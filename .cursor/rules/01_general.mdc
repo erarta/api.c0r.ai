@@ -1,0 +1,11 @@
+---
+description: General coding conventions for NeuCor.AI project
+alwaysApply: true
+---
+
+- Use Python ≥ 3.10 for bots and webhooks.
+- Use TypeScript ≥ 4.5 for Cloudflare Workers.
+- Follow PEP8 for Python; Airbnb style for TypeScript.
+- Format with Black, Flake8/Ruff for linting.
+- Use `.env` for all secrets; never hardcode keys.
+- Add clear logging (INFO, ERROR, DEBUG).

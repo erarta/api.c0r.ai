@@ -1,0 +1,14 @@
+---
+description: Rules for Edge API (Cloudflare Worker)
+globs:
+  - "api/**/*.ts"
+alwaysApply: false
+---
+
+- Accept only `POST` for analyze endpoints.
+- Validate file size & MIME type.
+- Save images to Cloudflare R2 with unique UUID.
+- Generate signed URL for OpenAI Vision call.
+- Always return JSON, never raw HTML.
+- Secure endpoints with Supabase service role.
+- Use proper HTTP status codes.
