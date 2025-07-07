@@ -12,7 +12,7 @@ export async function getSignedUrl(photoId: string): Promise<string> {
   // @ts-ignore: R2 binding is available in Worker environment
   const r2 = (globalThis as any).R2_BUCKET;
   if (!r2) throw new Error('R2_BUCKET binding not found');
-  // Use PRODUCTION_DOMAIN from env
-  const domain = (globalThis as any).PRODUCTION_DOMAIN || 'c0r.ai';
+  // Use BASE_URL from env
+  const domain = (globalThis as any).BASE_URL || 'c0r.ai';
   return `https://r2-public.${domain}/${photoId}`;
 } 

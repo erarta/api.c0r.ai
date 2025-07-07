@@ -8,7 +8,7 @@ from telegram.ext import ContextTypes
 from loguru import logger
 from utils.supabase import get_or_create_user, decrement_credits
 
-domain = os.getenv("PRODUCTION_DOMAIN", "c0r.ai")
+domain = os.getenv("BASE_URL", "c0r.ai")
 ANALYZE_API_URL = f"https://api.{domain}/v1/analyze"
 
 # Helper to format KBZHU nicely
