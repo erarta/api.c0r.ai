@@ -2,9 +2,9 @@
 
 ## [0.1.1] - 2024-07-06
 ### Changed
-- Centralized all domain and API URL logic to use `NEUCOR_DOMAIN` from `.env`.
+- Centralized all domain and API URL logic to use `PRODUCTION_DOMAIN` from `.env`.
 - Removed `NEUCOR_API_URL` from `.env` and code to avoid duplication.
-- All API and payment URLs are now dynamically built from `NEUCOR_DOMAIN`.
+- All API and payment URLs are now dynamically built from `PRODUCTION_DOMAIN`.
 - Updated `.env` and code to reflect this change for easier maintenance and consistency.
 
 ## [0.1.0] - 2024-06-09
@@ -29,3 +29,8 @@
   - NeuCor_Service_Bot → c0r_ai_Service_Bot
   - All domains, URLs, and environment variables updated to c0r.ai
 - Updated README, CONTRIBUTING, MODULES, and all code/docs to reflect new branding.
+
+## [0.2.1] - 2024-07-07
+### Added
+- Implemented Supabase SQL schema for users, logs, and payments tables, with default credits = 3 and row-level security by telegram_id.
+- This enables the Telegram bot to work for food analysis and testing with OpenAI and Supabase, without payment integration required for initial launch.

@@ -99,8 +99,8 @@ This repo is split into 5 logical parts:
 
 1️⃣ **Clone this repo**
 ```bash
-git clone https://github.com/erarta/c0r.ai.git
-cd c0r.ai
+git clone https://github.com/erarta/api.c0r.ai.git
+cd api.c0r.ai
 
 2️⃣ Install dependencies
 
