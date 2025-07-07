@@ -8,7 +8,8 @@ from telegram.ext import ContextTypes
 from loguru import logger
 from utils.supabase import get_or_create_user, decrement_credits
 
-ANALYZE_API_URL = "https://api.neucor.ai/v1/analyze"
+domain = os.getenv("NEUCOR_DOMAIN", "neucor.ai")
+ANALYZE_API_URL = f"https://api.{domain}/v1/analyze"
 
 # Helper to format KBZHU nicely
 def format_kbzhu(kbzhu: dict) -> str:
@@ -22,7 +23,7 @@ def format_kbzhu(kbzhu: dict) -> str:
 
 # Helper to generate payment link (stub, replace with real logic)
 def get_payment_link(telegram_user_id: int) -> str:
-    return f"https://pay.neucor.ai/?user_id={telegram_user_id}"
+    return f"https://pay.{domain}/?user_id={telegram_user_id}"
 
 # Main photo handler
 async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -1,15 +1,15 @@
-✅✅✅ 🚀 NeuCor.AI — TECHNICAL REQUIREMENTS
+✅✅✅ 🚀 c0r.ai — TECHNICAL REQUIREMENTS
 
 ⸻
 
 📌 📂 Structure
 
 5 Core Modules:
-1️⃣ NeuCor_Bot — Telegram bot (user-facing)
+1️⃣ c0r_ai_Bot — Telegram bot (user-facing)
 2️⃣ Cloudflare Worker API — Edge Function (analyze photo, call OpenAI)
 3️⃣ Supabase — DB schema & operations
 4️⃣ Payments — Stripe + YooKassa webhooks
-5️⃣ NeuCor_Service_Bot — Admin/OPS bot
+5️⃣ c0r_ai_Service_Bot — Admin/OPS bot
 6️⃣ n8n workflows — integration glue
 
 Each includes:
@@ -20,13 +20,13 @@ Each includes:
 
 ⸻
 
-✅ 1️⃣ NeuCor_Bot (Telegram — user)
+✅ 1️⃣ c0r_ai_Bot (Telegram — user)
 
 Goal: Telegram bot for user interaction:
 /start, /help, upload photo, get KBZHU, credits check, buy more credits.
 
 Key files:
-	•	neucor_bot.py or neucor_bot.ts
+	•	c0r_ai_bot.py or c0r_ai_bot.ts
 	•	handlers/commands.py
 	•	handlers/photo.py
 	•	utils/supabase.py
@@ -34,18 +34,18 @@ Key files:
 Features:
 	•	/start → register user in Supabase (telegram_user_id, credits = 3)
 	•	/help → static help
-	•	Photo handler → accepts 1 photo → uploads to api.neneucor.ai/v1/analyze
+	•	Photo handler → accepts 1 photo → uploads to api.c0r.ai/v1/analyze
 	•	Displays loading → parses JSON → shows KBZHU nicely
 	•	Checks credits:
 	•	If credits_remaining > 0 → allow
-	•	If credits = 0 → show “Buy More Credits” link (Stripe/YooKassa)
+	•	If credits = 0 → show "Buy More Credits" link (Stripe/YooKassa)
 
 Cursor prompt:
 
 Create a Telegram bot in Python (python-telegram-bot v20).
 /start: check Supabase users → insert if new.
 /help: simple static text.
-On photo: download → POST to https://api.neneucor.ai/v1/analyze with telegram_user_id.
+On photo: download → POST to https://api.c0r.ai/v1/analyze with telegram_user_id.
 Parse JSON → show KBZHU.
 If out of credits → show inline button with dynamic payment link.
 Async, clean error handling.
@@ -68,7 +68,7 @@ Key files:
 	•	lib/r2.ts
 
 Endpoint:
-POST /v1/analyze → api.neneucor.ai/v1/analyze
+POST /v1/analyze → api.c0r.ai/v1/analyze
 
 Cursor prompt:
 
@@ -129,7 +129,7 @@ Add policy: row-level security by telegram_id.
 ✅ 4️⃣ Payments
 
 Goal: Handle Stripe + YooKassa:
-	•	On payment → webhook → update Supabase → add credits → notify Service_Bot.
+	•	On payment → webhook → update Supabase → add credits → notify c0r_ai_Service_Bot.
 
 Files:
 	•	webhooks/stripe.py
@@ -142,11 +142,11 @@ Verify webhook → if payment_intent.succeeded.
 Find user by metadata telegram_user_id.
 Update users.credits_remaining +10/+100.
 Insert payments row.
-Notify NeuCor_Service_Bot with payment info.
+Notify c0r_ai_Service_Bot with payment info.
 
 ⸻
 
-✅ 5️⃣ NeuCor_Service_Bot (Admin)
+✅ 5️⃣ c0r_ai_Service_Bot (Admin)
 
 Goal: Ops bot for admin:
 	•	/stats → daily usage, signups, payments
@@ -175,9 +175,9 @@ Private Telegram bot for admin ID only.
 ✅ 6️⃣ n8n Workflows
 
 Goal: Automate glue:
-	•	Stripe/YooKassa → Supabase → Service_Bot
-	•	Daily stats → Service_Bot cron
-	•	Alerts → failed scans → Service_Bot
+	•	Stripe/YooKassa → Supabase → c0r_ai_Service_Bot
+	•	Daily stats → c0r_ai_Service_Bot cron
+	•	Alerts → failed scans → c0r_ai_Service_Bot
 
 Cursor prompt:
 
@@ -190,15 +190,15 @@ Supabase watcher → new error → Telegram push.
 ✅✅✅ 🔥 Final TODOs
 
 ✔️	Task
-✔️	Setup domain neneucor.ai
+✔️	Setup domain c0r.ai
 ✔️	Deploy Cloudflare R2
 ✔️	Deploy Cloudflare Worker
 ✔️	Setup Supabase project
-✔️	Create NeuCor_Bot
-✔️	Create NeuCor_Service_Bot
+✔️	Create c0r_ai_Bot
+✔️	Create c0r_ai_Service_Bot
 ✔️	Setup Stripe/YooKassa
 ✔️	Deploy n8n on EC2 micro
-✔️	Connect Service_Bot → n8n
+✔️	Connect c0r_ai_Service_Bot → n8n
 ✔️	Write Privacy, Refund Policy
 ✔️	Launch closed beta
 
@@ -213,8 +213,8 @@ Supabase watcher → new error → Telegram push.
 
 ⸻
 
-This is your CTO-ready launch blueprint for NeuCor.AI.
+This is your CTO-ready launch blueprint for c0r.ai.
 
 ⸻
 
-🟢 If you want it, I’ll package this as Notion doc + Google Doc + Cursor markdown, drop the link, and you can start TODAY. Just say “Yes, package NeuCor.AI TRD” — and I’ll prep it in 15 min. 🚀
+🟢 If you want it, I'll package this as Notion doc + Google Doc + Cursor markdown, drop the link, and you can start TODAY. Just say "Yes, package c0r.ai TRD" — and I'll prep it in 15 min. 🚀

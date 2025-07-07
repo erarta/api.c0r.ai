@@ -8,9 +8,9 @@ You can drop this in your root /README.md — works great for dev onboarding, au
 ⸻
 
 
-# 🚀 NeuCor.AI — AI Food & Wellbeing Assistant
+# 🚀 c0r.ai — AI Food & Wellbeing Assistant
 
-NeuCor.AI is an AI-powered Telegram bot and API service that helps people analyze their meals, track nutrition (КБЖУ), and improve their wellbeing.  
+c0r.ai is an AI-powered Telegram bot and API service that helps people analyze their meals, track nutrition (КБЖУ), and improve their wellbeing.  
 The system is modular, easy to scale, and built with a modern serverless stack.
 
 ---
@@ -28,10 +28,10 @@ The system is modular, easy to scale, and built with a modern serverless stack.
 
 This repo is split into 5 logical parts:
 
-### 1️⃣ `NeuCor_Bot`
+### 1️⃣ `c0r_ai_Bot`
 - Main user Telegram bot.
 - Handles `/start`, `/help`, photo upload, credits check.
-- Calls `api.neucor.ai/v1/analyze` with uploaded photo.
+- Calls `api.c0r.ai/v1/analyze` with uploaded photo.
 - Shows nicely formatted KBZHU data.
 - Prompts payment if free credits run out.
 
@@ -51,9 +51,9 @@ This repo is split into 5 logical parts:
 ### 4️⃣ `Payments`
 - Stripe and YooKassa webhook handlers.
 - On successful payment → updates credits in Supabase.
-- Notifies `NeuCor_Service_Bot` for ops tracking.
+- Notifies `c0r_ai_Service_Bot` for ops tracking.
 
-### 5️⃣ `NeuCor_Service_Bot`
+### 5️⃣ `c0r_ai_Service_Bot`
 - Private admin Telegram bot.
 - View usage stats, failed scans, leads.
 - Refund or block users.
@@ -61,7 +61,7 @@ This repo is split into 5 logical parts:
 
 ### 6️⃣ `n8n_Workflows`
 - Orchestrates payments, daily stats, error monitoring.
-- Sends alerts to `NeuCor_Service_Bot`.
+- Sends alerts to `c0r_ai_Service_Bot`.
 
 ---
 
@@ -82,15 +82,15 @@ This repo is split into 5 logical parts:
 
 **MVP Feature Checklist:**
 
-- [ ] Deploy `NeuCor_Bot` — handle `/start`, `/help`, photo upload
+- [ ] Deploy `c0r_ai_Bot` — handle `/start`, `/help`, photo upload
 - [ ] Deploy Cloudflare Worker — secure `/v1/analyze` endpoint
 - [ ] Integrate OpenAI Vision
 - [ ] Store photos to R2
 - [ ] Setup Supabase schema (`users`, `logs`, `payments`)
 - [ ] Add free credits + usage logic
 - [ ] Setup Stripe & YooKassa checkout
-- [ ] Deploy webhooks → update Supabase → ping `NeuCor_Service_Bot`
-- [ ] Create `NeuCor_Service_Bot` (admin)
+- [ ] Deploy webhooks → update Supabase → ping `c0r_ai_Service_Bot`
+- [ ] Create `c0r_ai_Service_Bot` (admin)
 - [ ] Setup `n8n` — daily stats, error notifications
 
 ---
@@ -99,8 +99,8 @@ This repo is split into 5 logical parts:
 
 1️⃣ **Clone this repo**
 ```bash
-git clone https://github.com/erarta/neucor.ai.git
-cd neucor.ai
+git clone https://github.com/erarta/c0r.ai.git
+cd c0r.ai
 
 2️⃣ Install dependencies
 
@@ -156,7 +156,7 @@ MIT — feel free to adapt, fork, and contribute.
 
 ✅ Credits
 
-Made with ❤️ by NeuCor.AI Team
+Made with ❤️ by c0r.ai Team
 
 ⸻
 

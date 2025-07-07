@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "hono": "^4.8.4",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.8.3"
+  }
+}

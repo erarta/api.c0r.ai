@@ -14,6 +14,12 @@ app.post('/v1/analyze', async (c) => {
     if (!photo || !userId) {
       return c.json({ error: 'Missing photo or user_id' }, 400);
     }
+    // Ensure photo is a File object
+    if (typeof photo === 'string' || !(photo instanceof File)) {
+      return c.json({ error: 'Photo must be a File upload (multipart/form-data)' }, 400);
+    }
+    // Ensure userId is a string
+    const userIdStr = typeof userId === 'string' ? userId : String(userId);
     // Save photo to R2
     const photoId = uuidv4();
     const r2Url = await handleR2Upload(photo, photoId);
@@ -22,7 +28,7 @@ app.post('/v1/analyze', async (c) => {
     // Call OpenAI Vision
     const kbzhu = await analyzePhotoWithOpenAI(signedUrl);
     // Update Supabase: decrement credits, add log
-    await decrementCreditsAndLog(userId, photoId, kbzhu);
+    await decrementCreditsAndLog(userIdStr, photoId, kbzhu);
     // Return result
     return c.json({ kbzhu });
   } catch (err: any) {

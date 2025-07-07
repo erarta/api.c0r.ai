@@ -1,6 +1,6 @@
-# 📌 Contributing to NeuCor.AI
+# 📌 Contributing to c0r.ai
 
-Thank you for helping build NeuCor.AI!  
+Thank you for helping build c0r.ai!  
 This doc explains how to contribute clean, safe code.
 
 ---
@@ -11,8 +11,8 @@ This doc explains how to contribute clean, safe code.
 
 2️⃣ **Clone your fork**
 ```bash
-git clone https://github.com/YOUR_USERNAME/neneucor.ai.git
-cd neneucor.ai
+git clone https://github.com/YOUR_USERNAME/c0r.ai.git
+cd c0r.ai
 
 3️⃣ Create a branch
 
@@ -20,7 +20,7 @@ git checkout -b feature/my-new-feature
 
 4️⃣ Write atomic code
 	•	One feature per branch.
-	•	Follow /modules structure (NeuCor_Bot, Cloudflare_Worker, etc).
+	•	Follow /modules structure (c0r_ai_Bot, Cloudflare_Worker, etc).
 
 5️⃣ Run local tests
 
@@ -53,4 +53,4 @@ Open an Issue or ping the repo owner.
 
 ⸻
 
-Let’s build NeuCor.AI together! 🚀
+Let’s build c0r.ai together! 🚀

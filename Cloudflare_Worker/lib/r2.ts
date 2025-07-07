@@ -12,7 +12,7 @@ export async function getSignedUrl(photoId: string): Promise<string> {
   // @ts-ignore: R2 binding is available in Worker environment
   const r2 = (globalThis as any).R2_BUCKET;
   if (!r2) throw new Error('R2_BUCKET binding not found');
-  // Generate a signed URL (simulate, as actual implementation may vary)
-  // In production, use R2's presigned URL API or equivalent
-  return `https://r2-public.example.com/${photoId}`;
+  // Use NEUCOR_DOMAIN from env
+  const domain = (globalThis as any).NEUCOR_DOMAIN || 'neucor.ai';
+  return `https://r2-public.${domain}/${photoId}`;
 } 
