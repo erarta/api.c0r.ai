@@ -5,11 +5,11 @@
 📌 📂 Structure
 
 5 Core Modules:
-1️⃣ c0r_ai_Bot — Telegram bot (user-facing)
+1️⃣ c0rService_bot — Telegram bot (user-facing)
 2️⃣ Cloudflare Worker API — Edge Function (analyze photo, call OpenAI)
 3️⃣ Supabase — DB schema & operations
 4️⃣ Payments — Stripe + YooKassa webhooks
-5️⃣ c0r_ai_Service_Bot — Admin/OPS bot
+5️⃣ c0rAIServiceBot — Admin/OPS bot
 6️⃣ n8n workflows — integration glue
 
 Each includes:
@@ -20,7 +20,7 @@ Each includes:
 
 ⸻
 
-✅ 1️⃣ c0r_ai_Bot (Telegram — user)
+✅ 1️⃣ c0rService_bot (Telegram — user)
 
 Goal: Telegram bot for user interaction:
 /start, /help, upload photo, get KBZHU, credits check, buy more credits.
@@ -128,8 +128,8 @@ Add policy: row-level security by telegram_id.
 
 ✅ 4️⃣ Payments
 
-Goal: Handle Stripe + YooKassa:
-	•	On payment → webhook → update Supabase → add credits → notify c0r_ai_Service_Bot.
+Goal: Handle Stripe (global) and YooKassa (Russian Telegram accounts only):
+	•	On payment → webhook → update Supabase → add credits → notify c0rAIServiceBot.
 
 Files:
 	•	webhooks/stripe.py
@@ -142,11 +142,13 @@ Verify webhook → if payment_intent.succeeded.
 Find user by metadata telegram_user_id.
 Update users.credits_remaining +10/+100.
 Insert payments row.
-Notify c0r_ai_Service_Bot with payment info.
+Notify c0rAIServiceBot with payment info.
+
+Note: SERVICE_BOT_URL should be set to the webhook endpoint of your admin/ops bot (c0rAIServiceBot) to receive payment notifications.
 
 ⸻
 
-✅ 5️⃣ c0r_ai_Service_Bot (Admin)
+✅ 5️⃣ c0rAIServiceBot (Admin)
 
 Goal: Ops bot for admin:
 	•	/stats → daily usage, signups, payments
@@ -175,9 +177,9 @@ Private Telegram bot for admin ID only.
 ✅ 6️⃣ n8n Workflows
 
 Goal: Automate glue:
-	•	Stripe/YooKassa → Supabase → c0r_ai_Service_Bot
-	•	Daily stats → c0r_ai_Service_Bot cron
-	•	Alerts → failed scans → c0r_ai_Service_Bot
+	•	Stripe/YooKassa → Supabase → c0rAIServiceBot
+	•	Daily stats → c0rAIServiceBot cron
+	•	Alerts → failed scans → c0rAIServiceBot
 
 Cursor prompt:
 
@@ -194,11 +196,11 @@ Supabase watcher → new error → Telegram push.
 ✔️	Deploy Cloudflare R2
 ✔️	Deploy Cloudflare Worker
 ✔️	Setup Supabase project
-✔️	Create c0r_ai_Bot
-✔️	Create c0r_ai_Service_Bot
+✔️	Create c0rService_bot
+✔️	Create c0rAIServiceBot
 ✔️	Setup Stripe/YooKassa
 ✔️	Deploy n8n on EC2 micro
-✔️	Connect c0r_ai_Service_Bot → n8n
+✔️	Connect c0rAIServiceBot → n8n
 ✔️	Write Privacy, Refund Policy
 ✔️	Launch closed beta
 

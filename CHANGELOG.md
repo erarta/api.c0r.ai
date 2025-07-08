@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1] - 2024-07-07
+### Changed
+- Refactored payment provider logic for maximum modularity and extensibility:
+  - All Stripe-specific code and configs moved to `pay.c0r.ai/app/stripe/` (`config.py`, `client.py`)
+  - All YooKassa-specific code and configs moved to `pay.c0r.ai/app/yookassa/` (`config.py`, `client.py`)
+  - Each provider is now fully self-contained, making it easy to add or update providers in the future
+  - Added `README.md` and `__init__.py` to each provider directory for clarity and extensibility
+- Updated all imports and references in the payment service to use the new structure
+- Updated root `config.py` to point to new config locations
+
 ## [0.1.1] - 2024-07-06
 ### Changed
 - Centralized all domain and API URL logic to use `BASE_URL` from `.env`.
@@ -34,3 +44,24 @@
 ### Added
 - Implemented Supabase SQL schema for users, logs, and payments tables, with default credits = 3 and row-level security by telegram_id.
 - This enables the Telegram bot to work for food analysis and testing with OpenAI and Supabase, without payment integration required for initial launch.
+
+## [0.2.2] - 2024-07-07
+### Changed
+- Renamed c0r_ai_Service_Bot to c0rAIServiceBot and c0r_ai_Bot to c0rService_bot across the project for consistency.
+- Added YooKassa webhook logic for Russian Telegram accounts only; Stripe is used for all other users.
+- Clarified SERVICE_BOT_URL usage: this environment variable should point to the webhook endpoint of your admin/ops bot (c0rAIServiceBot) to receive payment notifications.
+
+## [0.3.0] - 2024-07-07
+### Changed
+- Полный переход на монорепозиторий:
+  - /api.c0r.ai/ — публичный API и Telegram-бот
+  - /ml.c0r.ai/ — ML-инференс сервис
+  - /pay.c0r.ai/ — платёжный сервис (модульная архитектура, YooKassa)
+  - /common/ — общие утилиты, схемы, константы
+  - /scripts/ — миграции, деплой, вспомогательные скрипты
+- Для каждого сервиса добавлен Dockerfile
+- Добавлен docker-compose.yml для локального и production запуска
+- Пример nginx-конфига для проксирования поддоменов
+- Удалены все тесты
+- Обновлён README.md и .env.example
+- Подготовлены инструкции по деплою на AWS EC2 с nginx и HTTPS

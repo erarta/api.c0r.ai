@@ -3,13 +3,18 @@ Photo handler for NeuCor Telegram Bot
 """
 import os
 import httpx
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
+from telegram.ext import ContextTypes, MessageHandler, filters
 from loguru import logger
 from utils.supabase import get_or_create_user, decrement_credits
 
 domain = os.getenv("BASE_URL", "c0r.ai")
 ANALYZE_API_URL = f"https://api.{domain}/v1/analyze"
+
+# --- Payment Config ---
+YOOKASSA_PRICE_RUB = 29900  # 299.00 RUB
+YOOKASSA_CREDITS = 10
+YOOKASSA_DESCRIPTION = "10 credits for food analysis"
 
 # Helper to format KBZHU nicely
 def format_kbzhu(kbzhu: dict) -> str:
@@ -25,6 +30,23 @@ def format_kbzhu(kbzhu: dict) -> str:
 def get_payment_link(telegram_user_id: int) -> str:
     return f"https://pay.{domain}/?user_id={telegram_user_id}"
 
+# Send a YooKassa invoice using Telegram's native payment system
+async def send_yookassa_invoice(update, context):
+    await update.message.bot.send_invoice(
+        chat_id=update.effective_user.id,
+        title="Buy Credits",
+        description=YOOKASSA_DESCRIPTION,
+        payload="yookassa-payload-10-credits",
+        provider_token=os.getenv("YOOKASSA_PROVIDER_TOKEN"),  # from BotFather
+        currency="RUB",
+        prices=[LabeledPrice(f"{YOOKASSA_CREDITS} credits", YOOKASSA_PRICE_RUB)],
+        start_parameter="buy_credits",
+        need_name=True,
+        need_phone_number=True,
+        need_email=False,
+        is_flexible=False,
+    )
+
 # Main photo handler
 async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -32,17 +54,9 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user, _ = await get_or_create_user(telegram_user_id)
         credits = user["credits_remaining"]
         if credits <= 0:
-            # Out of credits: show payment button
-            pay_url = get_payment_link(telegram_user_id)
-            keyboard = [
-                [InlineKeyboardButton("Buy Credits 💳", url=pay_url)]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(
-                "You are out of credits! Please buy more to continue.",
-                reply_markup=reply_markup
-            )
-            logger.info(f"User {telegram_user_id} out of credits.")
+            # Out of credits: send a YooKassa invoice using Telegram Payments
+            await send_yookassa_invoice(update, context)
+            logger.info(f"User {telegram_user_id} out of credits, sent invoice.")
             return
         # Download photo file
         photo = update.message.photo[-1]  # Get highest resolution
@@ -76,4 +90,32 @@ async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Sorry, analysis failed. Please try again later.")
     except Exception as e:
         logger.error(f"Photo handler error: {e}")
-        await update.message.reply_text("An error occurred. Please try again later.") 
+        await update.message.reply_text("An error occurred. Please try again later.")
+
+# Handler for successful_payment event (YooKassa in Telegram)
+async def handle_successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    telegram_user_id = update.effective_user.id
+    # Increment credits (configurable)
+    user, _ = await get_or_create_user(telegram_user_id)
+    new_credits = user["credits_remaining"] + YOOKASSA_CREDITS
+    from utils.supabase import supabase
+    supabase.table("users").update({"credits_remaining": new_credits}).eq("telegram_id", telegram_user_id).execute()
+    await update.message.reply_text(f"Payment received! {YOOKASSA_CREDITS} credits added. Thank you!")
+    # Notify admin bot (optional)
+    service_bot_url = os.getenv("SERVICE_BOT_URL")
+    if service_bot_url:
+        async with httpx.AsyncClient() as client:
+            await client.post(service_bot_url, json={
+                "event": "payment",
+                "user_id": telegram_user_id,
+                "amount": f"{YOOKASSA_PRICE_RUB/100:.2f} RUB (YooKassa)",
+                "credits_added": YOOKASSA_CREDITS
+            })
+
+# --- Register the successful_payment handler at module level ---
+def register_handlers(app):
+    # Call this from your main bot setup
+    app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, handle_successful_payment))
+# Usage in main.py:
+# from handlers.photo import register_handlers
+# register_handlers(app) 
