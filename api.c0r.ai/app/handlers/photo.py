@@ -17,15 +17,29 @@ YOOKASSA_PRICE_RUB = int(os.getenv("YOOKASSA_PRICE_RUB"))
 YOOKASSA_CREDITS = int(os.getenv("YOOKASSA_CREDITS"))
 YOOKASSA_DESCRIPTION = os.getenv("YOOKASSA_DESCRIPTION")
 
-# Helper to format KBZHU nicely
-def format_kbzhu(kbzhu: dict) -> str:
-    return (
-        f"🍽️ *Analysis Result*\n"
-        f"Calories: {kbzhu.get('calories', '?')} kcal\n"
-        f"Protein: {kbzhu.get('protein', '?')} g\n"
-        f"Fats: {kbzhu.get('fats', '?')} g\n"
-        f"Carbs: {kbzhu.get('carbs', '?')} g"
-    )
+# Helper to format KBZHU nicely with detailed breakdown
+def format_analysis_result(result: dict) -> str:
+    message_parts = []
+    
+    # Add food items breakdown if available
+    if "food_items" in result and result["food_items"]:
+        message_parts.append("🥘 *Food Items Detected:*")
+        for item in result["food_items"]:
+            name = item.get("name", "Unknown")
+            weight = item.get("weight", "Unknown")
+            calories = item.get("calories", 0)
+            message_parts.append(f"• {name} ({weight}) - {calories} kcal")
+        message_parts.append("")  # Empty line
+    
+    # Add total KBZHU
+    kbzhu = result.get("kbzhu", {})
+    message_parts.append("🍽️ *Total Nutrition:*")
+    message_parts.append(f"Calories: {kbzhu.get('calories', '?')} kcal")
+    message_parts.append(f"Proteins: {kbzhu.get('proteins', '?')} g")
+    message_parts.append(f"Fats: {kbzhu.get('fats', '?')} g")
+    message_parts.append(f"Carbohydrates: {kbzhu.get('carbohydrates', '?')} g")
+    
+    return "\n".join(message_parts)
 
 # Helper to generate payment link (stub, replace with real logic)
 def get_payment_link(telegram_user_id: int) -> str:
@@ -65,7 +79,10 @@ async def photo_handler(message: types.Message):
         # POST to analysis API
         async with httpx.AsyncClient(timeout=30) as client:
             files = {"photo": ("photo.jpg", file_content, "image/jpeg")}
-            data = {"telegram_user_id": str(telegram_user_id)}
+            data = {
+                "telegram_user_id": str(telegram_user_id),
+                "provider": "openai"
+            }
             response = await client.post(f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}", data=data, files=files)
             response.raise_for_status()
             result = response.json()
@@ -83,10 +100,10 @@ async def photo_handler(message: types.Message):
             credits_left = "?"
 
         await message.answer(
-            format_kbzhu(kbzhu) + f"\n\nCredits left: {credits_left}",
+            format_analysis_result(result) + f"\n\nCredits left: {credits_left}",
             parse_mode="Markdown"
         )
-        logger.info(f"User {telegram_user_id} analyzed photo. KBZHU: {kbzhu}. Credits left: {credits_left}")
+        logger.info(f"User {telegram_user_id} analyzed photo. Result: {result}. Credits left: {credits_left}")
         
     except httpx.HTTPStatusError as e:
         logger.error(f"API error: {e.response.status_code} {e.response.text}")

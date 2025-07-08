@@ -2,4 +2,5 @@ fastapi
 uvicorn
 httpx
 loguru
-python-multipart 
+python-multipart
+openai 

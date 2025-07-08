@@ -1,0 +1,54 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+        
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          # Navigate to project directory
+          cd /home/ubuntu/c0r.ai
+          
+          # Pull latest changes
+          git pull origin main
+          
+          # Stop existing containers
+          docker compose down
+          
+          # Remove old images to free space
+          docker system prune -f
+          
+          # Build and start services
+          docker compose build --no-cache
+          docker compose up -d
+          
+          # Check service status
+          docker compose ps
+          
+          # Show logs for verification
+          docker compose logs --tail=10
+        EOF
+        
+    - name: Verify deployment
+      run: |
+        sleep 30
+        # Test health endpoints
+        curl -f https://api.c0r.ai/ || exit 1
+        curl -f https://ml.c0r.ai/ || exit 1
+        curl -f https://pay.c0r.ai/ || exit 1
+        echo "✅ All services are healthy" 

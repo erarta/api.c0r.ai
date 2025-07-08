@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.3.3] - 2024-07-08
+### Added
+- Enhanced OpenAI food analysis with detailed breakdown:
+  - Individual food item detection with estimated portions
+  - Weight/portion size estimation for each product (e.g., "150g", "1 cup")
+  - Calories per individual food item
+  - Comprehensive food analysis prompt for better accuracy
+- Improved user experience in Telegram bot:
+  - Detailed food breakdown display before total nutrition
+  - Better formatted analysis results with emojis
+  - More informative responses for users
+
+### Changed
+- Updated OpenAI Vision API integration:
+  - Enhanced prompt for detailed food analysis
+  - Structured JSON response with food_items array and total_nutrition
+  - Better error handling and fallback values
+- Improved ML service response format:
+  - Returns both detailed breakdown and KBZHU summary
+  - Backward compatibility with existing API consumers
+- Updated photo handler to display rich food analysis:
+  - Shows individual products with weights and calories
+  - Maintains total KBZHU summary at the bottom
+  - Better logging for debugging
+
+### Fixed
+- OpenAI response parsing for complex food analysis
+- JSON structure validation for new response format
+- Display formatting for detailed food breakdown
+
 ## [0.3.2] - 2024-07-08
 ### Changed
 - Centralized routing architecture with single source of truth:
