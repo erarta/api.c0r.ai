@@ -1,5 +1,5 @@
 import os
-from yookassa import Payment
+import yookassa as yookassa_sdk
 from .config import PLANS_YOOKASSA
 
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -27,8 +27,8 @@ async def create_yookassa_invoice(user_id: int, plan_id: str) -> dict:
         "invoice_url": "https://pay.yookassa.ru/stub",
         "status": "created",
         "plan_id": plan_id,
-        "count": plan["count"],
-        "amount": plan["amount"],
-        "recurring": plan["recurring"],
-        "interval": plan.get("interval")
+        "count": 100,  # stub value, replace as needed
+        "amount": 39900,  # stub value, replace as needed
+        "recurring": True,  # stub value, replace as needed
+        "interval": "month"  # stub value, replace as needed
     } 

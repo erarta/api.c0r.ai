@@ -1,7 +1,8 @@
-version: '3.8'
 services:
   api:
-    build: ./api.c0r.ai
+    build:
+      context: .
+      dockerfile: api.c0r.ai/Dockerfile
     env_file: .env
     ports:
       - "8000:8000"
@@ -9,12 +10,16 @@ services:
       - ml
       - pay
   ml:
-    build: ./ml.c0r.ai
+    build:
+      context: .
+      dockerfile: ml.c0r.ai/Dockerfile
     env_file: .env
     ports:
       - "8001:8001"
   pay:
-    build: ./pay.c0r.ai
+    build:
+      context: .
+      dockerfile: pay.c0r.ai/Dockerfile
     env_file: .env
     ports:
       - "8002:8002" 

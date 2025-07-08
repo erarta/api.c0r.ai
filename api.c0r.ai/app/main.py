@@ -1,16 +1,19 @@
+import sys; print("PYTHONPATH:", sys.path)
 from fastapi import FastAPI, Request, HTTPException
 import asyncio
 from bot import start_bot
 import os
 import httpx
+from common.routes import Routes
 from common.supabase_client import (
     get_or_create_user, get_user_by_telegram_id, decrement_credits, add_credits, log_analysis, add_payment
 )
 
 app = FastAPI()
 
-ML_URL = os.getenv("ML_URL", "http://ml:8001/api/v1/analyze")
-PAY_URL = os.getenv("PAY_URL", "http://pay:8002/invoice")
+# All values must be set in .env file
+ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
+PAY_SERVICE_URL = os.getenv("PAY_SERVICE_URL")
 INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN")
 
 @app.get("/")
@@ -48,7 +51,7 @@ async def analyze(request: Request):
     # Прокси-запрос к ml.c0r.ai
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            ML_URL,
+            f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}",
             headers={"X-Internal-Token": INTERNAL_API_TOKEN},
             json={"user_id": user_id, "image_url": image_url}
         )
@@ -70,7 +73,7 @@ async def buy_credits(request: Request):
     # Прокси-запрос к pay.c0r.ai
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            PAY_URL,
+            f"{PAY_SERVICE_URL}{Routes.PAY_INVOICE}",
             headers={"X-Internal-Token": INTERNAL_API_TOKEN},
             json={"user_id": user_id, "amount": amount, "description": description}
         )

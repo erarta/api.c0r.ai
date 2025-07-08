@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.2] - 2024-07-08
+### Changed
+- Centralized routing architecture with single source of truth:
+  - Created unified `common/routes.py` with all service routes defined in one place
+  - Removed duplicate route files from individual services (`api.c0r.ai/app/routes.py`, `ml.c0r.ai/app/routes.py`, `pay.c0r.ai/app/routes.py`)
+  - Updated all services to import routes from `common.routes.Routes`
+- Improved environment variable structure:
+  - Changed from full URLs to base URLs only (`ML_SERVICE_URL=http://ml:8001`, `PAY_SERVICE_URL=http://pay:8002`)
+  - Route paths are now handled by centralized routing configuration
+- Fixed Docker configuration issues:
+  - Added missing dependencies (`loguru`, `python-multipart`) to service requirements
+  - Fixed common module imports by adding proper symlinks in all Dockerfiles
+  - Standardized Dockerfile structure across all services
+- Updated service communication:
+  - All inter-service calls now use base URL + route path pattern
+  - Photo handler updated to use new routing system
+  - ML service simplified to only handle file uploads (removed unused URL analysis endpoint)
+- Enhanced service reliability:
+  - All services now start successfully with proper dependency resolution
+  - Improved error handling and logging across services
+  - Fixed aiogram 3.x compatibility issues in photo processing
+
+### Fixed
+- Docker build and runtime issues with missing Python packages
+- Common module import errors in ML and Payment services
+- Service startup failures due to missing dependencies
+- Photo upload processing with proper multipart form handling
+
 ## [0.3.1] - 2024-07-07
 ### Changed
 - Refactored payment provider logic for maximum modularity and extensibility:

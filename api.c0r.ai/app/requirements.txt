@@ -2,3 +2,7 @@ fastapi
 uvicorn
 python-dotenv
 aiogram 
+httpx 
+supabase 
+python-telegram-bot 
+loguru 

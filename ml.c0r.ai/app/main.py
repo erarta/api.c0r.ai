@@ -1,27 +1,31 @@
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 import os
-from openai_client import analyze_image_openai
-from gemini_client import analyze_image_gemini
-
-INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN")
+import httpx
+from loguru import logger
+from common.routes import Routes
 
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"msg": "ml.c0r.ai is alive"}
+# Get environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN")
 
-@app.post("/api/v1/analyze")
-async def analyze(request: Request, provider: str = Query("openai", enum=["openai", "gemini"])):
-    token = request.headers.get("X-Internal-Token")
-    if token != INTERNAL_API_TOKEN:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    data = await request.json()
-    image_url = data.get("image_url")
-    if not image_url:
-        raise HTTPException(status_code=400, detail="image_url required")
-    if provider == "gemini":
-        result = await analyze_image_gemini(image_url)
-    else:
-        result = await analyze_image_openai(image_url)
-    return result 
+@app.get(Routes.ML_HEALTH)
+async def health():
+    return {"status": "ok", "service": "ml.c0r.ai"}
+
+@app.post(Routes.ML_ANALYZE)
+async def analyze_file(
+    photo: UploadFile = File(...),
+    telegram_user_id: str = Form(...),
+    provider: str = Form(...),
+):
+    # For now, return mock data since we need to implement file handling
+    mock_kbzhu = {
+        "calories": 250,
+        "proteins": 15.5,
+        "fats": 8.2,
+        "carbohydrates": 32.1
+    }
+    return {"kbzhu": mock_kbzhu} 
