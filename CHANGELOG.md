@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.3.9] - 2025-07-09
+### Investigation
+- **Critical Payment User ID Mismatch Issue**:
+  - User 391490 executes `/buy` command and `/status` command
+  - User 7918860162 receives payment credits and invoice creation
+  - Issue persists despite multiple debugging attempts
+  - TelegramConflictError suggests multiple bot instances running
+  - Local webhook changes didn't resolve the core issue
+
+### Attempted Fixes
+- **User ID Parameter Fix**:
+  - Modified `create_invoice_message()` to accept explicit `user_id` parameter
+  - Updated `handle_buy_callback()` to pass correct `telegram_user_id`
+  - Added extensive debug logging to track user ID flow
+  - Fixed callback query handling logic
+- **Webhook Debugging**:
+  - Set up ngrok tunnel for local webhook testing
+  - Configured YooKassa webhook to point to local instance
+  - Added comprehensive logging for payment flow debugging
+- **Code Analysis**:
+  - Verified all handlers use `message.from_user.id` correctly
+  - Confirmed payment payload includes correct user ID
+  - Added debug logging throughout payment pipeline
+
+### Current Status
+- ❌ Issue persists: Credits still added to wrong user (7918860162)
+- ❌ Local fixes didn't resolve the fundamental problem
+- ⚠️ TelegramConflictError indicates possible bot instance conflicts
+- 🔍 Moving to production environment for comprehensive testing
+
+### Next Steps
+- Deploy to production environment for clean testing
+- Clear database and test with single bot instance
+- Monitor production logs for complete payment flow analysis
+- Identify root cause of user ID discrepancy
+
+### Technical Notes
+- Logs show `/buy` command from user 391490 but invoice creation for 7918860162
+- Missing "Buy callback received" logs suggest callback handled elsewhere
+- pay.c0r.ai service has import errors preventing proper startup
+- Need production environment testing to isolate the issue
+
 ## [0.3.8] - 2024-07-09
 ### Added
 - **YooKassa Integration Testing Suite**:

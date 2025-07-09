@@ -35,16 +35,21 @@ def format_analysis_result(result: dict) -> str:
     
     return "\n".join(message_parts)
 
-
-
 # Main photo handler
 async def photo_handler(message: types.Message):
     try:
         telegram_user_id = message.from_user.id
+        
+        # Get user info with detailed logging
+        logger.info(f"Photo handler called by user {telegram_user_id} (@{message.from_user.username})")
         user = await get_or_create_user(telegram_user_id)
+        logger.info(f"User {telegram_user_id} data: {user}")
+        
         credits = user["credits_remaining"]
+        logger.info(f"User {telegram_user_id} has {credits} credits")
         
         if credits <= 0:
+            logger.warning(f"User {telegram_user_id} has no credits ({credits}), showing payment options")
             # Out of credits - show payment options
             await message.answer(
                 f"❌ You have no credits left!\n\n"
@@ -68,56 +73,62 @@ async def photo_handler(message: types.Message):
                     ]
                 ])
             )
-            logger.info(f"User {telegram_user_id} out of credits, showed payment options.")
             return
 
         # Download photo file
         photo = message.photo[-1]  # Get highest resolution
         file = await message.bot.get_file(photo.file_id)
         
-        # Download file content using aiogram 3.x method
-        from io import BytesIO
-        file_bytes = BytesIO()
-        await message.bot.download_file(file.file_path, file_bytes)
-        file_bytes.seek(0)
-        file_content = file_bytes.getvalue()
-        
         await message.answer("Analyzing your photo, please wait... ⏳")
+        logger.info(f"Starting photo analysis for user {telegram_user_id}")
         
-        # POST to analysis API
-        async with httpx.AsyncClient(timeout=30) as client:
-            files = {"photo": ("photo.jpg", file_content, "image/jpeg")}
+        # Download file content directly as bytes 
+        file_content = await message.bot.download_file(file.file_path)
+        
+        # POST to analysis API with proper file handling
+        async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
+            files = {
+                "photo": ("image.jpg", file_content, "image/jpeg")
+            }
             data = {
                 "telegram_user_id": str(telegram_user_id),
                 "provider": "openai"
             }
-            response = await client.post(f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}", data=data, files=files)
+            logger.info(f"Sending photo to ML service for user {telegram_user_id}")
+            response = await client.post(
+                f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}", 
+                data=data, 
+                files=files
+            )
             response.raise_for_status()
             result = response.json()
+            logger.info(f"ML analysis result for user {telegram_user_id}: {result}")
 
         kbzhu = result.get("kbzhu")
         if not kbzhu:
             raise ValueError("No KBZHU data in API response.")
 
-        # Decrement credits and show result
+        # Decrement credits
         try:
+            logger.info(f"Decrementing credits for user {telegram_user_id}")
             updated_user = await decrement_credits(telegram_user_id)
+            logger.info(f"Credits decremented for user {telegram_user_id}: {updated_user}")
             credits_left = updated_user["credits_remaining"]
         except Exception as e:
-            logger.error(f"Failed to decrement credits after analysis: {e}")
+            logger.error(f"Failed to decrement credits for user {telegram_user_id}: {e}")
             credits_left = "?"
 
         await message.answer(
             format_analysis_result(result) + f"\n\nCredits left: {credits_left}",
             parse_mode="Markdown"
         )
-        logger.info(f"User {telegram_user_id} analyzed photo. Result: {result}. Credits left: {credits_left}")
+        logger.info(f"Photo analysis completed for user {telegram_user_id}. Credits left: {credits_left}")
         
     except httpx.HTTPStatusError as e:
-        logger.error(f"API error: {e.response.status_code} {e.response.text}")
+        logger.error(f"API error for user {telegram_user_id}: {e.response.status_code} {e.response.text}")
         await message.answer("Sorry, analysis failed. Please try again later.")
     except Exception as e:
-        logger.error(f"Photo handler error: {e}")
+        logger.error(f"Photo handler error for user {telegram_user_id}: {e}")
         await message.answer("An error occurred. Please try again later.")
 
 # Handler for successful_payment event (placeholder)

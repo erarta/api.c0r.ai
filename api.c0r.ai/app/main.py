@@ -8,6 +8,7 @@ from common.routes import Routes
 from common.supabase_client import (
     get_or_create_user, get_user_by_telegram_id, decrement_credits, add_credits, log_analysis, add_payment
 )
+from loguru import logger
 
 app = FastAPI()
 
@@ -20,11 +21,11 @@ INTERNAL_API_TOKEN = os.getenv("INTERNAL_API_TOKEN")
 def root():
     return {"msg": "api.c0r.ai is alive"}
 
-# Запуск aiogram-бота в фоне при старте FastAPI
+# Simple bot startup without complex lifecycle management
 @app.on_event("startup")
-def launch_bot():
-    loop = asyncio.get_event_loop()
-    loop.create_task(start_bot())
+async def launch_bot():
+    logger.info("FastAPI startup - launching bot...")
+    asyncio.create_task(start_bot())
 
 @app.post("/register")
 async def register(request: Request):

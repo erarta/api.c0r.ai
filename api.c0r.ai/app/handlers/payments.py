@@ -28,11 +28,24 @@ PAYMENT_PLANS = {
     }
 }
 
-async def create_invoice_message(message: types.Message, plan_id: str = "basic"):
+async def create_invoice_message(message: types.Message, plan_id: str = "basic", user_id: int = None):
     """
     Create and send Telegram invoice message
     """
     try:
+        # Use passed user_id or fallback to message.from_user.id
+        if user_id is None:
+            user_id = message.from_user.id
+        
+        username = message.from_user.username
+        logger.info(f"=== CREATE_INVOICE_MESSAGE DEBUG ===")
+        logger.info(f"User ID: {user_id}")
+        logger.info(f"Username: {username}")  
+        logger.info(f"Message object type: {type(message)}")
+        logger.info(f"Message from_user: {message.from_user}")
+        logger.info(f"Plan: {plan_id}")
+        logger.info(f"=====================================")
+        
         if not YOOKASSA_PROVIDER_TOKEN:
             await message.answer("❌ Payment system is not configured. Please contact support.")
             return
@@ -46,7 +59,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic")
         await message.answer_invoice(
             title=plan["title"],
             description=plan["description"],
-            payload=f"credits_{plan_id}_{message.from_user.id}",
+            payload=f"credits_{plan_id}_{user_id}",
             provider_token=YOOKASSA_PROVIDER_TOKEN,
             currency=plan["currency"],
             prices=[
@@ -65,7 +78,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic")
             is_flexible=False
         )
         
-        logger.info(f"Created invoice for user {message.from_user.id}, plan {plan_id}")
+        logger.info(f"Created invoice for user {user_id}, plan {plan_id}")
         
     except Exception as e:
         logger.error(f"Failed to create invoice: {e}")
@@ -76,14 +89,20 @@ async def handle_buy_callback(callback: types.CallbackQuery):
     Handle callback from buy buttons
     """
     try:
+        telegram_user_id = callback.from_user.id
+        logger.info(f"Buy callback received from user {telegram_user_id} (@{callback.from_user.username})")
+        logger.info(f"Callback data: {callback.data}")
+        
         # Extract plan_id from callback data
         plan_id = callback.data.split("_")[1]  # "buy_basic" -> "basic"
+        logger.info(f"Plan selected by user {telegram_user_id}: {plan_id}")
         
         # Answer callback to remove loading state
         await callback.answer()
         
-        # Create invoice message
-        await create_invoice_message(callback.message, plan_id)
+        # Create invoice message with explicit user_id
+        logger.info(f"Creating invoice for user {telegram_user_id}, plan {plan_id}")
+        await create_invoice_message(callback.message, plan_id, user_id=telegram_user_id)
         
     except Exception as e:
         logger.error(f"Failed to handle buy callback: {e}")
@@ -141,28 +160,42 @@ async def handle_successful_payment(message: types.Message):
     try:
         payment = message.successful_payment
         payload = payment.invoice_payload
+        telegram_user_id = message.from_user.id
+        
+        logger.info(f"Processing successful payment for user {telegram_user_id}")
+        logger.info(f"Payment data: {payment}")
+        logger.info(f"Payment payload: {payload}")
         
         # Parse payload to get plan and user info
         if not payload.startswith("credits_"):
-            logger.error(f"Invalid payment payload: {payload}")
+            logger.error(f"Invalid payment payload for user {telegram_user_id}: {payload}")
             return
 
         parts = payload.split("_")
         if len(parts) != 3:
-            logger.error(f"Invalid payment format: {payload}")
+            logger.error(f"Invalid payment format for user {telegram_user_id}: {payload}")
             return
 
         plan_id = parts[1]
         user_id = int(parts[2])
         
+        logger.info(f"Payment details - plan: {plan_id}, user_id: {user_id}, telegram_user_id: {telegram_user_id}")
+        
         # Get plan details
         plan = PAYMENT_PLANS.get(plan_id)
         if not plan:
-            logger.error(f"Invalid plan in payment: {plan_id}")
+            logger.error(f"Invalid plan in payment for user {telegram_user_id}: {plan_id}")
             return
 
+        logger.info(f"Plan details: {plan}")
+        
+        # Get user before adding credits
+        user_before = await get_or_create_user(user_id)
+        logger.info(f"User before payment: {user_before}")
+        
         # Add credits to user account
         updated_user = await add_credits(user_id, plan["credits"])
+        logger.info(f"User after payment: {updated_user}")
         
         # Send confirmation message
         await message.answer(
@@ -175,8 +208,10 @@ async def handle_successful_payment(message: types.Message):
             parse_mode="Markdown"
         )
         
-        logger.info(f"Payment processed successfully for user {user_id}: {plan['credits']} credits added")
+        logger.info(f"Payment processed successfully for user {user_id}: {plan['credits']} credits added, total credits: {updated_user['credits_remaining']}")
         
     except Exception as e:
-        logger.error(f"Failed to process successful payment: {e}")
+        logger.error(f"Failed to process successful payment for user {telegram_user_id}: {e}")
+        import traceback
+        logger.error(f"Payment error traceback: {traceback.format_exc()}")
         await message.answer("❌ Payment was successful but there was an error adding credits. Please contact support.") 

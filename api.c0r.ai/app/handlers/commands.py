@@ -38,7 +38,10 @@ async def help_command(message: types.Message):
 async def status_command(message: types.Message):
     try:
         telegram_user_id = message.from_user.id
+        logger.info(f"Status command called by user {telegram_user_id} (@{message.from_user.username})")
+        
         user = await get_or_create_user(telegram_user_id)
+        logger.info(f"User {telegram_user_id} data from database: {user}")
         
         # Format user creation date
         created_at = user.get('created_at', 'Unknown')
@@ -63,11 +66,13 @@ async def status_command(message: types.Message):
             f"⚡ Powered by OpenAI Vision"
         )
         
+        logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")
         await message.answer(status_text, parse_mode="Markdown")
-        logger.info(f"/status by user {telegram_user_id}")
         
     except Exception as e:
-        logger.error(f"Error in /status: {e}")
+        logger.error(f"Error in /status for user {telegram_user_id}: {e}")
+        import traceback
+        logger.error(f"Status command error traceback: {traceback.format_exc()}")
         await message.answer("An error occurred while fetching your status. Please try again later.")
 
 # /buy command handler - NEW FEATURE
@@ -77,6 +82,14 @@ async def buy_credits_command(message: types.Message):
     """
     try:
         telegram_user_id = message.from_user.id
+        username = message.from_user.username
+        
+        logger.info(f"=== BUY_COMMAND DEBUG ===")
+        logger.info(f"/buy command by user {telegram_user_id} (@{username})")
+        logger.info(f"Message object type: {type(message)}")
+        logger.info(f"Message from_user: {message.from_user}")
+        logger.info(f"========================")
+        
         user = await get_or_create_user(telegram_user_id)
         
         # Show current credits and payment options
@@ -103,8 +116,6 @@ async def buy_credits_command(message: types.Message):
             ])
         )
         
-        logger.info(f"/buy command by user {telegram_user_id}")
-        
     except Exception as e:
-        logger.error(f"Error in /buy: {e}")
+        logger.error(f"Error in /buy for user {telegram_user_id}: {e}")
         await message.answer("An error occurred. Please try again later.") 
