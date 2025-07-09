@@ -46,9 +46,41 @@ jobs:
         
     - name: Verify deployment
       run: |
-        sleep 30
-        # Test health endpoints
-        curl -f https://api.c0r.ai/ || exit 1
-        curl -f https://ml.c0r.ai/ || exit 1
-        curl -f https://pay.c0r.ai/ || exit 1
+        sleep 60  # Increased wait time for services to fully start
+        
+        echo "🔍 Checking service health..."
+        
+        # Test API service
+        echo "Testing API service..."
+        if curl -f https://api.c0r.ai/; then
+          echo "✅ API service is healthy"
+        else
+          echo "❌ API service failed"
+          exit 1
+        fi
+        
+        # Test ML service  
+        echo "Testing ML service..."
+        if curl -f https://ml.c0r.ai/; then
+          echo "✅ ML service is healthy"
+        else
+          echo "❌ ML service failed"
+          exit 1
+        fi
+        
+        # Test Pay service with detailed error reporting
+        echo "Testing Pay service..."
+        if curl -f https://pay.c0r.ai/; then
+          echo "✅ Pay service is healthy"
+        else
+          echo "❌ Pay service failed - checking logs..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'DIAG_EOF'
+            echo "=== Pay service logs ==="
+            docker logs apic0rai-pay-1 --tail=20
+            echo "=== Container status ==="
+            docker-compose ps
+          DIAG_EOF
+          exit 1
+        fi
+        
         echo "✅ All services are healthy" 

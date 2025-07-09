@@ -1,13 +1,16 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-import os
 import httpx
 from loguru import logger
 from common.routes import Routes
-from .yookassa.client import create_yookassa_invoice, verify_yookassa_payment, validate_yookassa_webhook
-from .yookassa.config import PLANS_YOOKASSA
+from yookassa.client import create_yookassa_invoice, verify_yookassa_payment, validate_yookassa_webhook
+from yookassa.config import PLANS_YOOKASSA
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
