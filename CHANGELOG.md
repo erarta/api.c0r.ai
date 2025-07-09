@@ -1,5 +1,112 @@
 # Changelog
 
+## [0.3.8] - 2024-07-09
+### Added
+- **YooKassa Integration Testing Suite**:
+  - Comprehensive test scripts for YooKassa API integration
+  - Telegram payments functionality testing (`test_telegram_payments.py`)
+  - YooKassa API connection testing (`test_payment_simple.py`)
+  - Provider token validation and format checking
+  - Payment plans configuration testing
+- **Production Deployment Preparation**:
+  - Complete testing framework for payment integration
+  - Bot testing script (`run_bot_test.py`) for payment flow validation
+  - Production testing guide (`PAYMENT_TESTING_GUIDE.md`)
+  - YooKassa API keys setup guide (`get_yookassa_keys.md`)
+- **Enhanced Testing Infrastructure**:
+  - Virtual environment setup for testing dependencies
+  - Automated test execution with comprehensive reporting
+  - Test cards and payment scenarios documentation
+  - Webhook testing and validation tools
+
+### Changed
+- **Updated environment configuration** with proper YooKassa credentials structure
+- **Enhanced payment testing** with real API integration tests
+- **Improved documentation** for production deployment and testing
+- **Standardized testing approach** across all payment components
+
+### Fixed
+- YooKassa API connection testing and error handling
+- Provider token format validation
+- Payment flow testing with proper error reporting
+- Environment variable validation for production deployment
+
+### Testing Results
+- ✅ Telegram Bot API: Working (@c0rAIBot)
+- ✅ Provider Token: Configured (381764678:TEST:130406)
+- ✅ Telegram Payments: Ready for testing
+- ✅ Payment Buttons: Configured and functional
+- ✅ Invoice Creation: Successfully tested
+- ⚠️ YooKassa API: Requires correct credentials from dashboard
+
+### Documentation
+- Added comprehensive production testing guide
+- Step-by-step YooKassa API keys setup instructions
+- Complete payment testing workflow documentation
+- Troubleshooting guide for common deployment issues
+
+## [0.3.7] - 2024-07-09
+### Added
+- **Telegram Native Payments Integration**:
+  - Complete Telegram Payments support via BotFather and YooKassa
+  - In-app payment experience without leaving Telegram
+  - Native Telegram invoice messages with payment buttons
+  - Pre-checkout validation for payment security
+  - Automatic credit addition after successful payment
+  - Payment plans: Basic (20 credits/99 RUB) and Pro (100 credits/399 RUB)
+- **Enhanced bot commands**:
+  - New `/buy` command for purchasing credits
+  - Inline keyboard buttons for payment plan selection
+  - Improved user experience with native Telegram UI
+- **Payment handlers**:
+  - `pre_checkout_query` handler for payment validation
+  - `successful_payment` handler for credit addition
+  - Callback query handler for payment button interactions
+
+### Changed
+- **Replaced external payment links** with native Telegram invoices
+- **Updated photo handler** to show inline payment buttons instead of external URLs
+- **Improved payment flow** - users never leave Telegram app
+- **Enhanced user experience** with familiar Telegram payment interface
+- **Updated environment configuration** with `YOOKASSA_PROVIDER_TOKEN` for Telegram payments
+
+### Fixed
+- Payment flow now works entirely within Telegram app
+- Better error handling for payment failures
+- Improved payment validation and security
+
+### Documentation
+- Added comprehensive `TELEGRAM_PAYMENTS_SETUP.md` guide
+- Step-by-step BotFather configuration instructions
+- YooKassa integration guide for Telegram payments
+- Troubleshooting section for common issues
+
+## [0.3.6] - 2024-07-09
+### Added
+- **Complete YooKassa payment integration**:
+  - Real YooKassa SDK integration with proper API calls
+  - Dynamic payment link generation via payment service
+  - Webhook handler for processing successful payments
+  - Automatic credit addition after successful payment
+  - Payment success page with user-friendly design
+  - Payment plans: Basic (20 credits/99 RUB) and Pro (100 credits/399 RUB monthly)
+- **Enhanced payment service**:
+  - Real invoice creation with YooKassa API
+  - Proper error handling and logging
+  - Integration with API service for credit management
+  - HTML template support for payment success page
+
+### Changed
+- **Updated photo handler** to use real payment service instead of placeholder URLs
+- **Improved environment configuration** with proper service URL management
+- **Enhanced payment flow** with proper user experience from bot to payment to credit addition
+- **Removed outdated environment variables** (YOOKASSA_PROVIDER_TOKEN) and updated examples
+
+### Fixed
+- Payment link generation now creates real YooKassa payment URLs
+- Credit addition after payment now works through proper webhook handling
+- Service communication between API and payment services
+
 ## [0.3.5] - 2024-07-09
 ### Added
 - New `/status` command for Telegram bot:
@@ -122,18 +229,6 @@
 - Updated `.env` and code to reflect this change for easier maintenance and consistency.
 
 ## [0.1.0] - 2024-06-09
-### Added
-- Initial project structure as per 11_STRUCTURE.md: NeuCor_Bot, Cloudflare_Worker, Payments, NeuCor_Service_Bot, n8n_Workflows directories.
-- Environment variable management and validation using python-dotenv.
-- Async Telegram bot skeleton using python-telegram-bot v20+.
-- `/start` command: checks Supabase for user, inserts if new, returns welcome and credits info.
-- `/help` command: static help text.
-- Photo handler: checks credits, downloads photo, POSTs to analysis API, parses and displays KBZHU, decrements credits, shows payment link if out of credits.
-- Supabase utilities: async user get/create, decrement credits, robust error handling and logging.
-- User-friendly messages and inline payment button when out of credits.
-- All logic is async, modular, and follows best practices for maintainability and extensibility.
-
-## [0.2.0] - 2024-07-07
 ### Changed
 - Full rebranding from NeuCor.AI and COR.DIET to c0r.ai across the entire project.
 - Renamed all references, files, folders, and documentation:

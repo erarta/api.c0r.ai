@@ -9,13 +9,7 @@ from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits
 
 # All values must be set in .env file
-BASE_URL = os.getenv("BASE_URL")
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
-
-# --- Payment Config ---
-YOOKASSA_PRICE_RUB = int(os.getenv("YOOKASSA_PRICE_RUB"))
-YOOKASSA_CREDITS = int(os.getenv("YOOKASSA_CREDITS"))
-YOOKASSA_DESCRIPTION = os.getenv("YOOKASSA_DESCRIPTION")
 
 # Helper to format KBZHU nicely with detailed breakdown
 def format_analysis_result(result: dict) -> str:
@@ -41,9 +35,7 @@ def format_analysis_result(result: dict) -> str:
     
     return "\n".join(message_parts)
 
-# Helper to generate payment link (stub, replace with real logic)
-def get_payment_link(telegram_user_id: int) -> str:
-    return f"https://pay.{BASE_URL}/?user_id={telegram_user_id}"
+
 
 # Main photo handler
 async def photo_handler(message: types.Message):
@@ -53,14 +45,30 @@ async def photo_handler(message: types.Message):
         credits = user["credits_remaining"]
         
         if credits <= 0:
-            # Out of credits - send payment link
-            payment_link = get_payment_link(telegram_user_id)
+            # Out of credits - show payment options
             await message.answer(
-                f"❌ You have no credits left!\n"
-                f"💳 Buy more credits: {payment_link}\n"
-                f"💰 {YOOKASSA_CREDITS} credits for {YOOKASSA_PRICE_RUB/100:.2f} RUB"
+                f"❌ You have no credits left!\n\n"
+                f"💳 **Buy Credits to Continue:**\n"
+                f"📦 Basic Plan: 20 credits for 99 RUB\n"
+                f"📦 Pro Plan: 100 credits for 399 RUB\n\n"
+                f"Choose a plan to continue analyzing your food:",
+                parse_mode="Markdown",
+                reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
+                    [
+                        types.InlineKeyboardButton(
+                            text="💰 Basic Plan (99 RUB)",
+                            callback_data="buy_basic"
+                        )
+                    ],
+                    [
+                        types.InlineKeyboardButton(
+                            text="💎 Pro Plan (399 RUB)", 
+                            callback_data="buy_pro"
+                        )
+                    ]
+                ])
             )
-            logger.info(f"User {telegram_user_id} out of credits, sent payment link.")
+            logger.info(f"User {telegram_user_id} out of credits, showed payment options.")
             return
 
         # Download photo file

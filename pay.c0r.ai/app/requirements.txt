@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 httpx
-loguru 
+loguru
+yookassa
+jinja2 

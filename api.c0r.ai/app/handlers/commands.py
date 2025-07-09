@@ -6,6 +6,7 @@ from datetime import datetime
 from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user
+from .payments import create_invoice_message
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -27,7 +28,8 @@ async def help_command(message: types.Message):
         "Commands:\n"
         "• /start - Check your credits\n"
         "• /help - Show this help\n"
-        "• /status - Show your account status\n\n"
+        "• /status - Show your account status\n"
+        "• /buy - Buy more credits\n\n"
         "If you run out of credits, you can buy more."
     )
     await message.answer(help_text)
@@ -66,4 +68,43 @@ async def status_command(message: types.Message):
         
     except Exception as e:
         logger.error(f"Error in /status: {e}")
-        await message.answer("An error occurred while fetching your status. Please try again later.") 
+        await message.answer("An error occurred while fetching your status. Please try again later.")
+
+# /buy command handler - NEW FEATURE
+async def buy_credits_command(message: types.Message):
+    """
+    Handle /buy command - show payment options
+    """
+    try:
+        telegram_user_id = message.from_user.id
+        user = await get_or_create_user(telegram_user_id)
+        
+        # Show current credits and payment options
+        await message.answer(
+            f"💳 **Buy Credits**\n\n"
+            f"Current credits: *{user['credits_remaining']}*\n\n"
+            f"📦 **Basic Plan**: 20 credits for 99 RUB\n"
+            f"📦 **Pro Plan**: 100 credits for 399 RUB\n\n"
+            f"Choose a plan to continue:",
+            parse_mode="Markdown",
+            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text="💰 Basic Plan (99 RUB)",
+                        callback_data="buy_basic"
+                    )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text="💎 Pro Plan (399 RUB)", 
+                        callback_data="buy_pro"
+                    )
+                ]
+            ])
+        )
+        
+        logger.info(f"/buy command by user {telegram_user_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in /buy: {e}")
+        await message.answer("An error occurred. Please try again later.") 
