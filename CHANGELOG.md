@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.3.4] - 2024-07-08
+### Added
+- Production environment configuration for AWS deployment:
+  - Created `.env.production.example` with AWS subdomain URLs
+  - Added automatic environment switching script (`scripts/switch-env.sh`)
+  - Enhanced deployment documentation with production URL configuration
+- Production-ready Nginx configuration (`nginx.conf.production`):
+  - Complete SSL setup for all three subdomains (api/ml/pay.c0r.ai)
+  - Rate limiting per service with appropriate burst limits
+  - Upstream servers configuration with keepalive
+  - Security headers and proper proxy settings
+  - Webhook endpoint handling with custom timeouts
+- Automated production setup script (`scripts/setup-production.sh`):
+  - Installs all required dependencies (Docker, Nginx, Certbot)
+  - Configures environment and service URLs automatically
+  - Sets up firewall and basic security
+  - Provides next steps and useful commands reference
+
+### Changed
+- Updated environment variable structure:
+  - Added production service URLs: `ML_SERVICE_URL=https://ml.c0r.ai`, `PAY_SERVICE_URL=https://pay.c0r.ai`
+  - Development URLs remain: `ML_SERVICE_URL=http://ml:8001`, `PAY_SERVICE_URL=http://pay:8002`
+  - Clear separation between development and production configurations
+- Enhanced deployment guide:
+  - Added instructions for switching between development and production URLs
+  - Updated required environment variables for production
+  - Improved documentation for AWS deployment process
+
+### Fixed
+- Environment configuration for production deployment on AWS
+- Service URL management for different deployment environments
+- Documentation clarity for production setup requirements
+
 ## [0.3.3] - 2024-07-08
 ### Added
 - Enhanced OpenAI food analysis with detailed breakdown:

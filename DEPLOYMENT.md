@@ -50,8 +50,8 @@ sudo apt install git -y
 ### 3. Clone Repository
 ```bash
 cd /home/ubuntu
-git clone https://github.com/your-username/c0r.ai.git
-cd c0r.ai
+git clone https://github.com/yourusername/api.c0r.ai.git
+cd api.c0r.ai
 ```
 
 ### 4. Configure Environment
@@ -66,23 +66,41 @@ nano .env
 **Required variables to update:**
 - `TELEGRAM_BOT_TOKEN` - Your production bot token
 - `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_KEY` - Your Supabase anon key
+- `SUPABASE_SERVICE_KEY` - Your Supabase service key
 - `OPENAI_API_KEY` - Your OpenAI API key
 - `INTERNAL_API_TOKEN` - Generate secure token: `openssl rand -hex 32`
 - `YOOKASSA_SHOP_ID` - Your YooKassa shop ID
 - `YOOKASSA_SECRET_KEY` - Your YooKassa secret key
+- `YOOKASSA_PROVIDER_TOKEN` - Your YooKassa provider token
+
+**Service URLs are automatically configured:**
+- `ML_SERVICE_URL=https://ml.c0r.ai` (production)
+- `PAY_SERVICE_URL=https://pay.c0r.ai` (production)
+
+**Alternative: Use environment switching script**
+```bash
+# Switch to production URLs
+./scripts/switch-env.sh prod
+
+# Switch back to development URLs (if needed)
+./scripts/switch-env.sh dev
+```
 
 ### 5. Configure Nginx
 ```bash
 # Remove default config
 sudo rm /etc/nginx/sites-enabled/default
 
-# Copy production config
+# Copy production config from api.c0r.ai directory
+cd /home/ubuntu/api.c0r.ai
 sudo cp nginx.conf.production /etc/nginx/sites-available/c0r.ai
 sudo ln -s /etc/nginx/sites-available/c0r.ai /etc/nginx/sites-enabled/
 
 # Test configuration
 sudo nginx -t
+
+# If configuration is OK, reload nginx
+sudo systemctl reload nginx
 ```
 
 ### 6. Obtain SSL Certificates
