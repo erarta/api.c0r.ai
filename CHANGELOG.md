@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.5] - 2024-07-09
+### Added
+- New `/status` command for Telegram bot:
+  - Shows user account information (ID, credits, total paid, member since)
+  - Displays system status and version information
+  - Enhanced user experience with detailed account overview
+- Updated `/help` command with improved formatting and command list
+- Added proper datetime formatting for user creation dates
+
+### Changed
+- Enhanced help text with structured command list
+- Improved user interaction with more informative status display
+
 ## [0.3.4] - 2024-07-08
 ### Added
 - Production environment configuration for AWS deployment:

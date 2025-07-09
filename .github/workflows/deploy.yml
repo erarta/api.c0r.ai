@@ -22,7 +22,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           # Navigate to project directory
-          cd /home/ubuntu/c0r.ai
+          cd /home/ubuntu/api.c0r.ai
           
           # Pull latest changes
           git pull origin main
