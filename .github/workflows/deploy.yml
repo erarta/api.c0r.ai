@@ -73,14 +73,11 @@ jobs:
         if curl -f https://pay.c0r.ai/; then
           echo "✅ Pay service is healthy"
         else
-          echo "❌ Pay service failed - checking logs..."
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'DIAG_EOF'
-            echo "=== Pay service logs ==="
-            docker logs apic0rai-pay-1 --tail=20
-            echo "=== Container status ==="
-            docker-compose ps
-          DIAG_EOF
+          echo "❌ Pay service failed"
+          echo "🔍 Getting Pay service diagnostics..."
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "docker logs apic0rai-pay-1 --tail=20"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "docker ps -a | grep pay"
           exit 1
         fi
         
-        echo "✅ All services are healthy" 
+        echo "✅ All services are healthy!" 
