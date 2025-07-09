@@ -129,12 +129,15 @@ else
     print_warning "Environment switch script not found. Please ensure service URLs are set to production domains."
 fi
 
-# Configure Nginx
-print_status "Configuring Nginx..."
-if [ -f "nginx.conf.production" ]; then
+# Configure Nginx (temporary HTTP-only configuration)
+print_status "Configuring Nginx with temporary HTTP configuration..."
+if [ -f "nginx.conf.temp" ]; then
     sudo rm -f /etc/nginx/sites-enabled/default
-    sudo cp nginx.conf.production /etc/nginx/sites-available/c0r.ai
+    sudo cp nginx.conf.temp /etc/nginx/sites-available/c0r.ai
     sudo ln -sf /etc/nginx/sites-available/c0r.ai /etc/nginx/sites-enabled/
+    
+    # Create web root for certbot
+    sudo mkdir -p /var/www/html
     
     # Test nginx configuration
     if sudo nginx -t; then
@@ -145,7 +148,7 @@ if [ -f "nginx.conf.production" ]; then
         exit 1
     fi
 else
-    print_error "nginx.conf.production not found!"
+    print_error "nginx.conf.temp not found!"
     exit 1
 fi
 
@@ -159,9 +162,11 @@ print_status "✅ Basic setup completed!"
 echo ""
 print_warning "Next steps:"
 print_warning "1. Configure DNS records for api.c0r.ai, ml.c0r.ai, pay.c0r.ai to point to this server's IP"
-print_warning "2. Run: sudo certbot --nginx -d api.c0r.ai -d ml.c0r.ai -d pay.c0r.ai"
-print_warning "3. Build and start services: docker-compose build && docker-compose up -d"
-print_warning "4. Test all endpoints and functionality"
+print_warning "2. Build and start services: docker-compose build && docker-compose up -d"
+print_warning "3. Get SSL certificates: sudo certbot --nginx -d api.c0r.ai -d ml.c0r.ai -d pay.c0r.ai"
+print_warning "4. Switch to production SSL config: sudo cp nginx.conf.production /etc/nginx/sites-available/c0r.ai"
+print_warning "5. Test SSL config: sudo nginx -t && sudo systemctl reload nginx"
+print_warning "6. Test all endpoints and functionality"
 echo ""
 print_status "Setup script completed!"
 

@@ -86,15 +86,18 @@ nano .env
 ./scripts/switch-env.sh dev
 ```
 
-### 5. Configure Nginx
+### 5. Configure Nginx (Temporary HTTP Configuration)
 ```bash
 # Remove default config
 sudo rm /etc/nginx/sites-enabled/default
 
-# Copy production config from api.c0r.ai directory
+# Copy temporary HTTP config from api.c0r.ai directory
 cd /home/ubuntu/api.c0r.ai
-sudo cp nginx.conf.production /etc/nginx/sites-available/c0r.ai
+sudo cp nginx.conf.temp /etc/nginx/sites-available/c0r.ai
 sudo ln -s /etc/nginx/sites-available/c0r.ai /etc/nginx/sites-enabled/
+
+# Create web root for certbot
+sudo mkdir -p /var/www/html
 
 # Test configuration
 sudo nginx -t
@@ -103,17 +106,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 6. Obtain SSL Certificates
-```bash
-# Get certificates for all subdomains
-sudo certbot --nginx -d api.c0r.ai -d ml.c0r.ai -d pay.c0r.ai
-
-# Setup auto-renewal
-sudo crontab -e
-# Add line: 0 12 * * * /usr/bin/certbot renew --quiet
-```
-
-### 7. Start Services
+### 6. Start Services
 ```bash
 # Build and start all services
 docker-compose build
@@ -124,7 +117,29 @@ docker-compose ps
 docker-compose logs
 ```
 
-### 8. Configure Firewall
+### 7. Obtain SSL Certificates
+```bash
+# Get certificates for all subdomains
+sudo certbot --nginx -d api.c0r.ai -d ml.c0r.ai -d pay.c0r.ai
+
+# Setup auto-renewal
+sudo crontab -e
+# Add line: 0 12 * * * /usr/bin/certbot renew --quiet
+```
+
+### 8. Switch to Production SSL Configuration
+```bash
+# Copy production SSL config
+sudo cp nginx.conf.production /etc/nginx/sites-available/c0r.ai
+
+# Test configuration
+sudo nginx -t
+
+# If configuration is OK, reload nginx
+sudo systemctl reload nginx
+```
+
+### 9. Configure Firewall
 ```bash
 # Setup UFW
 sudo ufw allow OpenSSH
