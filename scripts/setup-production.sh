@@ -166,7 +166,8 @@ print_warning "2. Build and start services: docker-compose build && docker-compo
 print_warning "3. Get SSL certificates: sudo certbot --nginx -d api.c0r.ai -d ml.c0r.ai -d pay.c0r.ai"
 print_warning "4. Switch to production SSL config: sudo cp nginx.conf.production /etc/nginx/sites-available/c0r.ai"
 print_warning "5. Test SSL config: sudo nginx -t && sudo systemctl reload nginx"
-print_warning "6. Test all endpoints and functionality"
+print_warning "6. Setup SSL auto-renewal: (crontab -l 2>/dev/null; echo \"0 12 * * * /usr/bin/certbot renew --quiet\") | crontab -"
+print_warning "7. Test all endpoints and functionality"
 echo ""
 print_status "Setup script completed!"
 
