@@ -9,8 +9,8 @@ from pydantic import BaseModel
 import httpx
 from loguru import logger
 from common.routes import Routes
-from yookassa.client import create_yookassa_invoice, verify_yookassa_payment, validate_yookassa_webhook
-from yookassa.config import PLANS_YOOKASSA
+from yookassa_handlers.client import create_yookassa_invoice, verify_yookassa_payment, validate_yookassa_webhook
+from yookassa_handlers.config import PLANS_YOOKASSA
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
