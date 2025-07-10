@@ -170,7 +170,7 @@ async def analyze_file(
         # Analyze with OpenAI (default provider)
         if provider == "openai" or not provider:
             analysis_result = await analyze_food_with_openai(image_bytes)
-        else:
+        elif provider == "gemini":
             # For now, only OpenAI is supported
             raise HTTPException(status_code=400, detail=f"Provider '{provider}' not supported")
         

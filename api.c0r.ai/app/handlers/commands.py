@@ -63,7 +63,7 @@ async def status_command(message: types.Message):
             f"📅 Member since: `{created_date}`\n\n"
             f"🤖 System: *c0r.ai v0.3.4*\n"
             f"🌐 Status: *Online*\n"
-            f"⚡ Powered by OpenAI Vision"
+            f"⚡ Powered by c0r AI Vision"
         )
         
         logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")

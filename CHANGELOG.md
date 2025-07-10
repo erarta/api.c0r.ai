@@ -1,6 +1,21 @@
 # Changelog
 
+## [0.4.0] - 2025-07-09
+### Changed - User Interface Rebranding
+- **User-Facing Text Rebranding Only**:
+  - Changed "Powered by OpenAI Vision" → "Powered by c0r AI Vision" in user status messages
+  - Maintained all technical OpenAI API integration unchanged
+  - Kept original provider names, API keys, and error messages for developers
+  - Only user-visible branding updated for better brand consistency
+
 ## [0.3.9] - 2025-07-09
+### Fixed
+- **Pay Service Import Conflict**:
+  - Renamed `yookassa/` folder to `yookassa_handlers/` to resolve import conflicts
+  - Fixed ImportError: cannot import name 'Configuration' from 'yookassa'
+  - Pay service now starts correctly without 502 errors
+  - Updated GitHub Action diagnostics for better error reporting
+
 ### Investigation
 - **Critical Payment User ID Mismatch Issue**:
   - User 391490 executes `/buy` command and `/status` command

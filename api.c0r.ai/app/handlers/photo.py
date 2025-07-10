@@ -85,16 +85,16 @@ async def photo_handler(message: types.Message):
         # Download file content directly as bytes 
         file_content = await message.bot.download_file(file.file_path)
         
-        # POST to analysis API with proper file handling
-        async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
+        # Call ML service for analysis
+        logger.info(f"Sending photo to ML service for user {telegram_user_id}")
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
             files = {
-                "photo": ("image.jpg", file_content, "image/jpeg")
+                "image": ("photo.jpg", file_content, "image/jpeg")
             }
             data = {
-                "telegram_user_id": str(telegram_user_id),
+                "user_id": str(telegram_user_id),
                 "provider": "openai"
             }
-            logger.info(f"Sending photo to ML service for user {telegram_user_id}")
             response = await client.post(
                 f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}", 
                 data=data, 

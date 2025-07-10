@@ -40,9 +40,10 @@ async def register(request: Request):
 @app.post("/analyze")
 async def analyze(request: Request):
     data = await request.json()
-    user_id = data.get("user_id")
-    image_url = data.get("image_url")
+    # Extract data for logging
+    user_id = data.get("user_id", "unknown")
     model_used = data.get("model_used", "openai")
+    image_url = data.get("image_url")
     if not user_id or not image_url:
         raise HTTPException(status_code=400, detail="user_id and image_url required")
     user = await get_user_by_telegram_id(user_id)
