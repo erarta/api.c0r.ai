@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.5] - 2024-01-XX
+## [0.3.5] - 2024-01-15
 
 ### 🚀 **New Features**
 - **Anti-DDOS Protection**: Added rate limiting to prevent spam attacks
@@ -15,6 +15,10 @@
   - Profile setup can be restarted anytime with `/profile` command
   - FSM state is cleared on profile command to prevent stuck states
   - Better user guidance during profile setup
+- **Production Testing Tools**: Complete testing and monitoring infrastructure
+  - Real-time monitoring script with color-coded logs
+  - Automated connection tests for bot and database
+  - Comprehensive testing guides and checklists
 
 ### 🛠️ **Improvements**
 - **User Experience**: All text now in English for consistency
@@ -24,7 +28,8 @@
   - Age: 10-120 years
   - Height: 100-250 cm
   - Weight: 30-300 kg
-- **Testing**: Created comprehensive local testing guide
+- **Testing**: Created comprehensive local and production testing guides
+- **Monitoring**: Real-time error monitoring and performance tracking
 
 ### 🔧 **Technical Changes**
 - Added `RateLimiter` class for anti-spam protection
@@ -32,18 +37,29 @@
 - Enhanced photo handler with size checks
 - Improved FSM state management
 - Better error messages and user feedback
+- Created production monitoring and testing infrastructure
 
-### 📋 **Testing**
-- Created `TESTING_GUIDE.md` with comprehensive testing strategy
-- Added `test_db_connection.py` for database connection testing
-- Defined test phases from basic commands to performance testing
-- Mock ML service setup for local testing
+### 📋 **New Files Added**
+- `monitor_bot.sh` - Real-time monitoring script with color-coded output
+- `test_bot_connection.py` - Telegram bot connection testing
+- `test_db_connection.py` - Database connection testing  
+- `PRODUCTION_TESTING_COMMANDS.md` - Detailed production testing guide
+- `QUICK_PROD_TEST.md` - Quick 10-minute testing checklist
+- `PRODUCTION_README.md` - Complete production deployment guide
+- `TESTING_GUIDE.md` - Local development testing strategy
 
 ### 🐛 **Bug Fixes**
 - Fixed profile setup interruption handling
 - Fixed credits deduction on failed analysis
 - Fixed text language consistency (all English)
 - Fixed FSM state management issues
+
+### 🎯 **Production Ready**
+- Complete testing infrastructure for production deployment
+- Real-time monitoring and error tracking
+- Step-by-step testing scenarios
+- Emergency response procedures
+- Performance monitoring tools
 
 ---
 
