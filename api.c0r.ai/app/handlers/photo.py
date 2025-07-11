@@ -112,10 +112,10 @@ async def photo_handler(message: types.Message):
         logger.info(f"Sending photo to ML service for user {telegram_user_id}")
         async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
             files = {
-                "image": ("photo.jpg", file_content, "image/jpeg")
+                "photo": ("photo.jpg", file_content, "image/jpeg")  # ← ИСПРАВЛЕНО: "image" -> "photo"
             }
             data = {
-                "user_id": str(telegram_user_id),
+                "telegram_user_id": str(telegram_user_id),  # ← ИСПРАВЛЕНО: "user_id" -> "telegram_user_id"
                 "provider": "openai"
             }
             response = await client.post(
