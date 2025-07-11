@@ -79,8 +79,13 @@ class RateLimiter:
 rate_limiter = RateLimiter()
 
 # Rate limiting middleware
-async def rate_limit_middleware(message: types.Message, handler, data: dict):
+async def rate_limit_middleware(handler, event, data: dict):
     """Middleware to check rate limits"""
+    # Only process messages, skip other events
+    if not isinstance(event, types.Message):
+        return await handler(event, data)
+    
+    message = event
     user_id = message.from_user.id
     
     # Check for photo requests
@@ -110,7 +115,7 @@ async def rate_limit_middleware(message: types.Message, handler, data: dict):
             return
     
     # Continue to handler if not rate limited
-    await handler(message, data)
+    return await handler(event, data)
 
 # Register middleware
 dp.message.middleware(rate_limit_middleware)
