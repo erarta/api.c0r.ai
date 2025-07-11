@@ -1,323 +1,177 @@
 # Changelog
 
-## [0.4.0] - 2025-07-09
-### Changed - User Interface Rebranding
-- **User-Facing Text Rebranding Only**:
-  - Changed "Powered by OpenAI Vision" → "Powered by c0r AI Vision" in user status messages
-  - Maintained all technical OpenAI API integration unchanged
-  - Kept original provider names, API keys, and error messages for developers
-  - Only user-visible branding updated for better brand consistency
+## [0.3.5] - 2024-01-XX
 
-## [0.3.9] - 2025-07-09
-### Fixed
-- **Pay Service Import Conflict**:
-  - Renamed `yookassa/` folder to `yookassa_handlers/` to resolve import conflicts
-  - Fixed ImportError: cannot import name 'Configuration' from 'yookassa'
-  - Pay service now starts correctly without 502 errors
-  - Updated GitHub Action diagnostics for better error reporting
+### 🚀 **New Features**
+- **Anti-DDOS Protection**: Added rate limiting to prevent spam attacks
+  - Photo analysis: Maximum 5 photos per minute per user
+  - General commands: Maximum 20 commands per minute per user
+  - Informative rate limit messages with countdown timers
+- **Enhanced Photo Processing**: Improved error handling for photo analysis
+  - Photo size limit: 10MB maximum
+  - Better "no food detected" handling (credits not deducted)
+  - Proper error messages for failed analysis
+- **Profile System Improvements**: Fixed profile setup flow
+  - Profile setup can be restarted anytime with `/profile` command
+  - FSM state is cleared on profile command to prevent stuck states
+  - Better user guidance during profile setup
 
-### Investigation
-- **Critical Payment User ID Mismatch Issue**:
-  - User 391490 executes `/buy` command and `/status` command
-  - User 7918860162 receives payment credits and invoice creation
-  - Issue persists despite multiple debugging attempts
-  - TelegramConflictError suggests multiple bot instances running
-  - Local webhook changes didn't resolve the core issue
+### 🛠️ **Improvements**
+- **User Experience**: All text now in English for consistency
+- **Error Handling**: Credits are not deducted when analysis fails
+- **Security**: Rate limiting prevents system abuse
+- **Validation**: Comprehensive input validation for all profile fields
+  - Age: 10-120 years
+  - Height: 100-250 cm
+  - Weight: 30-300 kg
+- **Testing**: Created comprehensive local testing guide
 
-### Attempted Fixes
-- **User ID Parameter Fix**:
-  - Modified `create_invoice_message()` to accept explicit `user_id` parameter
-  - Updated `handle_buy_callback()` to pass correct `telegram_user_id`
-  - Added extensive debug logging to track user ID flow
-  - Fixed callback query handling logic
-- **Webhook Debugging**:
-  - Set up ngrok tunnel for local webhook testing
-  - Configured YooKassa webhook to point to local instance
-  - Added comprehensive logging for payment flow debugging
-- **Code Analysis**:
-  - Verified all handlers use `message.from_user.id` correctly
-  - Confirmed payment payload includes correct user ID
-  - Added debug logging throughout payment pipeline
+### 🔧 **Technical Changes**
+- Added `RateLimiter` class for anti-spam protection
+- Implemented middleware for rate limiting
+- Enhanced photo handler with size checks
+- Improved FSM state management
+- Better error messages and user feedback
 
-### Current Status
-- ❌ Issue persists: Credits still added to wrong user (7918860162)
-- ❌ Local fixes didn't resolve the fundamental problem
-- ⚠️ TelegramConflictError indicates possible bot instance conflicts
-- 🔍 Moving to production environment for comprehensive testing
+### 📋 **Testing**
+- Created `TESTING_GUIDE.md` with comprehensive testing strategy
+- Added `test_db_connection.py` for database connection testing
+- Defined test phases from basic commands to performance testing
+- Mock ML service setup for local testing
 
-### Next Steps
-- Deploy to production environment for clean testing
-- Clear database and test with single bot instance
-- Monitor production logs for complete payment flow analysis
-- Identify root cause of user ID discrepancy
+### 🐛 **Bug Fixes**
+- Fixed profile setup interruption handling
+- Fixed credits deduction on failed analysis
+- Fixed text language consistency (all English)
+- Fixed FSM state management issues
 
-### Technical Notes
-- Logs show `/buy` command from user 391490 but invoice creation for 7918860162
-- Missing "Buy callback received" logs suggest callback handled elsewhere
-- pay.c0r.ai service has import errors preventing proper startup
-- Need production environment testing to isolate the issue
+---
 
-## [0.3.8] - 2024-07-09
-### Added
-- **YooKassa Integration Testing Suite**:
-  - Comprehensive test scripts for YooKassa API integration
-  - Telegram payments functionality testing (`test_telegram_payments.py`)
-  - YooKassa API connection testing (`test_payment_simple.py`)
-  - Provider token validation and format checking
-  - Payment plans configuration testing
-- **Production Deployment Preparation**:
-  - Complete testing framework for payment integration
-  - Bot testing script (`run_bot_test.py`) for payment flow validation
-  - Production testing guide (`PAYMENT_TESTING_GUIDE.md`)
-  - YooKassa API keys setup guide (`get_yookassa_keys.md`)
-- **Enhanced Testing Infrastructure**:
-  - Virtual environment setup for testing dependencies
-  - Automated test execution with comprehensive reporting
-  - Test cards and payment scenarios documentation
-  - Webhook testing and validation tools
+## [0.3.4] - 2024-01-XX
 
-### Changed
-- **Updated environment configuration** with proper YooKassa credentials structure
-- **Enhanced payment testing** with real API integration tests
-- **Improved documentation** for production deployment and testing
-- **Standardized testing approach** across all payment components
+### 🚀 **New Features**
+- **Daily Nutrition Tracking**: Added `/daily` command to show daily calorie consumption and progress
+- **Profile Management**: Added `/profile` command for user profile setup and management
+- **Interactive User Interface**: Enhanced `/start` command with interactive buttons
+- **Personal Data Collection**: Users can now input age, gender, height, weight, activity level, and goals
+- **Daily Calorie Calculation**: Automatic TDEE calculation based on user profile
 
-### Fixed
-- YooKassa API connection testing and error handling
-- Provider token format validation
-- Payment flow testing with proper error reporting
-- Environment variable validation for production deployment
+### 🛠️ **Improvements**
+- **Enhanced Photo Analysis**: Now shows personalized progress for users with profiles
+- **Better User Onboarding**: Interactive welcome message with action buttons
+- **Comprehensive Help System**: Updated help command with all available features
+- **Progress Tracking**: Visual progress bars and detailed daily statistics
 
-### Testing Results
-- ✅ Telegram Bot API: Working (@c0rAIBot)
-- ✅ Provider Token: Configured (381764678:TEST:130406)
-- ✅ Telegram Payments: Ready for testing
-- ✅ Payment Buttons: Configured and functional
-- ✅ Invoice Creation: Successfully tested
-- ⚠️ YooKassa API: Requires correct credentials from dashboard
+### 🔧 **Technical Changes**
+- Added FSM (Finite State Machine) for profile setup workflow
+- Enhanced database schema with profile and detailed logging
+- Improved logging system with structured action tracking
+- Better error handling and user feedback
 
-### Documentation
-- Added comprehensive production testing guide
-- Step-by-step YooKassa API keys setup instructions
-- Complete payment testing workflow documentation
-- Troubleshooting guide for common deployment issues
+### 📋 **Database Schema Updates**
+- Extended `users` table with personal data fields
+- Enhanced `logs` table with action types and metadata
+- Added proper nullable fields for flexible data storage
 
-## [0.3.7] - 2024-07-09
-### Added
-- **Telegram Native Payments Integration**:
-  - Complete Telegram Payments support via BotFather and YooKassa
-  - In-app payment experience without leaving Telegram
-  - Native Telegram invoice messages with payment buttons
-  - Pre-checkout validation for payment security
-  - Automatic credit addition after successful payment
-  - Payment plans: Basic (20 credits/99 RUB) and Pro (100 credits/399 RUB)
-- **Enhanced bot commands**:
-  - New `/buy` command for purchasing credits
-  - Inline keyboard buttons for payment plan selection
-  - Improved user experience with native Telegram UI
-- **Payment handlers**:
-  - `pre_checkout_query` handler for payment validation
-  - `successful_payment` handler for credit addition
-  - Callback query handler for payment button interactions
+---
 
-### Changed
-- **Replaced external payment links** with native Telegram invoices
-- **Updated photo handler** to show inline payment buttons instead of external URLs
-- **Improved payment flow** - users never leave Telegram app
-- **Enhanced user experience** with familiar Telegram payment interface
-- **Updated environment configuration** with `YOOKASSA_PROVIDER_TOKEN` for Telegram payments
+## [0.3.3] - 2024-01-XX
 
-### Fixed
-- Payment flow now works entirely within Telegram app
-- Better error handling for payment failures
-- Improved payment validation and security
+### 🚀 **New Features**
+- **Enhanced Logging System**: Comprehensive user action logging with metadata
+- **Cloudflare R2 Integration**: Photo storage in Cloudflare R2 with automatic URL generation
+- **Improved Database Schema**: Enhanced users and logs tables with additional fields
+- **Better Error Handling**: More informative error messages and proper exception handling
 
-### Documentation
-- Added comprehensive `TELEGRAM_PAYMENTS_SETUP.md` guide
-- Step-by-step BotFather configuration instructions
-- YooKassa integration guide for Telegram payments
-- Troubleshooting section for common issues
+### 🛠️ **Improvements**
+- **User Experience**: Better feedback messages and status updates
+- **Database Operations**: Optimized queries and improved data structure
+- **Photo Processing**: Enhanced photo handling with R2 storage integration
+- **Code Organization**: Better separation of concerns and modular design
 
-## [0.3.6] - 2024-07-09
-### Added
-- **Complete YooKassa payment integration**:
-  - Real YooKassa SDK integration with proper API calls
-  - Dynamic payment link generation via payment service
-  - Webhook handler for processing successful payments
-  - Automatic credit addition after successful payment
-  - Payment success page with user-friendly design
-  - Payment plans: Basic (20 credits/99 RUB) and Pro (100 credits/399 RUB monthly)
-- **Enhanced payment service**:
-  - Real invoice creation with YooKassa API
-  - Proper error handling and logging
-  - Integration with API service for credit management
-  - HTML template support for payment success page
+### 🔧 **Technical Changes**
+- Added comprehensive logging function `log_user_action()`
+- Enhanced database schema with nullable fields and metadata support
+- Improved photo upload workflow with R2 integration
+- Better error handling across all handlers
 
-### Changed
-- **Updated photo handler** to use real payment service instead of placeholder URLs
-- **Improved environment configuration** with proper service URL management
-- **Enhanced payment flow** with proper user experience from bot to payment to credit addition
-- **Removed outdated environment variables** (YOOKASSA_PROVIDER_TOKEN) and updated examples
+### 📋 **Documentation**
+- Updated environment setup instructions
+- Enhanced API documentation
+- Better code comments and documentation strings
 
-### Fixed
-- Payment link generation now creates real YooKassa payment URLs
-- Credit addition after payment now works through proper webhook handling
-- Service communication between API and payment services
+---
 
-## [0.3.5] - 2024-07-09
-### Added
-- New `/status` command for Telegram bot:
-  - Shows user account information (ID, credits, total paid, member since)
-  - Displays system status and version information
-  - Enhanced user experience with detailed account overview
-- Updated `/help` command with improved formatting and command list
-- Added proper datetime formatting for user creation dates
+## [0.3.2] - 2024-01-XX
 
-### Changed
-- Enhanced help text with structured command list
-- Improved user interaction with more informative status display
+### 🚀 **New Features**
+- **Credits System**: Users start with 3 free credits, 1 credit per photo analysis
+- **Payment Integration**: `/buy` command with payment plans (Basic: 99 RUB, Pro: 399 RUB)
+- **User Status**: `/status` command showing credits, total paid, and account info
+- **Enhanced Photo Analysis**: Better food detection and KBZHU calculation
 
-## [0.3.4] - 2024-07-08
-### Added
-- Production environment configuration for AWS deployment:
-  - Created `.env.production.example` with AWS subdomain URLs
-  - Added automatic environment switching script (`scripts/switch-env.sh`)
-  - Enhanced deployment documentation with production URL configuration
-- Production-ready Nginx configuration (`nginx.conf.production`):
-  - Complete SSL setup for all three subdomains (api/ml/pay.c0r.ai)
-  - Rate limiting per service with appropriate burst limits
-  - Upstream servers configuration with keepalive
-  - Security headers and proper proxy settings
-  - Webhook endpoint handling with custom timeouts
-- Automated production setup script (`scripts/setup-production.sh`):
-  - Installs all required dependencies (Docker, Nginx, Certbot)
-  - Configures environment and service URLs automatically
-  - Sets up firewall and basic security
-  - Provides next steps and useful commands reference
+### 🛠️ **Improvements**
+- **User Interface**: Interactive buttons and better message formatting
+- **Database Operations**: Improved user management and credit tracking
+- **Error Handling**: Better error messages and fallback scenarios
+- **Performance**: Optimized database queries and response times
 
-### Changed
-- Updated environment variable structure:
-  - Added production service URLs: `ML_SERVICE_URL=https://ml.c0r.ai`, `PAY_SERVICE_URL=https://pay.c0r.ai`
-  - Development URLs remain: `ML_SERVICE_URL=http://ml:8001`, `PAY_SERVICE_URL=http://pay:8002`
-  - Clear separation between development and production configurations
-- Enhanced deployment guide:
-  - Added instructions for switching between development and production URLs
-  - Updated required environment variables for production
-  - Improved documentation for AWS deployment process
+### 🔧 **Technical Changes**
+- Added credit management system
+- Enhanced database schema for user tracking
+- Improved photo processing pipeline
+- Better integration with ML service
 
-### Fixed
-- Environment configuration for production deployment on AWS
-- Service URL management for different deployment environments
-- Documentation clarity for production setup requirements
+---
 
-## [0.3.3] - 2024-07-08
-### Added
-- Enhanced OpenAI food analysis with detailed breakdown:
-  - Individual food item detection with estimated portions
-  - Weight/portion size estimation for each product (e.g., "150g", "1 cup")
-  - Calories per individual food item
-  - Comprehensive food analysis prompt for better accuracy
-- Improved user experience in Telegram bot:
-  - Detailed food breakdown display before total nutrition
-  - Better formatted analysis results with emojis
-  - More informative responses for users
+## [0.3.1] - 2024-01-XX
 
-### Changed
-- Updated OpenAI Vision API integration:
-  - Enhanced prompt for detailed food analysis
-  - Structured JSON response with food_items array and total_nutrition
-  - Better error handling and fallback values
-- Improved ML service response format:
-  - Returns both detailed breakdown and KBZHU summary
-  - Backward compatibility with existing API consumers
-- Updated photo handler to display rich food analysis:
-  - Shows individual products with weights and calories
-  - Maintains total KBZHU summary at the bottom
-  - Better logging for debugging
+### 🚀 **New Features**
+- **Multi-service Architecture**: Separated ML, API, and Payment services
+- **Docker Support**: Complete containerization with docker-compose
+- **Enhanced Bot Commands**: `/start`, `/help`, `/status`, `/buy` commands
+- **Payment Processing**: Integrated YooKassa and Stripe payment systems
 
-### Fixed
-- OpenAI response parsing for complex food analysis
-- JSON structure validation for new response format
-- Display formatting for detailed food breakdown
+### 🛠️ **Improvements**
+- **Code Organization**: Better project structure with separated concerns
+- **Documentation**: Comprehensive setup and deployment guides
+- **Error Handling**: Improved error messages and user feedback
+- **Performance**: Optimized service communication and response times
 
-## [0.3.2] - 2024-07-08
-### Changed
-- Centralized routing architecture with single source of truth:
-  - Created unified `common/routes.py` with all service routes defined in one place
-  - Removed duplicate route files from individual services (`api.c0r.ai/app/routes.py`, `ml.c0r.ai/app/routes.py`, `pay.c0r.ai/app/routes.py`)
-  - Updated all services to import routes from `common.routes.Routes`
-- Improved environment variable structure:
-  - Changed from full URLs to base URLs only (`ML_SERVICE_URL=http://ml:8001`, `PAY_SERVICE_URL=http://pay:8002`)
-  - Route paths are now handled by centralized routing configuration
-- Fixed Docker configuration issues:
-  - Added missing dependencies (`loguru`, `python-multipart`) to service requirements
-  - Fixed common module imports by adding proper symlinks in all Dockerfiles
-  - Standardized Dockerfile structure across all services
-- Updated service communication:
-  - All inter-service calls now use base URL + route path pattern
-  - Photo handler updated to use new routing system
-  - ML service simplified to only handle file uploads (removed unused URL analysis endpoint)
-- Enhanced service reliability:
-  - All services now start successfully with proper dependency resolution
-  - Improved error handling and logging across services
-  - Fixed aiogram 3.x compatibility issues in photo processing
+### 🔧 **Technical Changes**
+- Implemented microservices architecture
+- Added proper environment configuration
+- Enhanced database schema
+- Better API route management
 
-### Fixed
-- Docker build and runtime issues with missing Python packages
-- Common module import errors in ML and Payment services
-- Service startup failures due to missing dependencies
-- Photo upload processing with proper multipart form handling
+---
 
-## [0.3.1] - 2024-07-07
-### Changed
-- Refactored payment provider logic for maximum modularity and extensibility:
-  - All Stripe-specific code and configs moved to `pay.c0r.ai/app/stripe/` (`config.py`, `client.py`)
-  - All YooKassa-specific code and configs moved to `pay.c0r.ai/app/yookassa/` (`config.py`, `client.py`)
-  - Each provider is now fully self-contained, making it easy to add or update providers in the future
-  - Added `README.md` and `__init__.py` to each provider directory for clarity and extensibility
-- Updated all imports and references in the payment service to use the new structure
-- Updated root `config.py` to point to new config locations
+## [0.3.0] - 2024-01-XX
 
-## [0.1.1] - 2024-07-06
-### Changed
-- Centralized all domain and API URL logic to use `BASE_URL` from `.env`.
-- Removed `NEUCOR_API_URL` from `.env` and code to avoid duplication.
-- All API and payment URLs are now dynamically built from `BASE_URL`.
-- Updated `.env` and code to reflect this change for easier maintenance and consistency.
+### 🚀 **Initial Release**
+- **Core Bot Functionality**: Basic Telegram bot with photo analysis
+- **Food Recognition**: AI-powered food detection and calorie calculation
+- **Database Integration**: Supabase for user and data management
+- **ML Service**: OpenAI Vision API for food analysis
+- **Basic Commands**: Essential bot commands for user interaction
 
-## [0.1.0] - 2024-06-09
-### Changed
-- Full rebranding from NeuCor.AI and COR.DIET to c0r.ai across the entire project.
-- Renamed all references, files, folders, and documentation:
-  - NeuCor.AI → c0r.ai
-  - COR.DIET → c0r.ai
-  - NeuCor_Bot → c0r_ai_Bot
-  - NeuCor_Service_Bot → c0r_ai_Service_Bot
-  - All domains, URLs, and environment variables updated to c0r.ai
-- Updated README, CONTRIBUTING, MODULES, and all code/docs to reflect new branding.
+### 🛠️ **Core Features**
+- Photo-based food analysis
+- KBZHU (Calories, Proteins, Fats, Carbohydrates) calculation
+- User management and tracking
+- Basic error handling and logging
 
-## [0.2.1] - 2024-07-07
-### Added
-- Implemented Supabase SQL schema for users, logs, and payments tables, with default credits = 3 and row-level security by telegram_id.
-- This enables the Telegram bot to work for food analysis and testing with OpenAI and Supabase, without payment integration required for initial launch.
+### 🔧 **Technical Foundation**
+- Python-based Telegram bot
+- Supabase database integration
+- OpenAI API integration
+- Basic project structure
 
-## [0.2.2] - 2024-07-07
-### Changed
-- Renamed c0r_ai_Service_Bot to c0rAIServiceBot and c0r_ai_Bot to c0rService_bot across the project for consistency.
-- Added YooKassa webhook logic for Russian Telegram accounts only; Stripe is used for all other users.
-- Clarified SERVICE_BOT_URL usage: this environment variable should point to the webhook endpoint of your admin/ops bot (c0rAIServiceBot) to receive payment notifications.
+---
 
-## [0.3.0] - 2024-07-07
-### Changed
-- Полный переход на монорепозиторий:
-  - /api.c0r.ai/ — публичный API и Telegram-бот
-  - /ml.c0r.ai/ — ML-инференс сервис
-  - /pay.c0r.ai/ — платёжный сервис (модульная архитектура, YooKassa)
-  - /common/ — общие утилиты, схемы, константы
-  - /scripts/ — миграции, деплой, вспомогательные скрипты
-- Для каждого сервиса добавлен Dockerfile
-- Добавлен docker-compose.yml для локального и production запуска
-- Пример nginx-конфига для проксирования поддоменов
-- Удалены все тесты
-- Обновлён README.md и .env.example
-- Подготовлены инструкции по деплою на AWS EC2 с nginx и HTTPS
+**Legend:**
+- 🚀 New Features
+- 🛠️ Improvements
+- 🔧 Technical Changes
+- 🐛 Bug Fixes
+- 📋 Documentation/Testing

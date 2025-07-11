@@ -5,7 +5,7 @@ Handles native Telegram payments without leaving the app
 import os
 from aiogram import types
 from loguru import logger
-from common.supabase_client import get_or_create_user, add_credits
+from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -196,6 +196,29 @@ async def handle_successful_payment(message: types.Message):
         # Add credits to user account
         updated_user = await add_credits(user_id, plan["credits"])
         logger.info(f"User after payment: {updated_user}")
+        
+        # Add payment record to database
+        payment_amount = payment.total_amount / 100  # Convert kopecks to rubles
+        await add_payment(
+            user_id=updated_user['id'],
+            amount=payment_amount,
+            gateway="telegram_payments",
+            status="succeeded"
+        )
+        
+        # Log payment action
+        await log_user_action(
+            user_id=updated_user['id'],
+            action_type="payment_success",
+            metadata={
+                "plan_id": plan_id,
+                "credits_added": plan["credits"],
+                "amount_paid": payment_amount,
+                "currency": payment.currency,
+                "payment_charge_id": payment.telegram_payment_charge_id,
+                "provider_payment_charge_id": payment.provider_payment_charge_id
+            }
+        )
         
         # Send confirmation message
         await message.answer(

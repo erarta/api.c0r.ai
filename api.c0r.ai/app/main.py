@@ -8,6 +8,7 @@ from common.routes import Routes
 from common.supabase_client import (
     get_or_create_user, get_user_by_telegram_id, decrement_credits, add_credits, log_analysis, add_payment
 )
+from utils.r2 import test_r2_connection, get_photo_stats, get_user_photos
 from loguru import logger
 
 app = FastAPI()
@@ -98,4 +99,31 @@ async def add_credits_api(request: Request):
     # Добавить запись о платеже, если есть данные
     if amount is not None and payment_id is not None:
         await add_payment(user["id"], amount, gateway, status)
-    return user 
+    return user
+
+@app.get("/r2/test")
+async def test_r2():
+    """Test R2 connection and configuration"""
+    connection_ok = await test_r2_connection()
+    stats = get_photo_stats()
+    
+    return {
+        "r2_connection": "ok" if connection_ok else "failed",
+        "bucket_stats": stats,
+        "status": "R2 storage is working" if connection_ok else "R2 storage has issues"
+    }
+
+@app.get("/r2/stats")
+async def r2_stats():
+    """Get R2 bucket statistics"""
+    return get_photo_stats()
+
+@app.get("/r2/user/{user_id}/photos")
+async def get_user_photos_api(user_id: str, limit: int = 20):
+    """Get photos for specific user"""
+    photos = await get_user_photos(user_id, limit)
+    return {
+        "user_id": user_id,
+        "photos_count": len(photos),
+        "photos": photos
+    } 

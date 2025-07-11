@@ -5,4 +5,5 @@ aiogram
 httpx 
 supabase 
 python-telegram-bot 
-loguru 
+loguru
+boto3 
