@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.3.6] - 2025-01-20
+
+### 🚀 **New Features**
+- **Enhanced UX Navigation**: Added Main Menu button to all messages without reply buttons
+  - Users can now always return to main menu from any message
+  - No more "dead-end" messages where users don't know what to do next
+  - Consistent navigation throughout the bot experience
+- **R2 Diagnostics**: Added debugging endpoints for Cloudflare R2 storage
+  - `/debug/r2` - Check R2 configuration and connection status
+  - `/debug/recent-logs` - View recent photo analysis logs
+  - Better visibility into photo storage issues
+
+### 🛠️ **Improvements**
+- **User Experience**: Significantly improved navigation and user guidance
+  - Main Menu button added to: help messages, status messages, error messages, photo analysis failures
+  - Users always have a clear path to return to main functionality
+  - Better user retention and reduced confusion
+- **Error Handling**: Enhanced error messages with navigation options
+  - Payment errors now include Main Menu button
+  - Photo analysis failures include Main Menu button
+  - System errors provide way back to main functionality
+
+### 🔧 **Technical Changes**
+- Added `create_main_menu_keyboard()` utility function for consistent navigation
+- Added `action_main_menu` handler for Main Menu button clicks
+- Enhanced logging in R2 upload process for better debugging
+- Added static file serving preparation (temporarily disabled)
+
+### 🐛 **Bug Fixes**
+- **Critical R2 Upload Fix**: Resolved BytesIO conversion error in photo uploads
+  - Fixed `object of type '_io.BytesIO' has no len()` error
+  - Added `.getvalue()` conversion from BytesIO to bytes
+  - Photos now upload successfully to Cloudflare R2 storage
+- **Docker Build Fix**: Resolved asset folder copying issues
+  - Temporarily disabled assets mounting to prevent container crashes
+  - Fixed Dockerfile build errors with non-existent assets folder
+  - Improved container startup reliability
+- **Invoice Photo URL**: Improved payment invoice appearance
+  - Fixed photo URL in payment invoices
+  - Better visual presentation during checkout process
+
+### 🔍 **Production Improvements**
+- **Enhanced Monitoring**: Better R2 upload logging and error tracking
+- **Debugging Tools**: Added diagnostic endpoints for production troubleshooting
+- **Container Stability**: Fixed Docker build and startup issues
+- **Error Visibility**: Improved logging for R2 operations and photo processing
+
+### 📋 **Technical Debt Resolution**
+- Fixed BytesIO handling in multiple file download operations
+- Improved error handling consistency across all handlers
+- Better separation of concerns in navigation utilities
+- Enhanced production debugging capabilities
+
+---
+
 ## [0.3.5] - 2024-01-15
 
 ### 🚀 **New Features**
