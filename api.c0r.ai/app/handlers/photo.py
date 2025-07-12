@@ -8,6 +8,7 @@ from loguru import logger
 from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
 from utils.r2 import upload_telegram_photo
+from .commands import create_main_menu_keyboard
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
@@ -140,7 +141,8 @@ async def photo_handler(message: types.Message):
                 "• Try taking the photo from above\n\n"
                 "📤 **Try again with a clearer photo!**\n\n"
                 "💡 *Don't worry - your credit wasn't used since no food was detected.*",
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=create_main_menu_keyboard()
             )
             # Log the failed detection but don't use credits
             await log_user_action(
@@ -162,7 +164,8 @@ async def photo_handler(message: types.Message):
                 "❌ **Analysis failed**\n\n"
                 "The food analysis couldn't be completed properly. Please try again with a clearer photo.\n\n"
                 "💡 *Your credit wasn't used since the analysis failed.*",
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=create_main_menu_keyboard()
             )
             return
 
@@ -245,6 +248,12 @@ async def photo_handler(message: types.Message):
                         text="👤 Set Up Profile", 
                         callback_data="action_profile"
                     )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text="🏠 Main Menu",
+                        callback_data="action_main_menu"
+                    )
                 ]
             ])
 
@@ -257,7 +266,8 @@ async def photo_handler(message: types.Message):
             "❌ **Analysis service temporarily unavailable**\n\n"
             "Please try again in a few minutes.\n\n"
             "💡 *Your credit wasn't used since the analysis failed.*",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
         )
     except Exception as e:
         logger.error(f"Photo handler error for user {telegram_user_id}: {e}")
@@ -265,7 +275,8 @@ async def photo_handler(message: types.Message):
             "❌ **An error occurred during analysis**\n\n"
             "Please try again later.\n\n"
             "💡 *Your credit wasn't used since the analysis failed.*",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
         )
 
 # Handler for successful_payment event (placeholder)

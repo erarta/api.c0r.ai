@@ -6,6 +6,7 @@ import os
 from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
+from .commands import create_main_menu_keyboard
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -47,12 +48,12 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
         logger.info(f"=====================================")
         
         if not YOOKASSA_PROVIDER_TOKEN:
-            await message.answer("❌ Payment system is not configured. Please contact support.")
+            await message.answer("❌ Payment system is not configured. Please contact support.", reply_markup=create_main_menu_keyboard())
             return
 
         plan = PAYMENT_PLANS.get(plan_id)
         if not plan:
-            await message.answer("❌ Invalid payment plan selected.")
+            await message.answer("❌ Invalid payment plan selected.", reply_markup=create_main_menu_keyboard())
             return
 
         # Create invoice
@@ -82,7 +83,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
         
     except Exception as e:
         logger.error(f"Failed to create invoice: {e}")
-        await message.answer("❌ Failed to create payment. Please try again later.")
+        await message.answer("❌ Failed to create payment. Please try again later.", reply_markup=create_main_menu_keyboard())
 
 async def handle_buy_callback(callback: types.CallbackQuery):
     """

@@ -10,6 +10,7 @@ from common.supabase_client import (
     get_daily_calories_consumed,
     log_user_action
 )
+from .commands import create_main_menu_keyboard
 
 # /daily command handler
 async def daily_command(message: types.Message):
@@ -40,7 +41,7 @@ async def daily_command(message: types.Message):
             
     except Exception as e:
         logger.error(f"Error in /daily command for user {telegram_user_id}: {e}")
-        await message.answer("❌ An error occurred. Please try again later.")
+        await message.answer("❌ An error occurred. Please try again later.", reply_markup=create_main_menu_keyboard())
 
 async def show_no_profile_message(message: types.Message):
     """Show message encouraging profile setup"""
@@ -190,7 +191,7 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         
     except Exception as e:
         logger.error(f"Error showing daily plan: {e}")
-        await message.answer("❌ An error occurred while loading your daily plan.")
+        await message.answer("❌ An error occurred while loading your daily plan.", reply_markup=create_main_menu_keyboard())
 
 def get_daily_recommendations(progress_percent: int, remaining: int, goal: str, meals_count: int) -> str:
     """Generate personalized recommendations based on progress"""

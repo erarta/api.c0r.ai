@@ -8,6 +8,51 @@ from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .payments import create_invoice_message
 
+# Utility function for consistent main menu button
+def create_main_menu_keyboard():
+    """Create keyboard with Main Menu button"""
+    return types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text="🏠 Main Menu",
+                callback_data="action_main_menu"
+            )
+        ]
+    ])
+
+def create_main_menu_text():
+    """Create main menu message with interactive buttons"""
+    return (
+        f"🚀 **Choose an option:**"
+    ), types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text="🍕 Analyze Food Photo",
+                callback_data="action_analyze_info"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text="📊 Check My Status",
+                callback_data="action_status"
+            ),
+            types.InlineKeyboardButton(
+                text="ℹ️ Help & Guide",
+                callback_data="action_help"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text="💳 Buy More Credits",
+                callback_data="action_buy"
+            ),
+            types.InlineKeyboardButton(
+                text="👤 My Profile",
+                callback_data="action_profile"
+            )
+        ]
+    ])
+
 # /start command handler
 async def start_command(message: types.Message):
     try:
@@ -117,7 +162,7 @@ async def help_command(message: types.Message):
             "📞 **Support:** Contact @your_support_bot"
         )
         
-        await message.answer(help_text, parse_mode="Markdown")
+        await message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
         logger.info(f"/help by user {telegram_user_id}")
         
     except Exception as e:
@@ -167,7 +212,7 @@ async def help_callback(callback: types.CallbackQuery):
             "📞 **Support:** Contact @your_support_bot"
         )
         
-        await callback.message.answer(help_text, parse_mode="Markdown")
+        await callback.message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
         logger.info(f"Help callback by user {telegram_user_id}")
         
     except Exception as e:
@@ -221,7 +266,7 @@ async def status_command(message: types.Message):
         )
         
         logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")
-        await message.answer(status_text, parse_mode="Markdown")
+        await message.answer(status_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
         
     except Exception as e:
         logger.error(f"Error in /status for user {telegram_user_id}: {e}")
@@ -277,7 +322,7 @@ async def status_callback(callback: types.CallbackQuery):
         )
         
         logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")
-        await callback.message.answer(status_text, parse_mode="Markdown")
+        await callback.message.answer(status_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
         
     except Exception as e:
         logger.error(f"Error in status callback for user {telegram_user_id}: {e}")
@@ -544,6 +589,10 @@ async def handle_action_callback(callback: types.CallbackQuery):
             await buy_callback(callback)  # ← ИСПРАВЛЕНО: используем callback вместо callback.message
         elif action == "profile":
             await profile_callback(callback)  # ← ИСПРАВЛЕНО: используем реальную функцию профиля
+        elif action == "main_menu":
+            # Show main menu
+            menu_text, menu_keyboard = create_main_menu_text()
+            await callback.message.answer(menu_text, parse_mode="Markdown", reply_markup=menu_keyboard)
         
         logger.info(f"Action callback '{action}' handled for user {telegram_user_id}")
         
