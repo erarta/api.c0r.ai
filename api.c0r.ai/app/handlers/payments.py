@@ -69,7 +69,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
                 )
             ],
             start_parameter=f"buy_{plan_id}",
-            photo_url="https://via.placeholder.com/512x512/4CAF50/FFFFFF?text=c0r.ai",
+            photo_url="https://api.c0r.ai/assets/logo.png",
             photo_width=512,
             photo_height=512,
             need_email=False,

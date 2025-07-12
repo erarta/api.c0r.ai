@@ -197,24 +197,32 @@ async def upload_telegram_photo(bot, photo, user_id: str) -> Optional[str]:
         Public URL of uploaded photo or None if failed
     """
     try:
+        logger.info(f"Starting R2 upload for user {user_id}, R2_ENABLED={R2_ENABLED}")
+        
+        if not R2_ENABLED:
+            logger.warning(f"R2 is disabled for user {user_id}, skipping upload")
+            return None
+        
         # Get file info
         file = await bot.get_file(photo.file_id)
+        logger.info(f"Got Telegram file for user {user_id}: {file.file_path}, size: {file.file_size}")
         
         # Download photo data
         photo_data = await bot.download_file(file.file_path)
+        logger.info(f"Downloaded photo data for user {user_id}, size: {len(photo_data)} bytes")
         
         # Upload to R2
         url = await upload_photo_to_r2(photo_data, user_id, "image/jpeg")
         
         if url:
-            logger.info(f"Telegram photo uploaded for user {user_id}: {url}")
+            logger.info(f"✅ R2 upload SUCCESS for user {user_id}: {url}")
         else:
-            logger.warning(f"Failed to upload Telegram photo for user {user_id}")
+            logger.warning(f"❌ R2 upload FAILED for user {user_id}")
         
         return url
         
     except Exception as e:
-        logger.error(f"Error uploading Telegram photo for user {user_id}: {e}")
+        logger.error(f"❌ EXCEPTION in R2 upload for user {user_id}: {e}")
         return None
 
 def generate_signed_url(filename: str, expires_in: int = 86400) -> Optional[str]:

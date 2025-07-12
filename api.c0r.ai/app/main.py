@@ -1,5 +1,6 @@
 import sys; print("PYTHONPATH:", sys.path)
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.staticfiles import StaticFiles
 import asyncio
 from bot import start_bot
 import os
@@ -12,6 +13,9 @@ from utils.r2 import test_r2_connection, get_photo_stats, get_user_photos
 from loguru import logger
 
 app = FastAPI()
+
+# Mount static files directory for assets (logo, etc.)
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
@@ -100,6 +104,40 @@ async def add_credits_api(request: Request):
     if amount is not None and payment_id is not None:
         await add_payment(user["id"], amount, gateway, status)
     return user
+
+@app.get("/debug/r2")
+async def debug_r2():
+    """Debug R2 configuration and status"""
+    from utils.r2 import R2_ENABLED, R2_ACCOUNT_ID, R2_BUCKET_NAME, test_r2_connection
+    
+    r2_config = {
+        "r2_enabled": R2_ENABLED,
+        "r2_account_id": R2_ACCOUNT_ID[:8] + "..." if R2_ACCOUNT_ID else None,
+        "r2_bucket_name": R2_BUCKET_NAME,
+        "r2_access_key_configured": bool(os.getenv("R2_ACCESS_KEY_ID")),
+        "r2_secret_key_configured": bool(os.getenv("R2_SECRET_ACCESS_KEY")),
+    }
+    
+    if R2_ENABLED:
+        connection_test = await test_r2_connection()
+        r2_config["connection_test"] = "SUCCESS" if connection_test else "FAILED"
+    else:
+        r2_config["connection_test"] = "SKIPPED (R2 not enabled)"
+    
+    return r2_config
+
+@app.get("/debug/recent-logs")
+async def debug_recent_logs():
+    """Get recent photo analysis logs to check R2 URLs"""
+    from common.supabase_client import supabase
+    
+    # Get last 10 photo analysis logs
+    logs = supabase.table("logs").select("*").eq("action_type", "photo_analysis").order("timestamp", desc=True).limit(10).execute().data
+    
+    return {
+        "recent_logs_count": len(logs),
+        "logs": logs
+    }
 
 @app.get("/r2/test")
 async def test_r2():

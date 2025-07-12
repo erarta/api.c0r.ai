@@ -51,8 +51,8 @@ async def profile_command(message: types.Message, state: FSMContext):
             # Show existing profile
             await show_profile_menu(message, user, profile)
         else:
-            # Show setup prompt
-            await show_profile_setup_prompt(message, user)
+            # Start profile setup immediately
+            await start_profile_setup(message, state, telegram_user_id)
             
     except Exception as e:
         logger.error(f"Error in /profile command for user {telegram_user_id}: {e}")
@@ -195,8 +195,7 @@ async def start_profile_setup(message: types.Message, state: FSMContext, telegra
     
     await message.answer(
         f"👶 **Step 1/6: Your Age**\n\n"
-        f"Please enter your age in years (e.g., 25):\n\n"
-        f"💡 *Tip: Use /profile to restart setup anytime*",
+        f"Please enter your age in years (e.g., 25):",
         parse_mode="Markdown"
     )
 
@@ -248,16 +247,72 @@ async def recalculate_calories(message: types.Message, telegram_user_id: int):
 
 async def profile_skip(message: types.Message, telegram_user_id: int):
     """Handle profile setup skip"""
-    await message.answer(
-        f"⏭️ **Profile setup skipped**\n\n"
-        f"You can set up your profile anytime using the /profile command.\n\n"
-        f"💡 **Benefits of setting up a profile:**\n"
-        f"• Personalized daily calorie targets\n"
-        f"• Progress tracking\n"
-        f"• Better nutrition recommendations\n\n"
-        f"📸 You can still analyze food photos without a profile!",
-        parse_mode="Markdown"
-    )
+    try:
+        # Show skip message
+        skip_text = (
+            f"⏭️ **Profile setup skipped**\n\n"
+            f"💡 **Benefits of setting up a profile:**\n"
+            f"• Personalized daily calorie targets\n"
+            f"• Progress tracking\n"
+            f"• Better nutrition recommendations\n\n"
+            f"📸 You can still analyze food photos without a profile!"
+        )
+        
+        skip_keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="👤 Set Up Profile",
+                    callback_data="profile_start_setup"
+                )
+            ]
+        ])
+        
+        await message.answer(skip_text, parse_mode="Markdown", reply_markup=skip_keyboard)
+        
+        # Get user data for main menu
+        from common.supabase_client import get_or_create_user
+        user = await get_or_create_user(telegram_user_id)
+        
+        # Show main menu with buttons
+        welcome_text = (
+            f"🚀 **Ready to start?** Choose an option below:"
+        )
+        
+        # Create interactive keyboard (same as in start_command)
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="🍕 Analyze Food Photo",
+                    callback_data="action_analyze_info"
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text="📊 Check My Status",
+                    callback_data="action_status"
+                ),
+                types.InlineKeyboardButton(
+                    text="ℹ️ Help & Guide",
+                    callback_data="action_help"
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text="💳 Buy More Credits",
+                    callback_data="action_buy"
+                ),
+                types.InlineKeyboardButton(
+                    text="👤 My Profile",
+                    callback_data="action_profile"
+                )
+            ]
+        ])
+        
+        await message.answer(welcome_text, parse_mode="Markdown", reply_markup=keyboard)
+        
+    except Exception as e:
+        logger.error(f"Error in profile_skip for user {telegram_user_id}: {e}")
+        await message.answer("❌ An error occurred. Please try again later.")
 
 async def profile_main_menu(message: types.Message, telegram_user_id: int):
     """Return to main menu"""

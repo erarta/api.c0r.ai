@@ -15,6 +15,15 @@
   - Profile setup can be restarted anytime with `/profile` command
   - FSM state is cleared on profile command to prevent stuck states
   - Better user guidance during profile setup
+- **Streamlined Profile Setup**: Removed intermediate steps for better UX
+  - `/profile` command now starts setup immediately for new users
+  - No more intermediate "Profile Setup" messages with buttons
+  - Direct flow from command to first setup step
+- **Enhanced UI/UX**: Replaced command mentions with interactive buttons
+  - Profile setup messages now show "🚀 Set Up Profile" button instead of `/profile` command
+  - Existing profile view shows "✏️ Edit Profile" button for editing
+  - "Skip for now" option includes "👤 Set Up Profile" button for quick access
+  - More intuitive and user-friendly interface throughout
 - **Production Testing Tools**: Complete testing and monitoring infrastructure
   - Real-time monitoring script with color-coded logs
   - Automated connection tests for bot and database
@@ -22,6 +31,8 @@
 
 ### 🛠️ **Improvements**
 - **User Experience**: All text now in English for consistency
+- **Profile Flow**: Eliminated unnecessary intermediate steps in profile setup
+- **Button Interface**: Consistent use of interactive buttons instead of command references
 - **Error Handling**: Credits are not deducted when analysis fails
 - **Security**: Rate limiting prevents system abuse
 - **Validation**: Comprehensive input validation for all profile fields

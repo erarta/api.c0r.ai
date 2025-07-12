@@ -343,4 +343,28 @@ async def add_payment(user_id: str, amount: float, gateway: str, status: str):
     }
     supabase.table("payments").insert(payment).execute()
     logger.info(f"Payment recorded for user {user_id}")
-    return True 
+    return True
+
+async def get_user_total_paid(user_id: str) -> float:
+    """
+    Calculate total amount paid by user from payments table
+    
+    Args:
+        user_id: User UUID from database
+        
+    Returns:
+        Total amount paid by user
+    """
+    try:
+        logger.info(f"Calculating total paid for user {user_id}")
+        
+        # Get all successful payments for user
+        payments = supabase.table("payments").select("amount").eq("user_id", user_id).eq("status", "succeeded").execute().data
+        
+        total = sum(float(payment['amount']) for payment in payments)
+        logger.info(f"Total paid for user {user_id}: {total}")
+        
+        return total
+    except Exception as e:
+        logger.error(f"Error calculating total paid for user {user_id}: {e}")
+        return 0.0 

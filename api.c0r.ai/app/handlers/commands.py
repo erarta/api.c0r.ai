@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from aiogram import types
 from loguru import logger
-from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed
+from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .payments import create_invoice_message
 
 # /start command handler
@@ -183,6 +183,9 @@ async def status_command(message: types.Message):
         user = await get_or_create_user(telegram_user_id)
         logger.info(f"User {telegram_user_id} data from database: {user}")
         
+        # Get actual total paid from payments table
+        total_paid = await get_user_total_paid(user['id'])
+        
         # Log user action
         await log_user_action(
             user_id=user['id'],
@@ -190,7 +193,7 @@ async def status_command(message: types.Message):
             metadata={
                 "username": message.from_user.username,
                 "credits_remaining": user['credits_remaining'],
-                "total_paid": user.get('total_paid', 0)
+                "total_paid": total_paid
             }
         )
         
@@ -210,9 +213,9 @@ async def status_command(message: types.Message):
             f"📊 *Your Account Status*\n\n"
             f"🆔 User ID: `{telegram_user_id}`\n"
             f"💳 Credits remaining: *{user['credits_remaining']}*\n"
-            f"💰 Total paid: *${user.get('total_paid', 0):.2f}*\n"
+            f"💰 Total paid: *{total_paid:.2f} RUB*\n"
             f"📅 Member since: `{created_date}`\n\n"
-            f"🤖 System: *c0r.ai v0.3.4*\n"
+            f"🤖 System: *c0r.ai v0.3.5*\n"
             f"🌐 Status: *Online*\n"
             f"⚡ Powered by c0r AI Vision"
         )
@@ -236,6 +239,9 @@ async def status_callback(callback: types.CallbackQuery):
         user = await get_or_create_user(telegram_user_id)
         logger.info(f"User {telegram_user_id} data from database: {user}")
         
+        # Get actual total paid from payments table
+        total_paid = await get_user_total_paid(user['id'])
+        
         # Log user action with correct user data
         await log_user_action(
             user_id=user['id'],
@@ -243,7 +249,7 @@ async def status_callback(callback: types.CallbackQuery):
             metadata={
                 "username": callback.from_user.username,  # ← ПРАВИЛЬНО: используем callback.from_user
                 "credits_remaining": user['credits_remaining'],
-                "total_paid": user.get('total_paid', 0)
+                "total_paid": total_paid
             }
         )
         
@@ -263,9 +269,9 @@ async def status_callback(callback: types.CallbackQuery):
             f"📊 *Your Account Status*\n\n"
             f"🆔 User ID: `{telegram_user_id}`\n"
             f"💳 Credits remaining: *{user['credits_remaining']}*\n"
-            f"💰 Total paid: *${user.get('total_paid', 0):.2f}*\n"
+            f"💰 Total paid: *{total_paid:.2f} RUB*\n"
             f"📅 Member since: `{created_date}`\n\n"
-            f"🤖 System: *c0r.ai v0.3.4*\n"
+            f"🤖 System: *c0r.ai v0.3.5*\n"
             f"🌐 Status: *Online*\n"
             f"⚡ Powered by c0r AI Vision"
         )
@@ -303,7 +309,7 @@ async def buy_credits_command(message: types.Message):
             metadata={
                 "username": username,
                 "credits_remaining": user['credits_remaining'],
-                "total_paid": user.get('total_paid', 0)
+                "total_paid": await get_user_total_paid(user['id'])
             }
         )
         
@@ -357,7 +363,7 @@ async def buy_callback(callback: types.CallbackQuery):
             metadata={
                 "username": username,  # ← ПРАВИЛЬНО: используем callback.from_user
                 "credits_remaining": user['credits_remaining'],
-                "total_paid": user.get('total_paid', 0)
+                "total_paid": await get_user_total_paid(user['id'])
             }
         )
         
@@ -461,11 +467,19 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
         f"⚖️ **Weight:** {weight}\n"
         f"🏃 **Activity Level:** {activity}\n"
         f"🎯 **Goal:** {goal}\n\n"
-        f"🔥 **Daily Calorie Target:** {daily_calories}\n\n"
-        f"💡 Use /profile to edit your profile settings."
+        f"🔥 **Daily Calorie Target:** {daily_calories}"
     )
     
-    await callback.message.answer(profile_text, parse_mode="Markdown")
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text="✏️ Edit Profile",
+                callback_data="profile_edit"
+            )
+        ]
+    ])
+    
+    await callback.message.answer(profile_text, parse_mode="Markdown", reply_markup=keyboard)
 
 async def show_profile_setup_info(callback: types.CallbackQuery, user: dict):
     """Show profile setup information for new users"""
@@ -478,10 +492,19 @@ async def show_profile_setup_info(callback: types.CallbackQuery, user: dict):
         f"• Personalized nutrition recommendations\n"
         f"• Progress tracking towards your goals\n\n"
         f"🔒 **Your data is private and secure.**\n\n"
-        f"Use the /profile command to start the setup process!"
+        f"Ready to get started?"
     )
     
-    await callback.message.answer(setup_text, parse_mode="Markdown")
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text="🚀 Set Up Profile",
+                callback_data="profile_start_setup"
+            )
+        ]
+    ])
+    
+    await callback.message.answer(setup_text, parse_mode="Markdown", reply_markup=keyboard)
 
 # Callback handlers for interactive buttons
 async def handle_action_callback(callback: types.CallbackQuery):
