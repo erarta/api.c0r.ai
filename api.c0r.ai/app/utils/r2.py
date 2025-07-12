@@ -208,7 +208,8 @@ async def upload_telegram_photo(bot, photo, user_id: str) -> Optional[str]:
         logger.info(f"Got Telegram file for user {user_id}: {file.file_path}, size: {file.file_size}")
         
         # Download photo data
-        photo_data = await bot.download_file(file.file_path)
+        photo_io = await bot.download_file(file.file_path)
+        photo_data = photo_io.getvalue()  # Convert BytesIO to bytes
         logger.info(f"Downloaded photo data for user {user_id}, size: {len(photo_data)} bytes")
         
         # Upload to R2

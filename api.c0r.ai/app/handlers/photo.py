@@ -107,7 +107,8 @@ async def photo_handler(message: types.Message):
             photo_url = f"telegram_photo_{photo.file_id}"
         
         # Download file content directly as bytes for ML analysis
-        file_content = await message.bot.download_file(file.file_path)
+        file_io = await message.bot.download_file(file.file_path)
+        file_content = file_io.getvalue()  # Convert BytesIO to bytes
         
         # Call ML service for analysis
         logger.info(f"Sending photo to ML service for user {telegram_user_id}")
