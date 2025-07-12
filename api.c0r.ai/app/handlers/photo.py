@@ -8,7 +8,7 @@ from loguru import logger
 from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
 from utils.r2 import upload_telegram_photo
-from .commands import create_main_menu_keyboard
+from .keyboards import create_main_menu_keyboard
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")

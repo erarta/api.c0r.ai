@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.3.7] - 2025-01-20
+
+### 🚨 **Critical Bug Fix**
+- **Circular Import Fix**: Resolved deployment-blocking circular import issue
+  - **Issue**: `handlers/commands.py` ↔ `handlers/payments.py` circular import preventing API service startup
+  - **Solution**: Created new `handlers/keyboards.py` module for shared keyboard utilities
+  - **Impact**: API service now starts successfully, deployment restored
+  - **Files affected**: All handler files now import from centralized keyboards module
+  - **Error resolved**: `ImportError: cannot import name 'create_main_menu_keyboard' from partially initialized module`
+
+### 🛠️ **Code Quality Improvements**
+- **Enhanced Function Validation**: Improved `calculate_daily_calories()` function
+  - Added comprehensive input validation with descriptive error messages
+  - Implemented case-insensitive input handling (`.lower()` normalization)
+  - Enhanced error handling with try-catch blocks in all calling functions
+  - Switched from `int()` to `round()` for more accurate calorie calculations
+  - Added proper `ValueError` exceptions for invalid inputs (gender, activity, goal)
+  - Better user feedback when profile calculation fails
+
+### 🔧 **Technical Improvements**
+- **Modular Architecture**: Separated shared utilities to prevent circular imports
+- **Better Error Handling**: Graceful handling of calculation errors in profile system
+- **Code Organization**: Improved separation of concerns across handler modules
+- **Production Stability**: Fixed critical deployment blocker affecting system availability
+
+### 📋 **Files Modified**
+- `handlers/keyboards.py` - New shared keyboard utilities module
+- `handlers/commands.py` - Removed duplicate keyboard functions, import from keyboards
+- `handlers/payments.py` - Import keyboard utilities from keyboards module
+- `handlers/daily.py` - Import keyboard utilities from keyboards module
+- `handlers/photo.py` - Import keyboard utilities from keyboards module
+- `handlers/profile.py` - Enhanced error handling for calorie calculation
+- `common/supabase_client.py` - Improved calculate_daily_calories function with validation
+
+---
+
 ## [0.3.6] - 2025-01-20
 
 ### 🚀 **New Features**

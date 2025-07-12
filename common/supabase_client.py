@@ -121,9 +121,13 @@ async def create_user_profile(user_id: str, profile_data: dict):
     
     # Calculate daily calories target if we have enough data
     if all(key in profile_data for key in ['age', 'gender', 'height_cm', 'weight_kg', 'activity_level', 'goal']):
-        daily_calories = calculate_daily_calories(profile_data)
-        profile_data['daily_calories_target'] = daily_calories
-        logger.info(f"Calculated daily calories for user {user_id}: {daily_calories}")
+        try:
+            daily_calories = calculate_daily_calories(profile_data)
+            profile_data['daily_calories_target'] = daily_calories
+            logger.info(f"Calculated daily calories for user {user_id}: {daily_calories}")
+        except ValueError as e:
+            logger.error(f"Error calculating daily calories for user {user_id}: {e}")
+            # Don't include calories in profile if calculation failed
     
     # Add user_id to profile data
     profile_data['user_id'] = user_id
@@ -144,9 +148,13 @@ async def update_user_profile(user_id: str, profile_data: dict):
     
     # Calculate daily calories target if we have enough data
     if all(key in profile_data for key in ['age', 'gender', 'height_cm', 'weight_kg', 'activity_level', 'goal']):
-        daily_calories = calculate_daily_calories(profile_data)
-        profile_data['daily_calories_target'] = daily_calories
-        logger.info(f"Calculated daily calories for user {user_id}: {daily_calories}")
+        try:
+            daily_calories = calculate_daily_calories(profile_data)
+            profile_data['daily_calories_target'] = daily_calories
+            logger.info(f"Calculated daily calories for user {user_id}: {daily_calories}")
+        except ValueError as e:
+            logger.error(f"Error calculating daily calories for user {user_id}: {e}")
+            # Don't include calories in profile if calculation failed
     
     updated = supabase.table("user_profiles").update(profile_data).eq("user_id", user_id).execute().data[0]
     logger.info(f"Profile updated for user {user_id}: {updated}")
@@ -154,25 +162,32 @@ async def update_user_profile(user_id: str, profile_data: dict):
 
 def calculate_daily_calories(profile_data: dict) -> int:
     """
-    Calculate daily calorie target using Mifflin-St Jeor Equation
+    Calculate daily calorie target using Mifflin-St Jeor Equation.
     
     Args:
         profile_data: Dictionary with age, gender, height_cm, weight_kg, activity_level, goal
         
     Returns:
         Daily calorie target as integer
+        
+    Raises:
+        ValueError: If any input parameter is invalid
     """
     age = profile_data['age']
-    gender = profile_data['gender']
+    gender = profile_data['gender'].lower()
     height = profile_data['height_cm']
     weight = profile_data['weight_kg']
-    activity = profile_data['activity_level']
-    goal = profile_data['goal']
+    activity = profile_data['activity_level'].lower()
+    goal = profile_data['goal'].lower()
+    
+    # Validate gender
+    if gender not in ['male', 'female']:
+        raise ValueError("Gender must be 'male' or 'female'")
     
     # Mifflin-St Jeor Equation for BMR (Basal Metabolic Rate)
     if gender == 'male':
         bmr = 10 * weight + 6.25 * height - 5 * age + 5
-    else:  # female
+    else:
         bmr = 10 * weight + 6.25 * height - 5 * age - 161
     
     # Activity multipliers
@@ -184,17 +199,24 @@ def calculate_daily_calories(profile_data: dict) -> int:
         'extremely_active': 1.9
     }
     
+    # Validate activity level
+    if activity not in activity_multipliers:
+        raise ValueError("Invalid activity level.")
+    
     # Calculate TDEE (Total Daily Energy Expenditure)
-    tdee = bmr * activity_multipliers.get(activity, 1.2)
+    tdee = bmr * activity_multipliers[activity]
     
     # Adjust for goal
     if goal == 'lose_weight':
         tdee *= 0.85  # 15% deficit
     elif goal == 'gain_weight':
         tdee *= 1.15  # 15% surplus
-    # maintain_weight: no adjustment
+    elif goal == 'maintain_weight':
+        pass  # No adjustment
+    else:
+        raise ValueError("Goal must be 'lose_weight', 'gain_weight', or 'maintain_weight'.")
     
-    return int(tdee)
+    return round(tdee)
 
 async def create_or_update_profile(user_id: str, profile_data: dict):
     """

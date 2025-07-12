@@ -225,21 +225,30 @@ async def recalculate_calories(message: types.Message, telegram_user_id: int):
             return
         
         # Recalculate calories
-        new_calories = calculate_daily_calories(profile)
-        
-        # Update profile with new calorie target
-        await create_or_update_profile(user_data['user']['id'], {
-            'daily_calories_target': new_calories
-        })
-        
-        await message.answer(
-            f"🔄 **Calories Recalculated!**\n\n"
-            f"🔥 **New Daily Target:** {new_calories:,} calories\n\n"
-            f"Based on your current profile settings.",
-            parse_mode="Markdown"
-        )
-        
-        logger.info(f"Recalculated calories for user {telegram_user_id}: {new_calories}")
+        try:
+            new_calories = calculate_daily_calories(profile)
+            
+            # Update profile with new calorie target
+            await create_or_update_profile(user_data['user']['id'], {
+                'daily_calories_target': new_calories
+            })
+            
+            await message.answer(
+                f"🔄 **Calories Recalculated!**\n\n"
+                f"🔥 **New Daily Target:** {new_calories:,} calories\n\n"
+                f"Based on your current profile settings.",
+                parse_mode="Markdown"
+            )
+            
+            logger.info(f"Recalculated calories for user {telegram_user_id}: {new_calories}")
+        except ValueError as e:
+            logger.error(f"Error recalculating calories: {e}")
+            await message.answer(
+                f"❌ **Calculation Error**\n\n"
+                f"There was an issue with your profile data: {str(e)}\n\n"
+                f"Please check your profile settings and try again.",
+                parse_mode="Markdown"
+            )
         
     except Exception as e:
         logger.error(f"Error recalculating calories for user {telegram_user_id}: {e}")

@@ -6,7 +6,7 @@ import os
 from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
-from .commands import create_main_menu_keyboard
+from .keyboards import create_main_menu_keyboard
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")

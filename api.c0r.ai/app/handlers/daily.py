@@ -10,7 +10,7 @@ from common.supabase_client import (
     get_daily_calories_consumed,
     log_user_action
 )
-from .commands import create_main_menu_keyboard
+from .keyboards import create_main_menu_keyboard
 
 # /daily command handler
 async def daily_command(message: types.Message):
