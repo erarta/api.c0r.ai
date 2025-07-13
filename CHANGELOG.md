@@ -25,14 +25,32 @@
 - **Code Organization**: Improved separation of concerns across handler modules
 - **Production Stability**: Fixed critical deployment blocker affecting system availability
 
+### 🎨 **UX Improvements**
+- **Support Contact Updated**: Changed from @your_support_bot to team@c0r.ai
+- **View Daily Plan Fixed**: Added missing `daily_callback` handler for button functionality
+- **Enhanced Recommendations**: Dramatically improved daily nutrition recommendations
+  - Added 50+ varied, personalized tips based on progress and goals
+  - Implemented randomization for engaging, non-repetitive advice
+  - Added motivational and educational bonus tips (30% chance)
+  - Better categorization: morning, progress, meal suggestions, snacks
+  - Enhanced tracking encouragement and goal-specific feedback
+
+### 🖼️ **Assets & Visuals**
+- **Invoice Logo Fixed**: Updated photo_url to use @logo_v2.png
+- **Assets Serving Restored**: Re-enabled static file serving for logos
+  - Fixed Dockerfile to properly copy assets from root directory
+  - Assets now available at https://api.c0r.ai/assets/logo_v2.png
+
 ### 📋 **Files Modified**
 - `handlers/keyboards.py` - New shared keyboard utilities module
-- `handlers/commands.py` - Removed duplicate keyboard functions, import from keyboards
-- `handlers/payments.py` - Import keyboard utilities from keyboards module
-- `handlers/daily.py` - Import keyboard utilities from keyboards module
+- `handlers/commands.py` - Removed duplicate keyboard functions, import from keyboards, support contact fix
+- `handlers/payments.py` - Import keyboard utilities from keyboards module, logo_v2.png fix
+- `handlers/daily.py` - Import keyboard utilities from keyboards module, enhanced recommendations, daily_callback
 - `handlers/photo.py` - Import keyboard utilities from keyboards module
 - `handlers/profile.py` - Enhanced error handling for calorie calculation
 - `common/supabase_client.py` - Improved calculate_daily_calories function with validation
+- `api.c0r.ai/app/main.py` - Re-enabled assets serving
+- `api.c0r.ai/Dockerfile` - Fixed assets copying from root directory
 
 ---
 

@@ -114,7 +114,7 @@ async def help_command(message: types.Message):
             "• /daily - View daily nutrition plan & progress\n\n"
             "💳 **Need more credits?**\n"
             "Use /buy to purchase additional credits when you run out.\n\n"
-            "📞 **Support:** Contact @your_support_bot"
+            "📞 **Support:** Contact team@c0r.ai"
         )
         
         await message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
@@ -164,7 +164,7 @@ async def help_callback(callback: types.CallbackQuery):
             "• /daily - View daily nutrition plan & progress\n\n"
             "💳 **Need more credits?**\n"
             "Use /buy to purchase additional credits when you run out.\n\n"
-            "📞 **Support:** Contact @your_support_bot"
+            "📞 **Support:** Contact team@c0r.ai"
         )
         
         await callback.message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
@@ -544,6 +544,10 @@ async def handle_action_callback(callback: types.CallbackQuery):
             await buy_callback(callback)  # ← ИСПРАВЛЕНО: используем callback вместо callback.message
         elif action == "profile":
             await profile_callback(callback)  # ← ИСПРАВЛЕНО: используем реальную функцию профиля
+        elif action == "daily":
+            # Handle daily plan callback
+            from .daily import daily_callback
+            await daily_callback(callback)
         elif action == "main_menu":
             # Show main menu
             menu_text, menu_keyboard = create_main_menu_text()

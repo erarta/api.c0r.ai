@@ -70,7 +70,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
                 )
             ],
             start_parameter=f"buy_{plan_id}",
-            photo_url="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Green_tick.svg/512px-Green_tick.svg.png",
+            photo_url="https://api.c0r.ai/assets/logo_v2.png",
             photo_width=512,
             photo_height=512,
             need_email=False,

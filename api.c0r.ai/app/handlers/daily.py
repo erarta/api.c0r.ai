@@ -73,6 +73,41 @@ async def show_no_profile_message(message: types.Message):
     
     await message.answer(no_profile_text, parse_mode="Markdown", reply_markup=keyboard)
 
+# Daily callback handler
+async def daily_callback(callback: types.CallbackQuery):
+    """Handle daily callback from button clicks"""
+    try:
+        telegram_user_id = callback.from_user.id
+        
+        # Answer callback to remove loading state
+        await callback.answer()
+        
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        profile = user_data['profile']
+        has_profile = user_data['has_profile']
+        
+        # Log daily action
+        await log_user_action(
+            user_id=user['id'],
+            action_type="daily",
+            metadata={
+                "username": callback.from_user.username,
+                "has_profile": has_profile
+            }
+        )
+        
+        if not has_profile:
+            # No profile - encourage setup
+            await show_no_profile_message(callback.message)
+        else:
+            # Show daily plan
+            await show_daily_plan(callback.message, user, profile)
+            
+    except Exception as e:
+        logger.error(f"Error in daily callback for user {telegram_user_id}: {e}")
+        await callback.message.answer("❌ An error occurred. Please try again later.", reply_markup=create_main_menu_keyboard())
+
 async def show_daily_plan(message: types.Message, user: dict, profile: dict):
     """Show comprehensive daily plan for user with profile"""
     try:
@@ -195,37 +230,139 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
 
 def get_daily_recommendations(progress_percent: int, remaining: int, goal: str, meals_count: int) -> str:
     """Generate personalized recommendations based on progress"""
+    import random
+    
     recommendations = []
     
+    # Progress-based recommendations with variety
     if progress_percent < 30:
         if meals_count == 0:
-            recommendations.append("🍳 Start with a healthy breakfast!")
+            morning_tips = [
+                "🍳 Start with a protein-rich breakfast to boost metabolism",
+                "🥞 Try oatmeal with berries and nuts for sustained energy",
+                "🥑 Avocado toast with eggs provides healthy fats and protein",
+                "🥤 A protein smoothie is perfect for busy mornings",
+                "🍌 Banana with peanut butter offers quick energy"
+            ]
+            recommendations.append(random.choice(morning_tips))
         else:
-            recommendations.append("🥗 You have plenty of room for nutritious meals")
+            early_day_tips = [
+                "🥗 You have plenty of room for nutritious, satisfying meals",
+                "🍽️ Focus on getting quality proteins and complex carbs",
+                "🌈 Try to eat colorful vegetables with each meal",
+                "🥜 Don't forget healthy fats like nuts and olive oil",
+                "🐟 Consider fish or lean meats for protein"
+            ]
+            recommendations.append(random.choice(early_day_tips))
+    
     elif progress_percent < 70:
-        recommendations.append("👍 Good progress! Keep eating balanced meals")
+        mid_day_tips = [
+            "👍 Great progress! Keep up the balanced eating",
+            "🎯 You're on track - maintain this steady pace",
+            "⚖️ Perfect balance between nutrition and calories",
+            "💪 Your body is getting the fuel it needs",
+            "🔥 Keep this momentum going!"
+        ]
+        recommendations.append(random.choice(mid_day_tips))
+        
         if remaining > 500:
-            recommendations.append("🍽️ You can fit in another substantial meal")
+            meal_suggestions = [
+                "🍽️ You can fit in another substantial, nutritious meal",
+                "🥘 Try a protein-rich dinner with vegetables",
+                "🍲 A hearty soup or stew would be perfect",
+                "🥙 Consider a wrap with lean protein and veggies",
+                "🍝 Pasta with lean meat and vegetables is a good option"
+            ]
+            recommendations.append(random.choice(meal_suggestions))
+    
     elif progress_percent < 100:
-        recommendations.append("⚠️ Getting close to your target - choose lighter options")
+        approaching_tips = [
+            "⚠️ Getting close to your target - choose lighter, nutrient-dense options",
+            "🎨 Time for creative, low-calorie but satisfying choices",
+            "🥗 Focus on volume with vegetables and lean proteins",
+            "⏰ Consider the timing of your remaining calories",
+            "🍃 Light but nutritious options will keep you satisfied"
+        ]
+        recommendations.append(random.choice(approaching_tips))
+        
         if remaining > 200:
-            recommendations.append("🥗 Try a salad or vegetable-based meal")
+            light_meal_tips = [
+                "🥗 Try a large salad with grilled chicken or fish",
+                "🍲 Vegetable soup with lean protein works well",
+                "🥒 Raw vegetables with hummus are filling and nutritious",
+                "🐟 Grilled fish with steamed vegetables is perfect",
+                "🥬 A lettuce wrap with turkey and avocado"
+            ]
+            recommendations.append(random.choice(light_meal_tips))
         else:
-            recommendations.append("🍎 Consider fruits or small snacks")
+            snack_tips = [
+                "🍎 Consider fruits or small, protein-rich snacks",
+                "🥜 A handful of nuts or seeds is perfect",
+                "🥛 Greek yogurt with berries is satisfying",
+                "🥕 Carrot sticks with almond butter work great",
+                "🍓 Fresh berries are low-calorie and nutritious"
+            ]
+            recommendations.append(random.choice(snack_tips))
+    
     else:
         if goal == 'lose_weight':
-            recommendations.append("🛑 You've exceeded your weight loss target")
-            recommendations.append("💧 Focus on hydration and light activity")
+            over_limit_tips = [
+                "🛑 You've exceeded your weight loss target for today",
+                "💧 Focus on hydration and light physical activity",
+                "🚶‍♀️ A walk can help with digestion and mood",
+                "🧘‍♀️ Consider meditation or light stretching",
+                "💤 Ensure you get quality sleep tonight"
+            ]
+            recommendations.extend(random.sample(over_limit_tips, 2))
         elif goal == 'gain_weight':
-            recommendations.append("🎯 Great! You're meeting your calorie goals")
+            gain_success_tips = [
+                "🎯 Excellent! You're meeting your calorie goals for muscle gain",
+                "💪 Your body has the energy it needs to build muscle",
+                "🏋️‍♂️ Perfect fuel for your workouts and recovery",
+                "🌟 Consistency like this will lead to great results",
+                "👏 Great job staying committed to your goals!"
+            ]
+            recommendations.append(random.choice(gain_success_tips))
         else:
-            recommendations.append("⚖️ You're over your maintenance calories")
+            maintenance_tips = [
+                "⚖️ You're over your maintenance calories for today",
+                "🔄 Tomorrow is a fresh start - stay consistent",
+                "💚 One day won't derail your progress",
+                "🎯 Focus on balance over perfection",
+                "⏰ Consider adjusting meal timing tomorrow"
+            ]
+            recommendations.append(random.choice(maintenance_tips))
     
-    # Activity-based recommendations
+    # Activity and tracking recommendations
     if meals_count == 0:
-        recommendations.append("📱 Don't forget to log your meals for better tracking")
+        tracking_tips = [
+            "📱 Don't forget to log your meals for better tracking",
+            "📊 Consistent logging helps you understand your patterns",
+            "🎯 Tracking keeps you accountable to your goals",
+            "💡 Use photos to make logging easier and more accurate"
+        ]
+        recommendations.append(random.choice(tracking_tips))
     elif meals_count >= 5:
-        recommendations.append("📊 Great job tracking your nutrition!")
+        tracking_praise = [
+            "📊 Outstanding job tracking your nutrition today!",
+            "🏆 Your dedication to logging is impressive",
+            "💪 This level of tracking will lead to great results",
+            "🎉 You're building excellent healthy habits!"
+        ]
+        recommendations.append(random.choice(tracking_praise))
+    
+    # Add occasional motivational or educational tips
+    if random.random() < 0.3:  # 30% chance
+        bonus_tips = [
+            "💧 Remember to drink plenty of water throughout the day",
+            "🌅 Eating at regular intervals helps maintain energy",
+            "🥗 Aim for at least 5 servings of fruits and vegetables daily",
+            "😴 Quality sleep is just as important as nutrition",
+            "🚶‍♂️ Light movement after meals aids digestion",
+            "🧘‍♀️ Mindful eating helps with satisfaction and digestion",
+            "🏃‍♀️ Regular exercise complements your nutrition goals"
+        ]
+        recommendations.append(random.choice(bonus_tips))
     
     return "\n".join(f"• {rec}" for rec in recommendations)
 

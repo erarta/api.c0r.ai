@@ -15,13 +15,11 @@ from loguru import logger
 app = FastAPI()
 
 # Mount static files directory for assets (logo, etc.)
-# TODO: Temporarily disabled until assets folder is properly copied to container
-# if os.path.exists("assets"):
-#     app.mount("/assets", StaticFiles(directory="assets"), name="assets")
-#     logger.info("Assets directory mounted successfully")
-# else:
-#     logger.warning("Assets directory not found, static files will not be served")
-logger.info("Assets mounting temporarily disabled - using fallback photo URL")
+if os.path.exists("assets"):
+    app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+    logger.info("Assets directory mounted successfully")
+else:
+    logger.warning("Assets directory not found, static files will not be served")
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
