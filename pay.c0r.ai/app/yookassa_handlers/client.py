@@ -2,6 +2,7 @@ import os
 import uuid
 from yookassa import Configuration, Payment
 from loguru import logger
+import traceback
 from .config import PLANS_YOOKASSA
 
 # Configure YooKassa SDK
@@ -11,7 +12,7 @@ YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
 if YOOKASSA_SHOP_ID and YOOKASSA_SECRET_KEY:
     Configuration.account_id = YOOKASSA_SHOP_ID
     Configuration.secret_key = YOOKASSA_SECRET_KEY
-    logger.info("YooKassa SDK configured successfully")
+    logger.info(f"YooKassa SDK configured successfully: SHOP_ID={YOOKASSA_SHOP_ID}, SECRET_KEY={YOOKASSA_SECRET_KEY[:6]}***")
 else:
     logger.warning("YooKassa credentials not found in environment variables")
 
@@ -23,9 +24,11 @@ async def create_yookassa_invoice(user_id: int, plan_id: str) -> dict:
     try:
         plan = PLANS_YOOKASSA.get(plan_id)
         if not plan:
+            logger.error(f"Unknown plan_id: {plan_id}")
             raise ValueError(f"Unknown plan_id: {plan_id}")
         
         if not YOOKASSA_SHOP_ID or not YOOKASSA_SECRET_KEY:
+            logger.error("YooKassa credentials not configured")
             raise ValueError("YooKassa credentials not configured")
         
         # Generate unique idempotency key
@@ -51,11 +54,11 @@ async def create_yookassa_invoice(user_id: int, plan_id: str) -> dict:
                 "interval": plan.get("interval", "")
             }
         }
+        logger.info(f"[YooKassa] Creating payment: user_id={user_id}, plan_id={plan_id}, payment_data={payment_data}")
         
         # Create payment via YooKassa SDK
         payment = Payment.create(payment_data, idempotency_key)
-        
-        logger.info(f"Created YooKassa payment {payment.id} for user {user_id}, plan {plan_id}")
+        logger.info(f"[YooKassa] Payment created: payment_id={getattr(payment, 'id', None)}, status={getattr(payment, 'status', None)}, confirmation_url={getattr(getattr(payment, 'confirmation', None), 'confirmation_url', None)}")
         
         return {
             "status": "success",
@@ -69,7 +72,8 @@ async def create_yookassa_invoice(user_id: int, plan_id: str) -> dict:
         }
         
     except Exception as e:
-        logger.error(f"Failed to create YooKassa payment for user {user_id}: {e}")
+        logger.error(f"[YooKassa] Failed to create payment for user {user_id}, plan {plan_id}: {e!r}")
+        logger.error(traceback.format_exc())
         raise
 
 async def verify_yookassa_payment(payment_id: str) -> dict:

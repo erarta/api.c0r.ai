@@ -8,6 +8,7 @@ from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
 from config import PAYMENT_PLANS
+import traceback
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -34,13 +35,17 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
         logger.info(f"=====================================")
         
         if not YOOKASSA_PROVIDER_TOKEN:
+            logger.error("YOOKASSA_PROVIDER_TOKEN is not set!")
             await message.answer("❌ Payment system is not configured. Please contact support.", reply_markup=create_main_menu_keyboard())
             return
 
         plan = PAYMENT_PLANS.get(plan_id)
         if not plan:
+            logger.error(f"Invalid payment plan selected: {plan_id}")
             await message.answer("❌ Invalid payment plan selected.", reply_markup=create_main_menu_keyboard())
             return
+
+        logger.info(f"[Telegram] Creating invoice: title={plan['title']}, price={plan['price']}, user_id={user_id}, provider_token={YOOKASSA_PROVIDER_TOKEN[:8]}..., payload=credits_{plan_id}_{user_id}")
 
         # Create invoice
         await message.answer_invoice(
@@ -68,7 +73,8 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
         logger.info(f"Created invoice for user {user_id}, plan {plan_id}")
         
     except Exception as e:
-        logger.error(f"Failed to create invoice: {e}")
+        logger.error(f"[Telegram] Failed to create invoice: {e!r}")
+        logger.error(traceback.format_exc())
         await message.answer("❌ Failed to create payment. Please try again later.", reply_markup=create_main_menu_keyboard())
 
 async def handle_buy_callback(callback: types.CallbackQuery):
