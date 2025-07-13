@@ -83,14 +83,58 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
         # Answer callback to remove loading state
         await callback.answer()
         
-        # Call the main insights function
-        await nutrition_insights_command(callback.message)
+        # Get the correct user ID from callback (not from bot message)
+        telegram_user_id = callback.from_user.id
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        profile = user_data['profile']
+        has_profile = user_data['has_profile']
+        
+        # Log nutrition insights action
+        await log_user_action(
+            user_id=user['id'],
+            action_type="nutrition_insights",
+            metadata={
+                "username": callback.from_user.username,
+                "has_profile": has_profile
+            }
+        )
+        
+        # Check if we have enough data for nutrition insights
+        required_fields = ['age', 'weight_kg', 'height_cm', 'gender', 'activity_level', 'goal']
+        
+        # If profile is None, all fields are missing
+        if profile is None:
+            missing_fields = required_fields
+        else:
+            missing_fields = [field for field in required_fields if not profile.get(field)]
+        
+        if missing_fields:
+            await callback.message.answer(
+                "🔍 **Nutrition Insights**\n\n"
+                f"Almost ready! Please complete your profile to get personalized analysis.\n\n"
+                f"**Missing:** {', '.join(missing_fields)}\n\n"
+                "Use /profile to complete your information.",
+                parse_mode="Markdown",
+                reply_markup=create_main_menu_keyboard()
+            )
+            return
+        
+        # Generate comprehensive nutrition insights
+        insights_text = await generate_nutrition_insights(profile, user)
+        
+        await callback.message.answer(
+            insights_text,
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
+        )
         
     except Exception as e:
         logger.error(f"Error in nutrition_insights_callback: {e}")
         await callback.message.answer(
             "❌ **Error**\n\n"
-            "Sorry, there was an error generating your nutrition insights.",
+            "Sorry, there was an error generating your nutrition insights.\n\n"
+            "Please try again or contact support if the problem persists.",
             parse_mode="Markdown",
             reply_markup=create_main_menu_keyboard()
         )

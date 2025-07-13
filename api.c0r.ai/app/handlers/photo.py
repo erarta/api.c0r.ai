@@ -1,5 +1,6 @@
 """
-Photo handler for NeuCor Telegram Bot
+Photo processing handler for c0r.ai bot
+Handles food photo analysis and nutrition information
 """
 import os
 import httpx
@@ -9,6 +10,7 @@ from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
 from utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
+from config import PAYMENT_PLANS
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
@@ -69,22 +71,22 @@ async def photo_handler(message: types.Message):
             logger.warning(f"User {telegram_user_id} has no credits ({credits}), showing payment options")
             # Out of credits - show payment options
             await message.answer(
-                f"❌ You have no credits left!\n\n"
-                f"💳 **Buy Credits to Continue:**\n"
-                f"📦 Basic Plan: 20 credits for 99 RUB\n"
-                f"📦 Pro Plan: 100 credits for 399 RUB\n\n"
+                f"💳 **Your credits are running low!**\n\n"
+                f"Current credits: *{user['credits_remaining']}*\n\n"
+                f"📦 Basic Plan: {PAYMENT_PLANS['basic']['credits']} credits for {PAYMENT_PLANS['basic']['price'] // 100} RUB\n"
+                f"📦 Pro Plan: {PAYMENT_PLANS['pro']['credits']} credits for {PAYMENT_PLANS['pro']['price'] // 100} RUB\n\n"
                 f"Choose a plan to continue analyzing your food:",
                 parse_mode="Markdown",
                 reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                     [
                         types.InlineKeyboardButton(
-                            text="💰 Basic Plan (99 RUB)",
+                            text=f"💰 Basic Plan ({PAYMENT_PLANS['basic']['price'] // 100} RUB)",
                             callback_data="buy_basic"
                         )
                     ],
                     [
                         types.InlineKeyboardButton(
-                            text="💎 Pro Plan (399 RUB)", 
+                            text=f"💎 Pro Plan ({PAYMENT_PLANS['pro']['price'] // 100} RUB)",
                             callback_data="buy_pro"
                         )
                     ]

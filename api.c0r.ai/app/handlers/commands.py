@@ -7,7 +7,7 @@ from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .keyboards import create_main_menu_keyboard, create_main_menu_text
-from config import VERSION
+from config import VERSION, PAYMENT_PLANS
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -314,24 +314,28 @@ async def buy_credits_command(message: types.Message):
             }
         )
         
+        # Get prices from config
+        basic_price = PAYMENT_PLANS['basic']['price'] // 100  # Convert kopecks to rubles
+        pro_price = PAYMENT_PLANS['pro']['price'] // 100
+        
         # Show current credits and payment options
         await message.answer(
             f"💳 **Buy Credits**\n\n"
             f"Current credits: *{user['credits_remaining']}*\n\n"
-            f"📦 **Basic Plan**: 20 credits for 99 RUB\n"
-            f"📦 **Pro Plan**: 100 credits for 399 RUB\n\n"
+            f"📦 **Basic Plan**: {PAYMENT_PLANS['basic']['credits']} credits for {basic_price} RUB\n"
+            f"📦 **Pro Plan**: {PAYMENT_PLANS['pro']['credits']} credits for {pro_price} RUB\n\n"
             f"Choose a plan to continue:",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text="💰 Basic Plan (99 RUB)",
+                        text=f"💰 Basic Plan ({basic_price} RUB)",
                         callback_data="buy_basic"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text="💎 Pro Plan (399 RUB)", 
+                        text=f"💎 Pro Plan ({pro_price} RUB)", 
                         callback_data="buy_pro"
                     )
                 ]
@@ -368,24 +372,28 @@ async def buy_callback(callback: types.CallbackQuery):
             }
         )
         
+        # Get prices from config
+        basic_price = PAYMENT_PLANS['basic']['price'] // 100  # Convert kopecks to rubles
+        pro_price = PAYMENT_PLANS['pro']['price'] // 100
+        
         # Show current credits and payment options
         await callback.message.answer(
             f"💳 **Buy Credits**\n\n"
             f"Current credits: *{user['credits_remaining']}*\n\n"
-            f"📦 **Basic Plan**: 20 credits for 99 RUB\n"
-            f"📦 **Pro Plan**: 100 credits for 399 RUB\n\n"
+            f"📦 **Basic Plan**: {PAYMENT_PLANS['basic']['credits']} credits for {basic_price} RUB\n"
+            f"📦 **Pro Plan**: {PAYMENT_PLANS['pro']['credits']} credits for {pro_price} RUB\n\n"
             f"Choose a plan to continue:",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text="💰 Basic Plan (99 RUB)",
+                        text=f"💰 Basic Plan ({basic_price} RUB)",
                         callback_data="buy_basic"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text="💎 Pro Plan (399 RUB)", 
+                        text=f"💎 Pro Plan ({pro_price} RUB)", 
                         callback_data="buy_pro"
                     )
                 ]

@@ -7,27 +7,13 @@ from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
+from config import PAYMENT_PLANS
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
 
-# Payment plans configuration
-PAYMENT_PLANS = {
-    "basic": {
-        "title": "Basic Plan",
-        "description": "20 credits for food analysis",
-        "price": 9900,  # 99 RUB in kopecks
-        "credits": 20,
-        "currency": "RUB"
-    },
-    "pro": {
-        "title": "Pro Plan", 
-        "description": "100 credits for food analysis",
-        "price": 39900,  # 399 RUB in kopecks
-        "credits": 100,
-        "currency": "RUB"
-    }
-}
+# Payment plans configuration - now imported from config
+# PAYMENT_PLANS imported from config.py
 
 async def create_invoice_message(message: types.Message, plan_id: str = "basic", user_id: int = None):
     """
