@@ -8,6 +8,7 @@
 - 🔧 Fixed malformed markdown headers that were causing "Can't find end of entity" errors
 - 📊 Improved nutrition insights text formatting for better Telegram compatibility
 - 🚀 Fixed deprecated `upload-artifact@v3` to `@v4` in GitHub Actions workflow
+- 🧪 Fixed CI test failures by creating dependency-free tests for critical functionality
 
 ### Added
 - 🧪 Created comprehensive test suite for markdown sanitization with 7 test cases
@@ -20,6 +21,7 @@
 - 📋 Created mandatory testing requirements rule in `.cursor/rules/testing_requirements.md`
 - 🐳 Added comprehensive local Docker testing script with health checks and troubleshooting
 - 📚 Created complete Docker testing guide with best practices and troubleshooting
+- 🧪 Created dependency-free critical tests for CI environment (`test_nutrition_sanitization_simple.py`)
 
 ### Technical
 - 🛠️ Added `sanitize_markdown_text()` function to nutrition handler
