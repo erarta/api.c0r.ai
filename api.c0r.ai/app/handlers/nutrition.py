@@ -36,11 +36,16 @@ async def nutrition_insights_command(message: types.Message):
             }
         )
         
-        if not has_profile:
+        # Check if we have enough data for nutrition insights
+        required_fields = ['age', 'weight_kg', 'height_cm', 'gender', 'activity_level', 'goal']
+        missing_fields = [field for field in required_fields if not profile.get(field)]
+        
+        if missing_fields:
             await message.answer(
                 "🔍 **Nutrition Insights**\n\n"
-                "To get personalized nutrition analysis, please set up your profile first.\n\n"
-                "Use /profile to enter your personal information.",
+                f"Almost ready! Please complete your profile to get personalized analysis.\n\n"
+                f"**Missing:** {', '.join(missing_fields)}\n\n"
+                "Use /profile to complete your information.",
                 parse_mode="Markdown",
                 reply_markup=create_main_menu_keyboard()
             )
@@ -115,6 +120,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
         bmi_data = calculate_bmi(weight, height)
         insights.append(f"📊 **Body Mass Index (BMI)**")
         insights.append(f"{bmi_data['emoji']} **{bmi_data['bmi']}** - {bmi_data['description']}")
+        insights.append(f"💡 {bmi_data['motivation']}")
         insights.append("")
         
         # Ideal weight
@@ -130,6 +136,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
         insights.append(f"🧬 **Metabolic Age**")
         insights.append(f"{metabolic_data['emoji']} **{metabolic_data['metabolic_age']} years** (vs {age} actual)")
         insights.append(f"{metabolic_data['description']}")
+        insights.append(f"💡 {metabolic_data['motivation']}")
         insights.append("")
     
     # 3. Daily Water Needs
@@ -183,29 +190,29 @@ def get_goal_specific_advice(goal: str, profile: dict) -> str:
     
     if goal == 'lose_weight':
         return (
-            "For **weight loss**:\n"
-            "• Create a moderate calorie deficit (300-500 calories)\n"
-            "• Focus on protein to preserve muscle mass\n"
-            "• Include strength training 2-3 times per week\n"
-            "• Eat slowly and mindfully to improve satiety"
+            "🎯 **Your Weight Loss Journey**:\n"
+            "• 💪 Create a gentle calorie deficit (300-500 calories) - sustainable wins!\n"
+            "• 🥩 Protein is your secret weapon for preserving muscle and feeling full\n"
+            "• 🏋️‍♀️ Strength training 2-3x/week will boost your metabolism\n"
+            "• 🧘‍♀️ Eat slowly and savor your food - your brain needs 20 minutes to register fullness"
         )
     
     elif goal == 'gain_weight':
         return (
-            "For **weight gain**:\n"
-            "• Eat in a slight calorie surplus (300-500 calories)\n"
-            "• Include healthy fats for dense calories\n"
-            "• Eat frequent, smaller meals throughout the day\n"
-            "• Combine with resistance training for muscle growth"
+            "🌱 **Your Healthy Weight Gain Plan**:\n"
+            "• 🍽️ Gentle calorie surplus (300-500 calories) - steady progress is best!\n"
+            "• 🥑 Healthy fats are your friend - nutrient-dense calories that fuel growth\n"
+            "• ⏰ Frequent, enjoyable meals keep your energy steady all day\n"
+            "• 💪 Resistance training transforms those calories into strong, healthy muscle"
         )
     
     else:  # maintain_weight
         return (
-            "For **weight maintenance**:\n"
-            "• Focus on consistent, balanced nutrition\n"
-            "• Monitor weight weekly and adjust as needed\n"
-            "• Prioritize whole foods and variety\n"
-            "• Stay active with both cardio and strength training"
+            "⚖️ **Your Maintenance Mastery**:\n"
+            "• 🎯 You've found your sweet spot! Focus on consistent, joyful eating\n"
+            "• 📊 Weekly check-ins help you stay in tune with your body\n"
+            "• 🌈 Variety keeps nutrition exciting and ensures you get all nutrients\n"
+            "• 🏃‍♀️ Mix cardio and strength training for total body wellness"
         )
 
 

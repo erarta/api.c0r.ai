@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.3.9] - 2025-01-20
+
+### 💪 **Motivational UX Enhancements**
+- **Fixed Nutrition Insights Bug**: Now properly checks specific profile fields instead of relying on has_profile flag
+  - Better error messaging showing exactly which fields are missing
+  - More accurate profile completeness detection
+
+- **Motivational BMI Messaging**: Transformed clinical BMI categories into supportive, encouraging messages
+  - Underweight: "Let's focus on healthy weight gain together! 🌱 Every nutritious meal is a step forward!"
+  - Normal: "Fantastic! You're in the ideal range! 🎉 Keep up the great work maintaining your health!"
+  - Overweight: "You're taking the right steps by tracking! 💪 Small changes lead to big results!"
+  - Obese: "Every healthy choice counts! 🌟 You're already on the path to positive change!"
+
+- **Enhanced Metabolic Age Encouragement**: Added motivational context to metabolic age analysis
+  - Younger metabolic age: "Amazing! Your healthy lifestyle is paying off! Keep doing what you're doing! 🚀"
+  - Older metabolic age: "No worries! With consistent nutrition and activity, you can improve this! 💪"
+  - Normal metabolic age: "Perfect balance! You're maintaining great metabolic health! 🎯"
+
+- **Supportive Nutrition Recommendations**: Completely rewritten recommendations with positive, encouraging tone
+  - Replaced clinical language with supportive, action-oriented advice
+  - Added context and reasoning behind recommendations
+  - Included encouragement for all activity levels and goals
+
+- **Random Motivational "Wins"**: Added rotating positive reinforcement messages
+  - "🌟 You're taking control of your health by tracking nutrition!"
+  - "🎉 Every food analysis brings you closer to your goals!"
+  - "💪 Small consistent steps lead to amazing transformations!"
+  - "🚀 You're investing in the most important asset - your health!"
+  - "✨ Progress, not perfection - you're doing great!"
+
+- **Goal-Specific Motivational Advice**: Enhanced goal-specific guidance with encouraging language
+  - Weight loss: Emphasized "gentle deficit" and "sustainable wins"
+  - Weight gain: Focused on "healthy weight building" and "steady progress"
+  - Maintenance: Celebrated "sweet spot" achievement and "joyful eating"
+
+### 🔧 **Technical Improvements**
+- **Better Profile Validation**: More granular checking of required fields for nutrition insights
+- **Enhanced Data Structure**: Added motivation fields to BMI and metabolic age calculations
+- **Improved Error Messaging**: Specific feedback on missing profile fields
+
+---
+
 ## [0.3.8] - 2025-01-20
 
 ### 🔬 **New Advanced Nutrition Features**

@@ -24,25 +24,30 @@ def calculate_bmi(weight_kg: float, height_cm: float) -> Dict[str, Any]:
     if bmi < 18.5:
         category = "underweight"
         emoji = "⬇️"
-        description = "Underweight"
+        description = "Below ideal range"
+        motivation = "Let's focus on healthy weight gain together! 🌱 Every nutritious meal is a step forward!"
     elif bmi < 25:
         category = "normal"
         emoji = "✅"
-        description = "Normal weight"
+        description = "Healthy weight range"
+        motivation = "Fantastic! You're in the ideal range! 🎉 Keep up the great work maintaining your health!"
     elif bmi < 30:
         category = "overweight"
         emoji = "⚠️"
-        description = "Overweight"
+        description = "Above ideal range"
+        motivation = "You're taking the right steps by tracking! 💪 Small changes lead to big results!"
     else:
         category = "obese"
         emoji = "🔴"
-        description = "Obese"
+        description = "Well above ideal range"
+        motivation = "Every healthy choice counts! 🌟 You're already on the path to positive change!"
     
     return {
         "bmi": round(bmi, 1),
         "category": category,
         "emoji": emoji,
-        "description": description
+        "description": description,
+        "motivation": motivation
     }
 
 
@@ -215,14 +220,17 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
         status = "younger"
         emoji = "🌟"
         description = "Your metabolism is younger than your age!"
+        motivation = "Amazing! Your healthy lifestyle is paying off! Keep doing what you're doing! 🚀"
     elif difference >= 2:
         status = "older"
         emoji = "⚠️"
         description = "Your metabolism is older than your age"
+        motivation = "No worries! With consistent nutrition and activity, you can improve this! 💪 You're on the right track!"
     else:
         status = "normal"
         emoji = "✅"
         description = "Your metabolism matches your age"
+        motivation = "Perfect balance! You're maintaining great metabolic health! 🎯 Keep it up!"
     
     return {
         "metabolic_age": round(metabolic_age),
@@ -230,7 +238,8 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
         "difference": round(difference, 1),
         "status": status,
         "emoji": emoji,
-        "description": description
+        "description": description,
+        "motivation": motivation
     }
 
 
@@ -325,26 +334,45 @@ def get_nutrition_recommendations(profile: Dict, recent_logs: List[Dict]) -> Lis
     if 'weight_kg' in profile and 'height_cm' in profile:
         bmi_data = calculate_bmi(profile['weight_kg'], profile['height_cm'])
         if bmi_data['category'] == 'underweight':
-            recommendations.append("🍽️ Focus on nutrient-dense, calorie-rich foods like nuts, avocados, and healthy oils")
-        elif bmi_data['category'] == 'overweight':
-            recommendations.append("🥗 Prioritize vegetables, lean proteins, and whole grains for sustainable weight loss")
+            recommendations.append("🍽️ Let's build healthy weight together! Focus on nutrient-rich foods like nuts, avocados, and wholesome meals")
+        elif bmi_data['category'] == 'overweight' or bmi_data['category'] == 'obese':
+            recommendations.append("🥗 You're on the right path! Prioritize colorful vegetables, lean proteins, and feel-good whole grains")
+        else:  # normal weight
+            recommendations.append("🎉 You're maintaining great health! Keep enjoying balanced, nutritious meals")
     
     # Activity-based recommendations
     if profile.get('activity_level') in ['very_active', 'extremely_active']:
-        recommendations.append("💪 Increase protein intake to 1.6-2.2g per kg body weight for muscle recovery")
-        recommendations.append("🍌 Consider post-workout carbs within 30 minutes of exercise")
+        recommendations.append("💪 Amazing dedication to fitness! Boost your protein to 1.6-2.2g per kg for optimal recovery")
+        recommendations.append("🍌 Fuel your workouts! Try post-exercise carbs within 30 minutes for best results")
+    elif profile.get('activity_level') in ['sedentary', 'lightly_active']:
+        recommendations.append("🚶‍♀️ Every step counts! Even light daily walks can boost your metabolism and mood")
     
     # Goal-based recommendations
     if profile.get('goal') == 'lose_weight':
-        recommendations.append("⏰ Try eating your largest meal earlier in the day")
-        recommendations.append("🥛 Include protein in every meal to maintain muscle mass")
+        recommendations.append("⏰ Smart strategy: Try eating your heartiest meal earlier when your metabolism is highest")
+        recommendations.append("🥛 Protein is your friend! Include it in every meal to preserve muscle while losing fat")
     elif profile.get('goal') == 'gain_weight':
-        recommendations.append("🍞 Include healthy carbs like oats, quinoa, and sweet potatoes")
-        recommendations.append("🥜 Add healthy fats like nuts, seeds, and olive oil to meals")
+        recommendations.append("🍞 Building healthy weight! Include energizing carbs like oats, quinoa, and sweet potatoes")
+        recommendations.append("🥜 Power up with healthy fats! Nuts, seeds, and olive oil add nutritious calories")
+    else:  # maintain_weight
+        recommendations.append("🎯 Maintaining beautifully! Focus on consistent, enjoyable eating patterns")
     
     # Water recommendations
     if 'weight_kg' in profile:
         water_data = calculate_water_needs(profile['weight_kg'], profile.get('activity_level', 'sedentary'))
-        recommendations.append(f"💧 Aim for {water_data['liters']}L of water daily ({water_data['glasses']} glasses)")
+        recommendations.append(f"💧 Stay hydrated for success! Aim for {water_data['liters']}L daily ({water_data['glasses']} glasses)")
+    
+    # Add motivational "wins" - positive reinforcement
+    wins = [
+        "🌟 You're taking control of your health by tracking nutrition!",
+        "🎉 Every food analysis brings you closer to your goals!",
+        "💪 Small consistent steps lead to amazing transformations!",
+        "🚀 You're investing in the most important asset - your health!",
+        "✨ Progress, not perfection - you're doing great!"
+    ]
+    
+    # Add a random win to keep it fresh
+    import random
+    recommendations.append(random.choice(wins))
     
     return recommendations 
