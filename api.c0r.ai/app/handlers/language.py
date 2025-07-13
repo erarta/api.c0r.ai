@@ -43,7 +43,7 @@ async def language_command(message: types.Message):
         # Create language settings message
         language_text = (
             f"{i18n.get_text('language_title', current_language)}\n\n"
-            f"{i18n.get_text('language_current', current_language, language=language_name)}\n\n"
+            f"{i18n.get_text('language_current', current_language, lang_name=language_name)}\n\n"
             f"{i18n.get_text('language_choose', current_language)}"
         )
         
@@ -92,7 +92,7 @@ async def handle_language_callback(callback: types.CallbackQuery):
         language_name = i18n.get_language_name(selected_language)
         
         # Create success message
-        success_text = i18n.get_text("language_changed", selected_language, language=language_name)
+        success_text = i18n.get_text("language_changed", selected_language, lang_name=language_name)
         
         # Create main menu keyboard with new language
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[

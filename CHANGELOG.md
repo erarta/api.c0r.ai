@@ -20,7 +20,12 @@ All notable changes to this project will be documented in this file.
 - **Message System**: All hardcoded messages replaced with i18n translation system
 - **Keyboard System**: All interactive keyboards now support multiple languages
 - **Error Messages**: Rate limiting and error messages now display in user's language
-- **Version Update**: Updated to version 0.4.2
+
+### Fixed
+- **Language Button Error**: Fixed "An error occurred" when clicking language button
+- **I18n Parameter Conflict**: Resolved `get_text()` function parameter conflict with `language` argument
+- **Translation Formatting**: Fixed translation parameter naming from `{language}` to `{lang_name}`
+- **Language Menu Display**: Corrected language selection menu to show proper language names
 
 ### Technical
 - **I18n System**: Created comprehensive internationalization system with i18n.py
@@ -30,6 +35,7 @@ All notable changes to this project will be documented in this file.
 - **Language Handlers**: New language.py module for language switching functionality
 - **Updated Handlers**: All command handlers updated to use i18n system
 - **Keyboard Updates**: All keyboard functions updated to support language parameter
+- **Parameter Naming**: Fixed translation parameter conflicts by using `lang_name` instead of `language`
 
 ### Database Changes
 - Added `language` column (TEXT, default 'en', check for 'en' or 'ru')

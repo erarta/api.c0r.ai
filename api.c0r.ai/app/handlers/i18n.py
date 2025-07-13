@@ -124,9 +124,9 @@ class I18nManager:
                 
                 # Language messages
                 "language_title": "🌐 **Language Settings**",
-                "language_current": "Current language: **{language}**",
+                "language_current": "Current language: **{lang_name}**",
                 "language_choose": "Choose your preferred language:",
-                "language_changed": "✅ Language changed to **{language}**",
+                "language_changed": "✅ Language changed to **{lang_name}**",
                 "language_english": "🇺🇸 English",
                 "language_russian": "🇷🇺 Русский",
                 
@@ -228,9 +228,9 @@ class I18nManager:
                 
                 # Language messages
                 "language_title": "🌐 **Настройки языка**",
-                "language_current": "Текущий язык: **{language}**",
+                "language_current": "Текущий язык: **{lang_name}**",
                 "language_choose": "Выберите предпочитаемый язык:",
-                "language_changed": "✅ Язык изменен на **{language}**",
+                "language_changed": "✅ Язык изменен на **{lang_name}**",
                 "language_english": "🇺🇸 English",
                 "language_russian": "🇷🇺 Русский",
                 
