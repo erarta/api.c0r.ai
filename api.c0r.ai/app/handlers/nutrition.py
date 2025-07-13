@@ -13,6 +13,7 @@ from common.nutrition_calculations import (
 )
 from .keyboards import create_main_menu_keyboard
 from datetime import datetime, timedelta
+import re
 
 
 async def nutrition_insights_command(message: types.Message):
@@ -95,6 +96,31 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
         )
 
 
+def sanitize_markdown_text(text: str) -> str:
+    """
+    Sanitize markdown text to prevent Telegram parsing issues
+    
+    Args:
+        text: Text to sanitize
+        
+    Returns:
+        Sanitized text safe for Telegram markdown
+    """
+    # Fix problematic **\n** patterns by adding space after **
+    text = text.replace('**\n**', '** \n**')
+    
+    # Fix any triple asterisks
+    text = text.replace('***', '** *')
+    
+    # Fix any quadruple asterisks
+    text = text.replace('****', '** **')
+    
+    # Fix empty bold patterns
+    text = text.replace('**  **', '** **')
+    
+    return text
+
+
 async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     """
     Generate comprehensive nutrition insights text
@@ -123,14 +149,14 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     # 1. BMI Analysis
     if weight > 0 and height > 0:
         bmi_data = calculate_bmi(weight, height)
-        insights.append(f"📊 **Body Mass Index (BMI)**")
+        insights.append(f"📊 **Body Mass Index (BMI):**")
         insights.append(f"{bmi_data['emoji']} **{bmi_data['bmi']}** - {bmi_data['description']}")
         insights.append(f"💡 {bmi_data['motivation']}")
         insights.append("")
         
         # Ideal weight
         ideal_weight = calculate_ideal_weight(height, gender)
-        insights.append(f"🎯 **Ideal Weight Range**")
+        insights.append(f"🎯 **Ideal Weight Range:**")
         insights.append(f"**{ideal_weight['range']}** (BMI-based)")
         insights.append(f"**{ideal_weight['broca']} kg** (Broca formula)")
         insights.append("")
@@ -138,7 +164,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     # 2. Metabolic Age
     if age > 0 and weight > 0 and height > 0:
         metabolic_data = calculate_metabolic_age(age, gender, weight, height, activity)
-        insights.append(f"🧬 **Metabolic Age**")
+        insights.append(f"🧬 **Metabolic Age:**")
         insights.append(f"{metabolic_data['emoji']} **{metabolic_data['metabolic_age']} years** (vs {age} actual)")
         insights.append(f"{metabolic_data['description']}")
         insights.append(f"💡 {metabolic_data['motivation']}")
@@ -147,7 +173,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     # 3. Daily Water Needs
     if weight > 0:
         water_data = calculate_water_needs(weight, activity)
-        insights.append(f"💧 **Daily Water Needs**")
+        insights.append(f"💧 **Daily Water Needs:**")
         insights.append(f"**{water_data['liters']}L** ({water_data['glasses']} glasses)")
         insights.append(f"Base: {water_data['base_ml']}ml + Activity: {water_data['activity_bonus']}ml")
         insights.append("")
@@ -155,7 +181,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     # 4. Macro Distribution
     if daily_calories > 0:
         macro_data = calculate_macro_distribution(daily_calories, goal)
-        insights.append(f"🥗 **Optimal Macro Distribution**")
+        insights.append(f"🥗 **Optimal Macro Distribution:**")
         insights.append(f"**Protein:** {macro_data['protein']['grams']}g ({macro_data['protein']['percent']}%)")
         insights.append(f"**Carbs:** {macro_data['carbs']['grams']}g ({macro_data['carbs']['percent']}%)")
         insights.append(f"**Fats:** {macro_data['fat']['grams']}g ({macro_data['fat']['percent']}%)")
@@ -163,7 +189,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
         
         # Meal portions
         meal_data = calculate_meal_portions(daily_calories, 3)
-        insights.append(f"🍽️ **Meal Distribution**")
+        insights.append(f"🍽️ **Meal Distribution:**")
         for meal in meal_data['meal_breakdown']:
             insights.append(f"**{meal['name']}:** {meal['calories']} cal ({meal['percent']}%)")
         insights.append("")
@@ -171,7 +197,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     # 5. Personalized Recommendations
     recommendations = get_nutrition_recommendations(profile, [])
     if recommendations:
-        insights.append(f"💡 **Personal Recommendations**")
+        insights.append(f"💡 **Personal Recommendations:**")
         for rec in recommendations[:4]:  # Show top 4 recommendations
             insights.append(f"• {rec}")
         insights.append("")
@@ -179,7 +205,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     # 6. Goal-specific advice
     goal_advice = get_goal_specific_advice(goal, profile)
     if goal_advice:
-        insights.append(f"🎯 **Goal-Specific Advice**")
+        insights.append(f"🎯 **Goal-Specific Advice:**")
         insights.append(goal_advice)
         insights.append("")
     
@@ -187,7 +213,9 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     insights.append(f"📅 **Analysis Date:** {datetime.now().strftime('%Y-%m-%d')}")
     insights.append(f"🔄 **Credits Remaining:** {user.get('credits_remaining', 0)}")
     
-    return "\n".join(insights)
+    # Join all insights and sanitize
+    raw_text = "\n".join(insights)
+    return sanitize_markdown_text(raw_text)
 
 
 def get_goal_specific_advice(goal: str, profile: dict) -> str:
@@ -195,7 +223,7 @@ def get_goal_specific_advice(goal: str, profile: dict) -> str:
     
     if goal == 'lose_weight':
         return (
-            "🎯 **Your Weight Loss Journey**:\n"
+            "🎯 **Your Weight Loss Journey:**\n"
             "• 💪 Create a gentle calorie deficit (300-500 calories) - sustainable wins!\n"
             "• 🥩 Protein is your secret weapon for preserving muscle and feeling full\n"
             "• 🏋️‍♀️ Strength training 2-3x/week will boost your metabolism\n"
@@ -204,7 +232,7 @@ def get_goal_specific_advice(goal: str, profile: dict) -> str:
     
     elif goal == 'gain_weight':
         return (
-            "🌱 **Your Healthy Weight Gain Plan**:\n"
+            "🌱 **Your Healthy Weight Gain Plan:**\n"
             "• 🍽️ Gentle calorie surplus (300-500 calories) - steady progress is best!\n"
             "• 🥑 Healthy fats are your friend - nutrient-dense calories that fuel growth\n"
             "• ⏰ Frequent, enjoyable meals keep your energy steady all day\n"
@@ -213,7 +241,7 @@ def get_goal_specific_advice(goal: str, profile: dict) -> str:
     
     else:  # maintain_weight
         return (
-            "⚖️ **Your Maintenance Mastery**:\n"
+            "⚖️ **Your Maintenance Mastery:**\n"
             "• 🎯 You've found your sweet spot! Focus on consistent, joyful eating\n"
             "• 📊 Weekly check-ins help you stay in tune with your body\n"
             "• 🌈 Variety keeps nutrition exciting and ensures you get all nutrients\n"

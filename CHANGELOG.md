@@ -1,6 +1,41 @@
 # Changelog
 
-## [0.3.10] - 2025-01-20
+## [v0.3.11] - 2025-01-13
+
+### Fixed
+- 🔥 **CRITICAL**: Fixed Telegram markdown parsing error in nutrition insights that was causing crashes
+- 📝 Added comprehensive markdown sanitization function to prevent `**\n**` patterns and other problematic Telegram entities
+- 🔧 Fixed malformed markdown headers that were causing "Can't find end of entity" errors
+- 📊 Improved nutrition insights text formatting for better Telegram compatibility
+- 🚀 Fixed deprecated `upload-artifact@v3` to `@v4` in GitHub Actions workflow
+
+### Added
+- 🧪 Created comprehensive test suite for markdown sanitization with 7 test cases
+- 🔍 Added byte position analysis tests to understand parsing issues
+- 📝 Implemented text sanitization function that fixes:
+  - `**\n**` patterns (bold across newlines)
+  - `***` patterns (triple asterisks)
+  - `****` patterns (quadruple asterisks)
+  - `**  **` patterns (empty bold entities)
+- 📋 Created mandatory testing requirements rule in `.cursor/rules/testing_requirements.md`
+- 🐳 Added comprehensive local Docker testing script with health checks and troubleshooting
+- 📚 Created complete Docker testing guide with best practices and troubleshooting
+
+### Technical
+- 🛠️ Added `sanitize_markdown_text()` function to nutrition handler
+- 📋 Updated all section headers to use proper colon formatting
+- 🔄 Implemented automatic text sanitization in `generate_nutrition_insights()`
+- 📊 Enhanced markdown validation functions for better testing
+- 🧪 Established mandatory testing workflow: unit tests + integration tests + coverage ≥85%
+- 🔧 Improved CI/CD pipeline reliability with updated GitHub Actions
+
+### Development Infrastructure
+- 📝 Enforced test-first development approach for all new features
+- 🛡️ Enhanced deployment protection with comprehensive test suite
+- 🐳 Standardized local Docker testing procedures
+- 📋 Created templates and guidelines for consistent test structure
+
+## [v0.3.10] - 2025-01-12
 
 ### 🐛 **Critical Bug Fixes**
 - **Fixed Nutrition Insights NoneType Error**: Resolved crash when users without profiles tried to access nutrition insights

@@ -1,8 +1,11 @@
-# Configuration file for c0r.ai API
+"""
+Configuration settings for c0r.ai API
+"""
+import os
+from typing import Optional
 
-# Current version - update this when releasing new versions
-# This should match the latest version in CHANGELOG.md
-VERSION = "0.3.10"
+# Application Version
+VERSION = "0.3.11"
 
 # System information
 SYSTEM_NAME = "c0r.ai"
