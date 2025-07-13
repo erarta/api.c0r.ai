@@ -221,6 +221,55 @@ def get_goal_specific_advice(goal: str, profile: dict) -> str:
         )
 
 
+async def weekly_report_callback(callback: types.CallbackQuery):
+    """Handle weekly report callback from button clicks"""
+    try:
+        # Answer callback to remove loading state
+        await callback.answer()
+        
+        # Get user ID from callback, not from message
+        telegram_user_id = callback.from_user.id
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        
+        # Log weekly report action
+        await log_user_action(
+            user_id=user['id'],
+            action_type="weekly_report",
+            metadata={
+                "username": callback.from_user.username,
+                "has_profile": user_data['has_profile']
+            }
+        )
+        
+        # For now, show a placeholder - in future will analyze actual logs
+        await callback.message.answer(
+            "📊 **Weekly Report**\n\n"
+            "📅 **Week of:** {}\n\n"
+            "🍽️ **Meals Analyzed:** 0\n"
+            "📈 **Average Calories:** Not enough data\n"
+            "🎯 **Goal Progress:** Set up profile to track\n"
+            "⭐ **Consistency Score:** N/A\n\n"
+            "📝 **Note:** Start analyzing your meals to see detailed weekly insights!\n\n"
+            "🔜 **Coming Soon:**\n"
+            "• Detailed calorie trends\n"
+            "• Macro balance analysis\n"
+            "• Nutrition quality scoring\n"
+            "• Goal progress tracking".format(datetime.now().strftime('%b %d, %Y')),
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in weekly_report_callback: {e}")
+        await callback.message.answer(
+            "❌ **Error**\n\n"
+            "Sorry, there was an error generating your weekly report.",
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
+        )
+
+
 async def weekly_report_command(message: types.Message):
     """
     Generate weekly nutrition report for user
@@ -253,6 +302,76 @@ async def weekly_report_command(message: types.Message):
         await message.answer(
             "❌ **Error**\n\n"
             "Sorry, there was an error generating your weekly report.",
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
+        )
+
+
+async def water_tracker_callback(callback: types.CallbackQuery):
+    """Handle water tracker callback from button clicks"""
+    try:
+        # Answer callback to remove loading state
+        await callback.answer()
+        
+        # Get user ID from callback, not from message
+        telegram_user_id = callback.from_user.id
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        profile = user_data['profile']
+        has_profile = user_data['has_profile']
+        
+        # Log water tracker action
+        await log_user_action(
+            user_id=user['id'],
+            action_type="water_tracker",
+            metadata={
+                "username": callback.from_user.username,
+                "has_profile": has_profile
+            }
+        )
+        
+        if not has_profile:
+            await callback.message.answer(
+                "💧 **Water Tracker**\n\n"
+                "Set up your profile to get personalized water recommendations!\n\n"
+                "💡 **General Guidelines:**\n"
+                "• 8-10 glasses (2-2.5L) per day\n"
+                "• More if you exercise or live in hot climate\n"
+                "• Check urine color - should be light yellow\n\n"
+                "Use /profile to set up your personal data.",
+                parse_mode="Markdown",
+                reply_markup=create_main_menu_keyboard()
+            )
+            return
+        
+        weight = profile.get('weight_kg', 70)
+        activity = profile.get('activity_level', 'sedentary')
+        
+        water_data = calculate_water_needs(weight, activity)
+        
+        await callback.message.answer(
+            f"💧 **Your Water Needs**\n\n"
+            f"🎯 **Daily Target:** {water_data['liters']}L\n"
+            f"🥤 **In Glasses:** {water_data['glasses']} glasses (250ml each)\n\n"
+            f"📊 **Breakdown:**\n"
+            f"• Base need: {water_data['base_ml']}ml\n"
+            f"• Activity bonus: +{water_data['activity_bonus']}ml\n"
+            f"• Total: {water_data['total_ml']}ml\n\n"
+            f"💡 **Tips:**\n"
+            f"• Drink 1-2 glasses when you wake up\n"
+            f"• Have water with each meal\n"
+            f"• Keep a water bottle nearby\n"
+            f"• Set reminders if you forget to drink\n\n"
+            f"🔜 **Coming Soon:** Water intake logging and reminders!",
+            parse_mode="Markdown",
+            reply_markup=create_main_menu_keyboard()
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in water_tracker_callback: {e}")
+        await callback.message.answer(
+            "❌ **Error**\n\n"
+            "Sorry, there was an error with the water tracker.",
             parse_mode="Markdown",
             reply_markup=create_main_menu_keyboard()
         )

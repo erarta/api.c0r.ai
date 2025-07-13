@@ -8,6 +8,12 @@
   - **Fix**: Added proper None check before calling profile.get() method
   - **Impact**: Users can now safely access nutrition insights feature and get clear profile setup guidance
 
+- **Fixed Callback User ID Confusion**: Resolved critical issue where callbacks used wrong user ID
+  - **Error**: Nutrition insights and water tracker were getting bot ID (7918860162) instead of actual user ID (391490)
+  - **Root Cause**: Callback functions used `callback.message.from_user.id` (bot's message) instead of `callback.from_user.id` (user who clicked)
+  - **Fix**: Created proper callback handlers that extract user ID from callback query correctly
+  - **Impact**: All callback-based features now work correctly for the actual user who clicked the button
+
 ### 🔧 **Technical Improvements**
 - **Dynamic Version Management**: Implemented centralized version system
   - **New**: Created `config.py` with VERSION variable for centralized version management

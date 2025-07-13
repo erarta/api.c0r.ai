@@ -555,12 +555,12 @@ async def handle_action_callback(callback: types.CallbackQuery):
             await nutrition_insights_callback(callback)
         elif action == "weekly_report":
             # Handle weekly report callback
-            from .nutrition import weekly_report_command
-            await weekly_report_command(callback.message)
+            from .nutrition import weekly_report_callback
+            await weekly_report_callback(callback)
         elif action == "water_tracker":
             # Handle water tracker callback
-            from .nutrition import water_tracker_command
-            await water_tracker_command(callback.message)
+            from .nutrition import water_tracker_callback
+            await water_tracker_callback(callback)
         elif action == "main_menu":
             # Show main menu
             menu_text, menu_keyboard = create_main_menu_text()
