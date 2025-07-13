@@ -6,7 +6,7 @@ import os
 from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
-from .keyboards import create_main_menu_keyboard
+from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -229,7 +229,8 @@ async def handle_successful_payment(message: types.Message):
             f"💰 **Amount Paid**: {payment.total_amount/100:.2f} {payment.currency}\n"
             f"🔋 **Total Credits**: {updated_user['credits_remaining']}\n\n"
             f"You can now continue analyzing your food photos!",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            reply_markup=create_payment_success_keyboard()
         )
         
         logger.info(f"Payment processed successfully for user {user_id}: {plan['credits']} credits added, total credits: {updated_user['credits_remaining']}")

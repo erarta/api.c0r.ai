@@ -17,6 +17,7 @@ from handlers.profile import (
     ProfileStates
 )
 from handlers.daily import daily_command, handle_daily_callback
+from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command
 from loguru import logger
 
 # Must be set in .env file
@@ -127,6 +128,9 @@ dp.message.register(status_command, Command(commands=["status"]))
 dp.message.register(buy_credits_command, Command(commands=["buy"]))
 dp.message.register(profile_command, Command(commands=["profile"]))
 dp.message.register(daily_command, Command(commands=["daily"]))
+dp.message.register(nutrition_insights_command, Command(commands=["insights"]))
+dp.message.register(weekly_report_command, Command(commands=["report"]))
+dp.message.register(water_tracker_command, Command(commands=["water"]))
 
 # Photo handler (only for photos, not documents)
 dp.message.register(photo_handler, lambda message: message.photo)

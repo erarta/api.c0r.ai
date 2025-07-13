@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.3.8] - 2025-01-20
+
+### 🔬 **New Advanced Nutrition Features**
+- **Nutrition Insights**: Comprehensive nutrition analysis with BMI, metabolic age, and recommendations
+  - BMI calculation with category classification (underweight, normal, overweight, obese)
+  - Ideal weight range using multiple formulas (BMI-based and Broca)
+  - Metabolic age estimation based on BMR and lifestyle factors
+  - Personalized macro distribution (protein, carbs, fats) based on goals
+  - Meal portion breakdown for optimal calorie distribution
+  - Goal-specific advice for weight loss, gain, or maintenance
+  - Command: `/insights` or 🔬 Nutrition Insights button
+
+- **Water Tracker**: Personalized hydration recommendations
+  - Calculate daily water needs based on weight and activity level
+  - Activity-based water bonus calculations
+  - Practical tips for staying hydrated
+  - Command: `/water` or 💧 Water Tracker button
+
+- **Weekly Report**: Nutrition progress tracking (foundation)
+  - Weekly meal analysis framework
+  - Consistency scoring system
+  - Trend analysis for goal progress
+  - Command: `/report` or 📈 Weekly Report button
+
+### 🧮 **Advanced Calculation Engine**
+- **New Nutrition Calculations Module**: `common/nutrition_calculations.py`
+  - BMI with detailed categorization and health indicators
+  - Ideal weight using BMI-based (20-25) and Broca formulas
+  - Water needs: 35ml/kg base + activity multipliers (1.0-1.8x)
+  - Metabolic age estimation using BMR, BMI, and activity factors
+  - Macro distribution optimization based on goals:
+    - Weight loss: 30% protein, 25% fat, 45% carbs
+    - Weight gain: 25% protein, 25% fat, 50% carbs
+    - Maintenance: 25% protein, 30% fat, 45% carbs
+  - Meal portion timing: breakfast 25%, lunch 40%, dinner 35%
+  - Personalized nutrition recommendations engine
+
+### 🎨 **Enhanced User Experience**
+- **Expanded Main Menu**: Added 4 new nutrition features
+  - Reorganized menu with better categorization
+  - More comprehensive feature access
+  - Clearer navigation flow
+- **Smart Recommendations**: Context-aware nutrition advice
+  - BMI-based food recommendations
+  - Activity-level specific protein guidance
+  - Goal-oriented meal timing advice
+  - Hydration reminders based on weight and activity
+
+---
+
 ## [0.3.7] - 2025-01-20
 
 ### 🚨 **Critical Bug Fix**
