@@ -157,6 +157,8 @@ class TestStatusCommand:
     @pytest.mark.asyncio
     async def test_status_command_with_version(self):
         """Test status command displays correct version"""
+        from config import VERSION
+        
         message = Mock()
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
@@ -181,11 +183,13 @@ class TestStatusCommand:
                         assert "📊 *Your Account Status*" in call_args
                         assert "Credits remaining: *5*" in call_args
                         assert "Total paid: *100.00 RUB*" in call_args
-                        assert "🤖 System: *c0r.ai v0.3.10*" in call_args
+                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
     
     @pytest.mark.asyncio
     async def test_status_callback_with_version(self):
         """Test status callback displays correct version"""
+        from config import VERSION
+        
         callback = Mock()
         callback.message = Mock()
         callback.message.from_user.id = 123456789
@@ -210,7 +214,7 @@ class TestStatusCommand:
                         callback.answer.assert_called_once()
                         callback.message.answer.assert_called_once()
                         call_args = callback.message.answer.call_args[0][0]
-                        assert "🤖 System: *c0r.ai v0.3.10*" in call_args
+                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
     
     @pytest.mark.asyncio
     async def test_status_command_date_parsing(self):
@@ -524,9 +528,11 @@ class TestVersionConsistency:
     def test_version_import(self):
         """Test that VERSION is properly imported and accessible"""
         from config import VERSION
-        assert VERSION == "0.3.10"
         assert isinstance(VERSION, str)
         assert len(VERSION) > 0
+        # Version should follow semantic versioning pattern (x.y.z)
+        import re
+        assert re.match(r'^\d+\.\d+\.\d+$', VERSION), f"VERSION '{VERSION}' should follow semantic versioning"
     
     def test_version_format(self):
         """Test that VERSION follows semantic versioning format"""

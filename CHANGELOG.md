@@ -9,6 +9,7 @@
 - 📊 Improved nutrition insights text formatting for better Telegram compatibility
 - 🚀 Fixed deprecated `upload-artifact@v3` to `@v4` in GitHub Actions workflow
 - 🧪 Fixed CI test failures by creating dependency-free tests for critical functionality
+- 🔢 **FUTURE-PROOF**: Made all version consistency tests dynamic by reading VERSION from config.py instead of hardcoded values
 
 ### Added
 - 🧪 Created comprehensive test suite for markdown sanitization with 7 test cases

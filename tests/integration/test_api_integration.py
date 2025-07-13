@@ -23,6 +23,8 @@ class TestUserJourney:
     @pytest.mark.asyncio
     async def test_new_user_complete_flow(self):
         """Test complete flow for new user from start to nutrition insights"""
+        from config import VERSION
+        
         # Mock user
         user_id = 123456789
         username = "testuser"
@@ -70,7 +72,7 @@ class TestUserJourney:
                         call_args = message.answer.call_args[0][0]
                         assert "Credits remaining: *3*" in call_args
                         assert "Total paid: *0.00 RUB*" in call_args
-                        assert "🤖 System: *c0r.ai v0.3.10*" in call_args
+                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -339,6 +341,8 @@ class TestVersionConsistencyIntegration:
     @pytest.mark.asyncio
     async def test_version_in_status_commands(self):
         """Test that version is displayed consistently in status commands"""
+        from config import VERSION
+        
         message = Mock()
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
@@ -362,7 +366,7 @@ class TestVersionConsistencyIntegration:
                         # Verify version is displayed
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "🤖 System: *c0r.ai v0.3.10*" in call_args
+                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -386,7 +390,7 @@ class TestVersionConsistencyIntegration:
                         # Verify version is displayed in callback too
                         callback.message.answer.assert_called_once()
                         call_args = callback.message.answer.call_args[0][0]
-                        assert "🤖 System: *c0r.ai v0.3.10*" in call_args
+                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
 
 
 class TestCriticalPathsIntegration:
