@@ -45,7 +45,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             await message.answer("❌ Invalid payment plan selected.", reply_markup=create_main_menu_keyboard())
             return
 
-        logger.info(f"[Telegram] Creating invoice: title={plan['title']}, price={plan['price']}, user_id={user_id}, provider_token={YOOKASSA_PROVIDER_TOKEN[:8]}..., payload=credits_{plan_id}_{user_id}")
+        logger.info(f"[Telegram] Creating invoice: title={plan['title']}, price={plan['price']}, user_id={user_id}, provider_token={YOOKASSA_PROVIDER_TOKEN[:12]}..., payload=credits_{plan_id}_{user_id}")
 
         # Create invoice
         await message.answer_invoice(

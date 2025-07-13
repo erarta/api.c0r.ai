@@ -12,12 +12,12 @@ SYSTEM_NAME = "c0r.ai"
 SYSTEM_DESCRIPTION = "AI-powered nutrition analysis bot"
 
 # Payment Configuration - Single source of truth
-# NOTE: Set to minimum Telegram-accepted amounts for testing (normally 99 and 399 rubles)
+# Set to 99 RUB and 149 RUB for production
 PAYMENT_PLANS = {
     "basic": {
         "title": "Basic Plan",
         "description": "20 credits for food analysis",
-        "price": 1000,  # 10 RUB in kopecks (minimum Telegram amount for testing, normally 9900)
+        "price": 9900,  # 99 RUB in kopecks
         "credits": 20,
         "currency": "RUB",
         "recurring": False
@@ -25,7 +25,7 @@ PAYMENT_PLANS = {
     "pro": {
         "title": "Pro Plan", 
         "description": "100 credits for food analysis",
-        "price": 5000,  # 50 RUB in kopecks (minimum Telegram amount for testing, normally 39900)
+        "price": 14900,  # 149 RUB in kopecks
         "credits": 100,
         "currency": "RUB",
         "recurring": True,
