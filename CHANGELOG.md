@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.15] - 2024-12-18
+
+### Fixed
+- **Telegram Payment Amount Error**: Fixed `CURRENCY_TOTAL_AMOUNT_INVALID` error by setting minimum accepted amounts
+- **Payment Testing**: Updated test amounts to 10 RUB and 50 RUB (minimum Telegram-accepted amounts)
+- **Invoice Creation**: Resolved issue preventing invoice creation in Telegram payments
+
+### Changed
+- **Basic Plan**: Updated from 1 RUB to 10 RUB (minimum Telegram amount)
+- **Pro Plan**: Updated from 5 RUB to 50 RUB (minimum Telegram amount)
+- **Payment Validation**: Ensured all amounts meet Telegram's minimum requirements
+
+### Technical
+- **Minimum Amounts**: Telegram requires minimum amounts for payment processing
+- **Testing Ready**: Payment system now ready for real testing with acceptable amounts
+- **Error Resolution**: Fixed `CURRENCY_TOTAL_AMOUNT_INVALID` error in production
+
+### Note
+Current pricing is set to minimum Telegram-accepted amounts for testing.
+Will be reverted to normal pricing (99 RUB / 399 RUB) after testing completion.
+
 ## [0.3.14] - 2024-12-18
 
 ### Fixed
