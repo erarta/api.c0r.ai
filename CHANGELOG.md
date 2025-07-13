@@ -19,6 +19,19 @@
   - **New**: Created `config.py` with VERSION variable for centralized version management
   - **Updated**: All system version references now use dynamic VERSION variable
   - **Benefit**: Version updates now only require changing one variable, eliminating version inconsistencies
+
+### 🚀 **Deployment & Testing Enhancements**
+- **Mandatory Testing in Deployment**: Added comprehensive testing steps to deployment process
+  - **New**: Created full-featured `scripts/deploy.sh` with mandatory test execution
+  - **Updated**: GitHub Actions workflow now includes testing job before deployment
+  - **Protection**: Deployment is blocked if any tests fail
+  - **Impact**: Prevents broken code from reaching production
+
+- **Integration Tests Organization**: Moved and organized integration tests
+  - **Moved**: All integration tests from root to `tests/integration/` directory
+  - **New**: Created `tests/run_integration_tests.py` runner for external service tests
+  - **Updated**: Main test runner now includes external integration tests
+  - **Impact**: Better organized test structure and comprehensive coverage
   - **Current Version**: Automatically displays v0.3.10 across all system messages
 
 ### 🧪 **Comprehensive Testing System**

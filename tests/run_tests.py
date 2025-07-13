@@ -53,14 +53,21 @@ def main():
     # Run integration tests
     print("\n🔗 Running Integration Tests...")
     integration_success, integration_output = run_command(
-        "python -m pytest tests/integration/ -v --cov=api.c0r.ai/app --cov=common --cov-report=html:tests/coverage/integration_html --cov-report=json:tests/coverage/integration_coverage.json --cov-report=term-missing",
+        "python -m pytest tests/integration/test_api_integration.py -v --cov=api.c0r.ai/app --cov=common --cov-report=html:tests/coverage/integration_html --cov-report=json:tests/coverage/integration_coverage.json --cov-report=term-missing",
         "Integration tests with coverage"
+    )
+    
+    # Run external integration tests (external services)
+    print("\n🌐 Running External Integration Tests...")
+    external_success, external_output = run_command(
+        "cd tests && python run_integration_tests.py",
+        "External integration tests (DB, payments, etc.)"
     )
     
     # Run all tests together for combined coverage
     print("\n🎯 Running All Tests for Combined Coverage...")
     all_success, all_output = run_command(
-        "python -m pytest tests/ -v --cov=api.c0r.ai/app --cov=common --cov-report=html:tests/coverage/combined_html --cov-report=json:tests/coverage/combined_coverage.json --cov-report=term-missing --cov-fail-under=85",
+        "python -m pytest tests/unit/ tests/integration/test_api_integration.py -v --cov=api.c0r.ai/app --cov=common --cov-report=html:tests/coverage/combined_html --cov-report=json:tests/coverage/combined_coverage.json --cov-report=term-missing --cov-fail-under=85",
         "All tests with combined coverage"
     )
     
@@ -131,13 +138,14 @@ def main():
     
     print(f"Unit Tests: {'✅ PASSED' if unit_success else '❌ FAILED'}")
     print(f"Integration Tests: {'✅ PASSED' if integration_success else '❌ FAILED'}")
+    print(f"External Integration Tests: {'✅ PASSED' if external_success else '❌ FAILED'}")
     print(f"Overall Coverage: {'✅ PASSED' if all_success else '❌ FAILED'}")
     
     if os.path.exists(coverage_file):
         print(f"Code Coverage: {total_coverage:.1f}% {'✅ PASSED' if total_coverage >= 85 else '❌ FAILED'}")
     
     # Exit with appropriate code
-    if all_success and total_coverage >= 85:
+    if all_success and external_success and total_coverage >= 85:
         print("\n🎉 All tests passed and coverage meets requirements!")
         sys.exit(0)
     else:
