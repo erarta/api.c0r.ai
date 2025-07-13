@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.16] - 2025-01-21
+
+### Added
+- **Multilingual Support**: Complete Russian and English language support for the entire bot
+- **Automatic Language Detection**: Smart language detection based on user's country and phone number
+- **Language Switching**: User can manually switch between languages via /language command
+- **Russian-Speaking Countries**: Automatic Russian language for Russia, Belarus, Kazakhstan, Kyrgyzstan, Armenia, Azerbaijan, Georgia, Uzbekistan
+- **Phone Number Detection**: Russian language detection for +7 and 8 phone number patterns
+- **Database Language Storage**: User language preferences stored in database with country and phone number
+- **Comprehensive Translations**: All bot messages, buttons, and error messages translated to Russian
+- **Language Menu**: Interactive language selection menu with flag emojis
+
+### Changed
+- **User Experience**: Bot now responds in user's preferred language automatically
+- **Database Schema**: Added language, country, and phone_number columns to users table
+- **Message System**: All hardcoded messages replaced with i18n translation system
+- **Keyboard System**: All interactive keyboards now support multiple languages
+- **Error Messages**: Rate limiting and error messages now display in user's language
+- **Version Update**: Updated to version 0.4.2
+
+### Technical
+- **I18n System**: Created comprehensive internationalization system with i18n.py
+- **Language Detection**: Implemented smart language detection algorithm
+- **Database Migration**: Added multilingual support to database schema
+- **Translation Management**: Centralized translation system with fallback to English
+- **Language Handlers**: New language.py module for language switching functionality
+- **Updated Handlers**: All command handlers updated to use i18n system
+- **Keyboard Updates**: All keyboard functions updated to support language parameter
+
+### Database Changes
+- Added `language` column (TEXT, default 'en', check for 'en' or 'ru')
+- Added `country` column (TEXT) for language detection
+- Added `phone_number` column (TEXT) for language detection
+- Added index on language column for performance
+- Updated user_activity_summary view to include language information
+
+### Language Support
+- **English (en)**: Default language for international users
+- **Russian (ru)**: Primary language for Russian-speaking countries
+- **Automatic Detection**: Based on Telegram language_code, country, and phone patterns
+- **Manual Override**: Users can change language via /language command
+- **Persistent Storage**: Language preference saved in database
+
 ## [0.3.15] - 2024-12-18
 
 ### Fixed

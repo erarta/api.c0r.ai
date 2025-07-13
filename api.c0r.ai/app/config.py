@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 # Application Version
-VERSION = "0.3.15"
+VERSION = "0.3.16"
 
 # System information
 SYSTEM_NAME = "c0r.ai"

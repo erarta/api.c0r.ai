@@ -7,6 +7,8 @@ from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .keyboards import create_main_menu_keyboard, create_main_menu_text
+from .i18n import i18n
+from .language import detect_and_set_user_language
 from config import VERSION, PAYMENT_PLANS
 
 # /start command handler
@@ -14,7 +16,15 @@ async def start_command(message: types.Message):
     try:
         telegram_user_id = message.from_user.id
         username = message.from_user.username or "User"
-        user = await get_or_create_user(telegram_user_id)
+        
+        # Detect and set user language
+        detected_language = await detect_and_set_user_language(message)
+        
+        # Get or create user with detected language
+        user = await get_or_create_user(
+            telegram_id=telegram_user_id,
+            language=detected_language
+        )
         
         # Log user action
         await log_user_action(
@@ -23,58 +33,68 @@ async def start_command(message: types.Message):
             metadata={
                 "username": username,
                 "first_name": message.from_user.first_name,
-                "credits_remaining": user['credits_remaining']
+                "credits_remaining": user['credits_remaining'],
+                "language": detected_language
             }
         )
         
-        # Create interactive welcome message
+        # Get user's preferred language (from database or detected)
+        user_language = user.get('language', detected_language)
+        
+        # Create interactive welcome message using i18n
         welcome_text = (
-            f"🎉 **Welcome to c0r.ai Food Analyzer!**\n\n"
-            f"👋 Hello {message.from_user.first_name}!\n"
-            f"💳 You have **{user['credits_remaining']} credits** remaining\n\n"
-            f"🍎 **What I can do:**\n"
-            f"• Analyze your food photos for calories, protein, fats, carbs\n"
-            f"• Calculate your daily calorie needs\n"
-            f"• Track your nutrition goals\n\n"
-            f"🚀 **Ready to start?** Choose an option below:"
+            f"{i18n.get_text('welcome_title', user_language)}\n\n"
+            f"{i18n.get_text('welcome_greeting', user_language, name=message.from_user.first_name)}\n"
+            f"{i18n.get_text('welcome_credits', user_language, credits=user['credits_remaining'])}\n\n"
+            f"{i18n.get_text('welcome_features', user_language)}\n"
+            f"{i18n.get_text('welcome_feature_1', user_language)}\n"
+            f"{i18n.get_text('welcome_feature_2', user_language)}\n"
+            f"{i18n.get_text('welcome_feature_3', user_language)}\n\n"
+            f"{i18n.get_text('welcome_ready', user_language)}"
         )
         
-        # Create interactive keyboard
+        # Create interactive keyboard with translated buttons
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text="🍕 Analyze Food Photo",
+                    text=i18n.get_text("btn_analyze_food", user_language),
                     callback_data="action_analyze_info"
                 )
             ],
             [
                 types.InlineKeyboardButton(
-                    text="📊 Check My Status",
+                    text=i18n.get_text("btn_check_status", user_language),
                     callback_data="action_status"
                 ),
                 types.InlineKeyboardButton(
-                    text="ℹ️ Help & Guide",
+                    text=i18n.get_text("btn_help_guide", user_language),
                     callback_data="action_help"
                 )
             ],
             [
                 types.InlineKeyboardButton(
-                    text="💳 Buy More Credits",
+                    text=i18n.get_text("btn_buy_credits", user_language),
                     callback_data="action_buy"
                 ),
                 types.InlineKeyboardButton(
-                    text="👤 My Profile",
+                    text=i18n.get_text("btn_my_profile", user_language),
                     callback_data="action_profile"
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_language", user_language),
+                    callback_data="action_language"
                 )
             ]
         ])
         
         await message.answer(welcome_text, parse_mode="Markdown", reply_markup=keyboard)
-        logger.info(f"/start by user {telegram_user_id} (@{username})")
+        logger.info(f"/start by user {telegram_user_id} (@{username}) with language {user_language}")
         
     except Exception as e:
         logger.error(f"Error in /start: {e}")
-        await message.answer("An error occurred. Please try again later.")
+        await message.answer(i18n.get_text("error_general", "en"))
 
 # /help command handler
 async def help_command(message: types.Message):
@@ -82,48 +102,53 @@ async def help_command(message: types.Message):
         telegram_user_id = message.from_user.id
         user = await get_or_create_user(telegram_user_id)
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
         # Log user action
         await log_user_action(
             user_id=user['id'],
             action_type="help",
             metadata={
                 "username": message.from_user.username,
-                "credits_remaining": user['credits_remaining']
+                "credits_remaining": user['credits_remaining'],
+                "language": user_language
             }
         )
         
+        # Create help text using i18n
         help_text = (
-            "🤖 **c0r.ai Food Analyzer - Help Guide**\n\n"
-            "📸 **How to use:**\n"
-            "1. Send me a food photo\n"
-            "2. I'll analyze calories, protein, fats, and carbs\n"
-            "3. Get instant nutrition information\n\n"
-            "🆓 **Free credits:**\n"
-            "• You start with 3 free credits\n"
-            "• Each photo analysis costs 1 credit\n\n"
-            "🎯 **Features:**\n"
-            "• Accurate calorie counting\n"
-            "• Detailed macro breakdown\n"
-            "• Daily calorie calculation\n"
-            "• Personal nutrition tracking\n\n"
-            "💡 **Commands:**\n"
-            "• /start - Main menu with interactive buttons\n"
-            "• /help - This help guide\n"
-            "• /status - Check your account status\n"
-            "• /buy - Purchase more credits\n"
-            "• /profile - Set up your personal profile\n"
-            "• /daily - View daily nutrition plan & progress\n\n"
-            "💳 **Need more credits?**\n"
-            "Use /buy to purchase additional credits when you run out.\n\n"
-            "📞 **Support:** Contact team@c0r.ai"
+            f"{i18n.get_text('help_title', user_language)}\n\n"
+            f"{i18n.get_text('help_usage_title', user_language)}\n"
+            f"{i18n.get_text('help_usage_1', user_language)}\n"
+            f"{i18n.get_text('help_usage_2', user_language)}\n"
+            f"{i18n.get_text('help_usage_3', user_language)}\n\n"
+            f"{i18n.get_text('help_credits_title', user_language)}\n"
+            f"{i18n.get_text('help_credits_1', user_language)}\n"
+            f"{i18n.get_text('help_credits_2', user_language)}\n\n"
+            f"{i18n.get_text('help_features_title', user_language)}\n"
+            f"{i18n.get_text('help_features_1', user_language)}\n"
+            f"{i18n.get_text('help_features_2', user_language)}\n"
+            f"{i18n.get_text('help_features_3', user_language)}\n"
+            f"{i18n.get_text('help_features_4', user_language)}\n\n"
+            f"{i18n.get_text('help_commands_title', user_language)}\n"
+            f"{i18n.get_text('help_commands_1', user_language)}\n"
+            f"{i18n.get_text('help_commands_2', user_language)}\n"
+            f"{i18n.get_text('help_commands_3', user_language)}\n"
+            f"{i18n.get_text('help_commands_4', user_language)}\n"
+            f"{i18n.get_text('help_commands_5', user_language)}\n"
+            f"{i18n.get_text('help_commands_6', user_language)}\n\n"
+            f"{i18n.get_text('help_credits_need', user_language)}\n"
+            f"{i18n.get_text('help_credits_info', user_language)}\n\n"
+            f"{i18n.get_text('help_support', user_language)}"
         )
         
         await message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
-        logger.info(f"/help by user {telegram_user_id}")
+        logger.info(f"/help by user {telegram_user_id} with language {user_language}")
         
     except Exception as e:
         logger.error(f"Error in /help: {e}")
-        await message.answer("An error occurred. Please try again later.")
+        await message.answer(i18n.get_text("error_general", "en"))
 
 # Help callback handler - handles button clicks
 async def help_callback(callback: types.CallbackQuery):
@@ -184,6 +209,9 @@ async def status_command(message: types.Message):
         user = await get_or_create_user(telegram_user_id)
         logger.info(f"User {telegram_user_id} data from database: {user}")
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
         # Get actual total paid from payments table
         total_paid = await get_user_total_paid(user['id'])
         
@@ -194,7 +222,8 @@ async def status_command(message: types.Message):
             metadata={
                 "username": message.from_user.username,
                 "credits_remaining": user['credits_remaining'],
-                "total_paid": total_paid
+                "total_paid": total_paid,
+                "language": user_language
             }
         )
         
@@ -210,25 +239,26 @@ async def status_command(message: types.Message):
         else:
             created_date = 'Unknown'
         
+        # Create status text using i18n
         status_text = (
-            f"📊 *Your Account Status*\n\n"
-            f"🆔 User ID: `{telegram_user_id}`\n"
-            f"💳 Credits remaining: *{user['credits_remaining']}*\n"
-            f"💰 Total paid: *{total_paid:.2f} RUB*\n"
-            f"📅 Member since: `{created_date}`\n\n"
-            f"🤖 System: *c0r.ai v{VERSION}*\n"
-            f"🌐 Status: *Online*\n"
-            f"⚡ Powered by c0r AI Vision"
+            f"{i18n.get_text('status_title', user_language)}\n\n"
+            f"{i18n.get_text('status_user_id', user_language, user_id=telegram_user_id)}\n"
+            f"{i18n.get_text('status_credits', user_language, credits=user['credits_remaining'])}\n"
+            f"{i18n.get_text('status_total_paid', user_language, total_paid=total_paid)}\n"
+            f"{i18n.get_text('status_member_since', user_language, date=created_date)}\n\n"
+            f"{i18n.get_text('status_system', user_language, version=VERSION)}\n"
+            f"{i18n.get_text('status_online', user_language)}\n"
+            f"{i18n.get_text('status_powered_by', user_language)}"
         )
         
-        logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")
+        logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}, language={user_language}")
         await message.answer(status_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
         
     except Exception as e:
         logger.error(f"Error in /status for user {telegram_user_id}: {e}")
         import traceback
         logger.error(f"Status command error traceback: {traceback.format_exc()}")
-        await message.answer("An error occurred while fetching your status. Please try again later.")
+        await message.answer(i18n.get_text("error_status", "en"))
 
 # Status callback handler - handles button clicks
 async def status_callback(callback: types.CallbackQuery):
@@ -571,8 +601,14 @@ async def handle_action_callback(callback: types.CallbackQuery):
             await water_tracker_callback(callback)
         elif action == "main_menu":
             # Show main menu
-            menu_text, menu_keyboard = create_main_menu_text()
+            user = await get_or_create_user(telegram_user_id)
+            user_language = user.get('language', 'en')
+            menu_text, menu_keyboard = create_main_menu_text(user_language)
             await callback.message.answer(menu_text, parse_mode="Markdown", reply_markup=menu_keyboard)
+        elif action == "language":
+            # Handle language selection
+            from .language import language_command
+            await language_command(callback.message)
         
         logger.info(f"Action callback '{action}' handled for user {telegram_user_id}")
         

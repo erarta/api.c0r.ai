@@ -18,6 +18,8 @@ from handlers.profile import (
 )
 from handlers.daily import daily_command, handle_daily_callback
 from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command
+from handlers.language import language_command, handle_language_callback
+from handlers.i18n import i18n
 from loguru import logger
 
 # Must be set in .env file
@@ -89,15 +91,23 @@ async def rate_limit_middleware(handler, event, data: dict):
     message = event
     user_id = message.from_user.id
     
+    # Get user's language (default to English for rate limit messages)
+    user_language = "en"
+    try:
+        from common.supabase_client import get_user_by_telegram_id
+        user = await get_user_by_telegram_id(user_id)
+        if user and user.get('language'):
+            user_language = user['language']
+    except:
+        pass  # Use default English if we can't get user language
+    
     # Check for photo requests
     if message.photo:
         if rate_limiter.is_rate_limited(user_id, "photo"):
             remaining = rate_limiter.get_remaining_time(user_id, "photo")
             await message.answer(
-                f"⏳ **Photo analysis rate limit reached!**\n\n"
-                f"🚫 You can analyze maximum 5 photos per minute\n"
-                f"⏰ Try again in {remaining} seconds\n\n"
-                f"💡 This prevents system overload and ensures fair usage for all users.",
+                f"{i18n.get_text('error_rate_limit_photo_title', user_language)}\n\n"
+                f"{i18n.get_text('error_rate_limit_photo', user_language, remaining=remaining)}",
                 parse_mode="Markdown"
             )
             logger.warning(f"Rate limit hit for photo analysis by user {user_id}")
@@ -107,9 +117,8 @@ async def rate_limit_middleware(handler, event, data: dict):
         if rate_limiter.is_rate_limited(user_id, "general"):
             remaining = rate_limiter.get_remaining_time(user_id, "general")
             await message.answer(
-                f"⏳ **Too many requests!**\n\n"
-                f"🚫 Maximum 20 commands per minute\n"
-                f"⏰ Try again in {remaining} seconds",
+                f"{i18n.get_text('error_rate_limit_title', user_language)}\n\n"
+                f"{i18n.get_text('error_rate_limit_general', user_language, remaining=remaining)}",
                 parse_mode="Markdown"
             )
             logger.warning(f"Rate limit hit for general commands by user {user_id}")
@@ -131,6 +140,7 @@ dp.message.register(daily_command, Command(commands=["daily"]))
 dp.message.register(nutrition_insights_command, Command(commands=["insights"]))
 dp.message.register(weekly_report_command, Command(commands=["report"]))
 dp.message.register(water_tracker_command, Command(commands=["water"]))
+dp.message.register(language_command, Command(commands=["language"]))
 
 # Photo handler (only for photos, not documents)
 dp.message.register(photo_handler, lambda message: message.photo)
@@ -150,10 +160,18 @@ async def reject_non_photo(message: types.Message):
     elif message.sticker:
         file_type = "sticker"
     
+    # Get user's language (default to English)
+    user_language = "en"
+    try:
+        from common.supabase_client import get_user_by_telegram_id
+        user = await get_user_by_telegram_id(message.from_user.id)
+        if user and user.get('language'):
+            user_language = user['language']
+    except:
+        pass
+    
     await message.answer(
-        f"❌ **File type not supported: {file_type}**\n\n"
-        f"🖼️ **Please send only photos** for food analysis.\n"
-        f"💡 Make sure to use the 📷 **Photo** option in Telegram, not 📎 **File/Document**.",
+        f"{i18n.get_text('error_file_type', user_language, file_type=file_type)}",
         parse_mode="Markdown"
     )
     logger.warning(f"User {message.from_user.id} tried to send {file_type}")
@@ -178,6 +196,7 @@ dp.callback_query.register(process_gender, lambda callback: callback.data.starts
 dp.callback_query.register(process_activity, lambda callback: callback.data.startswith("activity_"))
 dp.callback_query.register(process_goal, lambda callback: callback.data.startswith("goal_"))
 dp.callback_query.register(handle_daily_callback, lambda callback: callback.data.startswith("daily_"))
+dp.callback_query.register(handle_language_callback, lambda callback: callback.data.startswith("language_"))
 
 # Payment handlers
 dp.pre_checkout_query.register(handle_pre_checkout_query)
