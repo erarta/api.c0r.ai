@@ -19,7 +19,9 @@ COMMENT ON COLUMN users.country IS 'User country code for language detection';
 COMMENT ON COLUMN users.phone_number IS 'User phone number for language detection';
 
 -- Обновить view для включения информации о языке
-CREATE OR REPLACE VIEW user_activity_summary AS
+-- Сначала удаляем существующий view, затем создаем новый
+DROP VIEW IF EXISTS user_activity_summary;
+CREATE VIEW user_activity_summary AS
 SELECT 
     u.telegram_id,
     u.credits_remaining,
