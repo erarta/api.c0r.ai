@@ -38,7 +38,12 @@ async def nutrition_insights_command(message: types.Message):
         
         # Check if we have enough data for nutrition insights
         required_fields = ['age', 'weight_kg', 'height_cm', 'gender', 'activity_level', 'goal']
-        missing_fields = [field for field in required_fields if not profile.get(field)]
+        
+        # If profile is None, all fields are missing
+        if profile is None:
+            missing_fields = required_fields
+        else:
+            missing_fields = [field for field in required_fields if not profile.get(field)]
         
         if missing_fields:
             await message.answer(

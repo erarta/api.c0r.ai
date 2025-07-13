@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.10] - 2025-01-20
+
+### 🐛 **Critical Bug Fixes**
+- **Fixed Nutrition Insights NoneType Error**: Resolved crash when users without profiles tried to access nutrition insights
+  - **Error**: `'NoneType' object has no attribute 'get'` when profile is None
+  - **Fix**: Added proper None check before calling profile.get() method
+  - **Impact**: Users can now safely access nutrition insights feature and get clear profile setup guidance
+
+### 🔧 **Technical Improvements**
+- **Dynamic Version Management**: Implemented centralized version system
+  - **New**: Created `config.py` with VERSION variable for centralized version management
+  - **Updated**: All system version references now use dynamic VERSION variable
+  - **Benefit**: Version updates now only require changing one variable, eliminating version inconsistencies
+  - **Current Version**: Automatically displays v0.3.10 across all system messages
+
+### 📋 **Code Quality**
+- **Better Error Handling**: Enhanced profile validation in nutrition insights
+- **Centralized Configuration**: Improved maintainability with config.py
+- **Automated Testing**: Added test suite for nutrition insights bug fix verification
+
+---
+
 ## [0.3.9] - 2025-01-20
 
 ### 💪 **Motivational UX Enhancements**

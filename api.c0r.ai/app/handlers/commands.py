@@ -7,6 +7,7 @@ from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .keyboards import create_main_menu_keyboard, create_main_menu_text
+from config import VERSION
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -215,7 +216,7 @@ async def status_command(message: types.Message):
             f"💳 Credits remaining: *{user['credits_remaining']}*\n"
             f"💰 Total paid: *{total_paid:.2f} RUB*\n"
             f"📅 Member since: `{created_date}`\n\n"
-            f"🤖 System: *c0r.ai v0.3.5*\n"
+            f"🤖 System: *c0r.ai v{VERSION}*\n"
             f"🌐 Status: *Online*\n"
             f"⚡ Powered by c0r AI Vision"
         )
@@ -271,7 +272,7 @@ async def status_callback(callback: types.CallbackQuery):
             f"💳 Credits remaining: *{user['credits_remaining']}*\n"
             f"💰 Total paid: *{total_paid:.2f} RUB*\n"
             f"📅 Member since: `{created_date}`\n\n"
-            f"🤖 System: *c0r.ai v0.3.5*\n"
+            f"🤖 System: *c0r.ai v{VERSION}*\n"
             f"🌐 Status: *Online*\n"
             f"⚡ Powered by c0r AI Vision"
         )
