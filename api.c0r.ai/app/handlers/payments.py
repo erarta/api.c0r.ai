@@ -9,6 +9,7 @@ from common.supabase_client import get_or_create_user, add_credits, add_payment,
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
 from config import PAYMENT_PLANS
 import traceback
+import json
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -47,6 +48,26 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
 
         logger.info(f"[Telegram] Creating invoice: title={plan['title']}, price={plan['price']}, user_id={user_id}, provider_token={YOOKASSA_PROVIDER_TOKEN[:12]}..., payload=credits_{plan_id}_{user_id}")
 
+        # Prepare provider_data for YooKassa receipt
+        provider_data = json.dumps({
+            "receipt": {
+                "items": [
+                    {
+                        "description": plan["description"],
+                        "quantity": 1,
+                        "amount": {
+                            "value": plan["price"] // 100,  # RUB, not kopecks
+                            "currency": "RUB"
+                        },
+                        "vat_code": 1,
+                        "payment_mode": "full_payment",
+                        "payment_subject": "commodity"
+                    }
+                ],
+                "tax_system_code": 1
+            }
+        })
+
         # Create invoice
         await message.answer_invoice(
             title=plan["title"],
@@ -64,7 +85,9 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             photo_url="https://api.c0r.ai/assets/logo_v2.png",
             photo_width=512,
             photo_height=512,
-            need_email=False,
+            need_email=True,
+            send_email_to_provider=True,
+            provider_data=provider_data,
             need_phone_number=False,
             need_shipping_address=False,
             is_flexible=False

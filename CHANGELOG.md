@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.17] - 2025-01-21
+
+### Fixed
+- **YooKassa/Telegram Payments**: Payments now work with auto-receipt (фискализация) enabled in YooKassa
+- **Receipt Data**: Added provider_data with full receipt (items, tax_system_code, vat_code, etc.) to all Telegram invoices
+- **Email Collection**: Enabled need_email and send_email_to_provider so Telegram collects user email for receipt delivery automatically
+- **Amount Format**: Fixed amount formatting in provider_data (now always in RUB, not kopecks)
+- **Production Payment Reliability**: Payments now pass all YooKassa and Telegram requirements for production
+
+### Changed
+- **Payment Plan Prices**: Set Basic Plan to 99 RUB, Pro Plan to 149 RUB for production
+- **Detailed Logging**: Added logging of provider_token and all payment parameters for easier debugging
+
+### Technical
+- **provider_data**: Now always included in answer_invoice for Telegram/YooKassa payments
+- **Email via Telegram**: No need to collect email in chat, Telegram form handles it
+- **Compliant with YooKassa Docs**: Integration now matches YooKassa/Telegram fiscalization requirements
+
+### Note
+- Payments with auto-receipt (фискализация) now fully supported for Russian users
+- If YooKassa settings change, only provider_data and price in config.py need to be updated
+
 ## [0.3.16] - 2025-01-21
 
 ### Added
