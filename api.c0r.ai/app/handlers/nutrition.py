@@ -5,13 +5,14 @@ Provides BMI, ideal weight, water needs, macro distribution, and recommendations
 
 from aiogram import types
 from loguru import logger
-from common.supabase_client import get_user_with_profile, log_user_action
+from common.supabase_client import get_user_with_profile, log_user_action, get_or_create_user
 from common.nutrition_calculations import (
     calculate_bmi, calculate_ideal_weight, calculate_water_needs,
     calculate_macro_distribution, calculate_metabolic_age,
     calculate_meal_portions, get_nutrition_recommendations
 )
 from .keyboards import create_main_menu_keyboard
+from .i18n import i18n
 from datetime import datetime, timedelta
 import re
 
@@ -47,11 +48,12 @@ async def nutrition_insights_command(message: types.Message):
             missing_fields = [field for field in required_fields if not profile.get(field)]
         
         if missing_fields:
+            # Get user's language
+            user = await get_or_create_user(message.from_user.id)
+            user_language = user.get('language', 'en')
+            
             await message.answer(
-                "🔍 **Nutrition Insights**\n\n"
-                f"Almost ready! Please complete your profile to get personalized analysis.\n\n"
-                f"**Missing:** {', '.join(missing_fields)}\n\n"
-                "Use /profile to complete your information.",
+                i18n.get_text("nutrition_incomplete", user_language, missing_fields=', '.join(missing_fields)),
                 parse_mode="Markdown",
                 reply_markup=create_main_menu_keyboard()
             )
@@ -68,10 +70,12 @@ async def nutrition_insights_command(message: types.Message):
         
     except Exception as e:
         logger.error(f"Error in nutrition_insights_command: {e}")
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
-            "❌ **Error**\n\n"
-            "Sorry, there was an error generating your nutrition insights.\n\n"
-            "Please try again or contact support if the problem persists.",
+            i18n.get_text("nutrition_error", user_language),
             parse_mode="Markdown",
             reply_markup=create_main_menu_keyboard()
         )
@@ -110,11 +114,12 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
             missing_fields = [field for field in required_fields if not profile.get(field)]
         
         if missing_fields:
+            # Get user's language
+            user = await get_or_create_user(callback.from_user.id)
+            user_language = user.get('language', 'en')
+            
             await callback.message.answer(
-                "🔍 **Nutrition Insights**\n\n"
-                f"Almost ready! Please complete your profile to get personalized analysis.\n\n"
-                f"**Missing:** {', '.join(missing_fields)}\n\n"
-                "Use /profile to complete your information.",
+                i18n.get_text("nutrition_incomplete", user_language, missing_fields=', '.join(missing_fields)),
                 parse_mode="Markdown",
                 reply_markup=create_main_menu_keyboard()
             )
@@ -131,10 +136,12 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in nutrition_insights_callback: {e}")
+        # Get user's language
+        user = await get_or_create_user(callback.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await callback.message.answer(
-            "❌ **Error**\n\n"
-            "Sorry, there was an error generating your nutrition insights.\n\n"
-            "Please try again or contact support if the problem persists.",
+            i18n.get_text("nutrition_error", user_language),
             parse_mode="Markdown",
             reply_markup=create_main_menu_keyboard()
         )

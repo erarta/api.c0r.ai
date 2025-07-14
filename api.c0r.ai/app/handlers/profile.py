@@ -10,8 +10,10 @@ from common.supabase_client import (
     get_user_with_profile, 
     create_or_update_profile, 
     log_user_action,
-    calculate_daily_calories
+    calculate_daily_calories,
+    get_or_create_user
 )
+from .i18n import i18n
 
 # FSM States for profile setup
 class ProfileStates(StatesGroup):
@@ -56,7 +58,10 @@ async def profile_command(message: types.Message, state: FSMContext):
             
     except Exception as e:
         logger.error(f"Error in /profile command for user {telegram_user_id}: {e}")
-        await message.answer("❌ An error occurred. Please try again later.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language))
 
 async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     """Show profile menu for existing profile"""
@@ -185,7 +190,10 @@ async def handle_profile_callback(callback: types.CallbackQuery, state: FSMConte
         
     except Exception as e:
         logger.error(f"Error in profile callback: {e}")
-        await callback.answer("❌ An error occurred. Please try again later.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await callback.answer(i18n.get_text("error_general", user_language))
 
 async def start_profile_setup(message: types.Message, state: FSMContext, telegram_user_id: int):
     """Start profile setup process"""
@@ -193,9 +201,12 @@ async def start_profile_setup(message: types.Message, state: FSMContext, telegra
     await state.clear()
     await state.set_state(ProfileStates.waiting_for_age)
     
+    # Get user's language
+    user = await get_or_create_user(telegram_user_id)
+    user_language = user.get('language', 'en')
+    
     await message.answer(
-        f"👶 **Step 1/6: Your Age**\n\n"
-        f"Please enter your age in years (e.g., 25):",
+        i18n.get_text("profile_setup_age", user_language),
         parse_mode="Markdown"
     )
 
@@ -252,7 +263,10 @@ async def recalculate_calories(message: types.Message, telegram_user_id: int):
         
     except Exception as e:
         logger.error(f"Error recalculating calories for user {telegram_user_id}: {e}")
-        await message.answer("❌ An error occurred while recalculating. Please try again.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language))
 
 async def profile_skip(message: types.Message, telegram_user_id: int):
     """Handle profile setup skip"""
@@ -321,7 +335,10 @@ async def profile_skip(message: types.Message, telegram_user_id: int):
         
     except Exception as e:
         logger.error(f"Error in profile_skip for user {telegram_user_id}: {e}")
-        await message.answer("❌ An error occurred. Please try again later.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language))
 
 async def profile_main_menu(message: types.Message, telegram_user_id: int):
     """Return to main menu"""
@@ -370,7 +387,10 @@ async def show_progress(message: types.Message, telegram_user_id: int):
         
     except Exception as e:
         logger.error(f"Error showing progress for user {telegram_user_id}: {e}")
-        await message.answer("❌ An error occurred while loading progress.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language))
 
 # FSM handlers for profile setup steps
 async def process_age(message: types.Message, state: FSMContext):
@@ -378,9 +398,12 @@ async def process_age(message: types.Message, state: FSMContext):
     try:
         age = int(message.text.strip())
         if age < 10 or age > 120:
+            # Get user's language
+            user = await get_or_create_user(message.from_user.id)
+            user_language = user.get('language', 'en')
+            
             await message.answer(
-                "❌ **Invalid age**\n\n"
-                "Please enter an age between 10 and 120 years:",
+                i18n.get_text("profile_error_age", user_language),
                 parse_mode="Markdown"
             )
             return
@@ -398,18 +421,24 @@ async def process_age(message: types.Message, state: FSMContext):
             ]
         ])
         
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
             f"✅ Age: {age} years\n\n"
-            f"👤 **Step 2/6: Your Gender**\n\n"
-            f"Please select your gender:",
+            f"{i18n.get_text('profile_setup_gender', user_language)}",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
         
     except ValueError:
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
-            "❌ **Invalid input**\n\n"
-            "Please enter your age as a number (e.g., 25):",
+            i18n.get_text("profile_error_age_number", user_language),
             parse_mode="Markdown"
         )
 
@@ -424,11 +453,14 @@ async def process_gender(callback: types.CallbackQuery, state: FSMContext):
     # Move to next step - height
     await state.set_state(ProfileStates.waiting_for_height)
     
+    # Get user's language
+    user = await get_or_create_user(callback.from_user.id)
+    user_language = user.get('language', 'en')
+    
     await callback.answer()
     await callback.message.answer(
         f"✅ Gender: {gender_label}\n\n"
-        f"📏 **Step 3/6: Your Height**\n\n"
-        f"Please enter your height in centimeters (e.g., 175):",
+        f"{i18n.get_text('profile_setup_height', user_language)}",
         parse_mode="Markdown"
     )
 
@@ -437,9 +469,12 @@ async def process_height(message: types.Message, state: FSMContext):
     try:
         height = int(message.text.strip())
         if height < 100 or height > 250:
+            # Get user's language
+            user = await get_or_create_user(message.from_user.id)
+            user_language = user.get('language', 'en')
+            
             await message.answer(
-                "❌ **Invalid height**\n\n"
-                "Please enter height between 100 and 250 cm:",
+                i18n.get_text("profile_error_height", user_language),
                 parse_mode="Markdown"
             )
             return
@@ -450,17 +485,23 @@ async def process_height(message: types.Message, state: FSMContext):
         # Move to next step - weight
         await state.set_state(ProfileStates.waiting_for_weight)
         
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
             f"✅ Height: {height} cm\n\n"
-            f"⚖️ **Step 4/6: Your Weight**\n\n"
-            f"Please enter your weight in kilograms (e.g., 70 or 70.5):",
+            f"{i18n.get_text('profile_setup_weight', user_language)}",
             parse_mode="Markdown"
         )
         
     except ValueError:
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
-            "❌ **Invalid input**\n\n"
-            "Please enter your height as a number in centimeters (e.g., 175):",
+            i18n.get_text("profile_error_height_number", user_language),
             parse_mode="Markdown"
         )
 
@@ -469,9 +510,12 @@ async def process_weight(message: types.Message, state: FSMContext):
     try:
         weight = float(message.text.strip().replace(',', '.'))
         if weight < 30 or weight > 300:
+            # Get user's language
+            user = await get_or_create_user(message.from_user.id)
+            user_language = user.get('language', 'en')
+            
             await message.answer(
-                "❌ **Invalid weight**\n\n"
-                "Please enter weight between 30 and 300 kg:",
+                i18n.get_text("profile_error_weight", user_language),
                 parse_mode="Markdown"
             )
             return
@@ -490,23 +534,24 @@ async def process_weight(message: types.Message, state: FSMContext):
             [types.InlineKeyboardButton(text="🏋️ Extremely Active", callback_data="activity_extremely_active")]
         ])
         
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
             f"✅ Weight: {weight} kg\n\n"
-            f"🏃 **Step 5/6: Activity Level**\n\n"
-            f"Please select your typical activity level:\n\n"
-            f"😴 **Sedentary** - Little/no exercise\n"
-            f"🚶 **Lightly Active** - Light exercise 1-3 days/week\n"
-            f"🏃 **Moderately Active** - Moderate exercise 3-5 days/week\n"
-            f"💪 **Very Active** - Hard exercise 6-7 days/week\n"
-            f"🏋️ **Extremely Active** - Very hard exercise + physical job",
+            f"{i18n.get_text('profile_setup_activity', user_language)}",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
         
     except ValueError:
+        # Get user's language
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        
         await message.answer(
-            "❌ **Invalid input**\n\n"
-            "Please enter your weight as a number (e.g., 70 or 70.5):",
+            i18n.get_text("profile_error_weight_number", user_language),
             parse_mode="Markdown"
         )
 
@@ -534,11 +579,14 @@ async def process_activity(callback: types.CallbackQuery, state: FSMContext):
         [types.InlineKeyboardButton(text="📈 Gain Weight", callback_data="goal_gain_weight")]
     ])
     
+    # Get user's language
+    user = await get_or_create_user(callback.from_user.id)
+    user_language = user.get('language', 'en')
+    
     await callback.answer()
     await callback.message.answer(
         f"✅ Activity Level: {activity_label}\n\n"
-        f"🎯 **Step 6/6: Your Goal**\n\n"
-        f"What is your primary goal?",
+        f"{i18n.get_text('profile_setup_goal', user_language)}",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
@@ -592,6 +640,10 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
         }
         activity_label = activity_labels.get(data['activity_level'], data['activity_level'])
         
+        # Get user's language
+        user = await get_or_create_user(callback.from_user.id)
+        user_language = user.get('language', 'en')
+        
         success_text = (
             f"🎉 **Profile {'Created' if was_created else 'Updated'} Successfully!**\n\n"
             f"📊 **Your Profile Summary:**\n"
@@ -631,5 +683,8 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
         
     except Exception as e:
         logger.error(f"Error saving profile for user {telegram_user_id}: {e}")
-        await callback.answer("❌ An error occurred while saving your profile. Please try again.")
+        # Get user's language for error message
+        user = await get_or_create_user(callback.from_user.id)
+        user_language = user.get('language', 'en')
+        await callback.answer(i18n.get_text("error_general", user_language))
         await state.clear() 

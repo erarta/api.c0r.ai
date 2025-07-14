@@ -10,6 +10,7 @@ from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
 from utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
+from .i18n import i18n
 from config import PAYMENT_PLANS
 
 # All values must be set in .env file
@@ -97,7 +98,11 @@ async def photo_handler(message: types.Message):
         # Download photo file
         file = await message.bot.get_file(photo.file_id)
         
-        await message.answer("Uploading and analyzing your photo... ⏳")
+        # Get user's language
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        
+        await message.answer(i18n.get_text("photo_uploading", user_language))
         logger.info(f"Starting photo upload and analysis for user {telegram_user_id}")
         
         # Upload photo to R2 storage
@@ -120,7 +125,8 @@ async def photo_handler(message: types.Message):
             }
             data = {
                 "telegram_user_id": str(telegram_user_id),  # ← ИСПРАВЛЕНО: "user_id" -> "telegram_user_id"
-                "provider": "openai"
+                "provider": "openai",
+                "user_language": user_language
             }
             response = await client.post(
                 f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}", 
@@ -136,14 +142,10 @@ async def photo_handler(message: types.Message):
         if not kbzhu:
             # No food detected scenario
             await message.answer(
-                "🤔 **No food detected in this photo**\n\n"
-                "📸 **Tips for better results:**\n"
-                "• Make sure the food is clearly visible\n"
-                "• Use good lighting\n"
-                "• Focus on the food, not the background\n"
-                "• Try taking the photo from above\n\n"
-                "📤 **Try again with a clearer photo!**\n\n"
-                "💡 *Don't worry - your credit wasn't used since no food was detected.*",
+                f"{i18n.get_text('photo_no_food_title', user_language)}\n\n"
+                f"{i18n.get_text('photo_no_food_tips', user_language)}\n\n"
+                f"{i18n.get_text('photo_no_food_try_again', user_language)}\n\n"
+                f"{i18n.get_text('photo_no_food_credit', user_language)}",
                 parse_mode="Markdown",
                 reply_markup=create_main_menu_keyboard()
             )
@@ -164,9 +166,7 @@ async def photo_handler(message: types.Message):
         # Check if KBZHU data is valid
         if not isinstance(kbzhu, dict) or not any(kbzhu.values()):
             await message.answer(
-                "❌ **Analysis failed**\n\n"
-                "The food analysis couldn't be completed properly. Please try again with a clearer photo.\n\n"
-                "💡 *Your credit wasn't used since the analysis failed.*",
+                f"{i18n.get_text('photo_analysis_failed', user_language)}",
                 parse_mode="Markdown",
                 reply_markup=create_main_menu_keyboard()
             )
@@ -266,18 +266,14 @@ async def photo_handler(message: types.Message):
     except httpx.HTTPStatusError as e:
         logger.error(f"API error for user {telegram_user_id}: {e.response.status_code} {e.response.text}")
         await message.answer(
-            "❌ **Analysis service temporarily unavailable**\n\n"
-            "Please try again in a few minutes.\n\n"
-            "💡 *Your credit wasn't used since the analysis failed.*",
+            f"{i18n.get_text('photo_service_unavailable', user_language)}",
             parse_mode="Markdown",
             reply_markup=create_main_menu_keyboard()
         )
     except Exception as e:
         logger.error(f"Photo handler error for user {telegram_user_id}: {e}")
         await message.answer(
-            "❌ **An error occurred during analysis**\n\n"
-            "Please try again later.\n\n"
-            "💡 *Your credit wasn't used since the analysis failed.*",
+            f"{i18n.get_text('photo_error_analysis', user_language)}",
             parse_mode="Markdown",
             reply_markup=create_main_menu_keyboard()
         )

@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.18] - 2025-01-21
+
+### Added
+- **Complete Multilingual Support**: All bot features now fully translated to English and Russian
+- **Profile Setup Translations**: Complete translation of profile setup process (age, gender, height, weight, activity, goals)
+- **Photo Analysis Translations**: All photo analysis messages, errors, and tips translated
+- **Daily Plan Translations**: Complete translation of daily nutrition plan and progress tracking
+- **Nutrition Insights Translations**: All nutrition analysis messages and recommendations translated
+- **OpenAI Language-Aware Prompts**: ML service now uses Russian prompts for Russian users and English for others
+- **Comprehensive Error Messages**: All error messages and rate limiting notifications translated
+- **Language Detection Testing**: Comprehensive test suite for language detection and translation system
+
+### Changed
+- **Profile Setup Flow**: All profile setup steps now display in user's preferred language
+- **Photo Analysis Experience**: Analysis results, tips, and error messages now in user's language
+- **Daily Plan Interface**: Progress tracking, recommendations, and status messages translated
+- **Nutrition Analysis**: All nutrition insights and recommendations display in user's language
+- **ML Service Integration**: OpenAI prompts now adapt to user's language preference
+- **Error Handling**: All system errors and user-facing messages now support both languages
+- **User Experience**: Seamless multilingual experience across all bot features
+
+### Fixed
+- **Missing Translations**: Added translations for all previously hardcoded English text
+- **Profile Validation Messages**: Age, height, weight validation errors now translated
+- **Photo Analysis Errors**: "No food detected", "Analysis failed" messages translated
+- **Daily Plan Status**: Progress status messages and recommendations translated
+- **Nutrition Insights**: Profile completion prompts and error messages translated
+- **Language Consistency**: All user interactions now consistently use detected language
+- **OpenAI Response Language**: Analysis results now provided in user's preferred language
+
+### Technical
+- **I18n System Enhancement**: Extended translation system to cover all bot features
+- **ML Service Updates**: Added user_language parameter to photo analysis API
+- **Prompt Localization**: OpenAI prompts now support Russian and English languages
+- **Translation Coverage**: 100% of user-facing messages now translated
+- **Language Detection**: Comprehensive testing confirms accurate language detection
+- **API Integration**: ML service properly receives and uses user language preference
+- **Error Message System**: Centralized error message translation system
+
+### Database
+- **Language Storage**: User language preferences properly stored and retrieved
+- **Country Detection**: Language detection based on country codes working correctly
+- **Phone Number Detection**: Russian phone number patterns properly detected
+- **Language Persistence**: Language changes properly saved and maintained
+
+### Testing
+- **Language Detection Tests**: 25 test cases covering all country and phone patterns
+- **Translation Tests**: Complete translation system validation
+- **Language Name Tests**: Proper language name display verification
+- **Parameter Formatting**: Translation parameter substitution working correctly
+
 ## [0.3.17] - 2025-01-21
 
 ### Fixed

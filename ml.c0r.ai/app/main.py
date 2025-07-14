@@ -24,7 +24,7 @@ else:
 async def health():
     return {"status": "ok", "service": "ml.c0r.ai"}
 
-async def analyze_food_with_openai(image_bytes: bytes) -> dict:
+async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en") -> dict:
     """
     Analyze food image using OpenAI Vision API
     Returns KBZHU data in expected format
@@ -36,37 +36,69 @@ async def analyze_food_with_openai(image_bytes: bytes) -> dict:
         # Encode image to base64
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
-        # Create prompt for food analysis
-        prompt = """
-        Analyze this food image and provide detailed nutritional information. 
+        # Create prompt for food analysis based on user language
+        if user_language == "ru":
+            prompt = """
+            Проанализируйте это изображение еды и предоставьте подробную информацию о питании.
 
-        Please provide:
-        1. List of individual food items visible in the image
-        2. Estimated weight/portion size for each item
-        3. Calories for each individual item
-        4. Total nutritional summary
+            Пожалуйста, предоставьте:
+            1. Список отдельных продуктов питания, видимых на изображении
+            2. Оцененный вес/размер порции для каждого продукта
+            3. Калории для каждого отдельного продукта
+            4. Общую сводку по питанию
 
-        Return ONLY a JSON object with the following structure:
-        {
-            "food_items": [
-                {
-                    "name": "product name",
-                    "weight": "estimated weight with units (e.g., 150g, 1 cup)",
-                    "calories": number
+            Верните ТОЛЬКО JSON объект со следующей структурой:
+            {
+                "food_items": [
+                    {
+                        "name": "название продукта",
+                        "weight": "оцененный вес с единицами (например, 150г, 1 стакан)",
+                        "calories": число
+                    }
+                ],
+                "total_nutrition": {
+                    "calories": число,
+                    "proteins": число,
+                    "fats": число,
+                    "carbohydrates": число
                 }
-            ],
-            "total_nutrition": {
-                "calories": number,
-                "proteins": number,
-                "fats": number,
-                "carbohydrates": number
             }
-        }
 
-        Estimate values for the actual serving size shown in the image.
-        All numeric values should be numbers (not strings).
-        Be specific about food items and realistic about portions.
-        """
+            Оцените значения для фактического размера порции, показанного на изображении.
+            Все числовые значения должны быть числами (не строками).
+            Будьте конкретны в отношении продуктов питания и реалистичны в отношении порций.
+            """
+        else:
+            prompt = """
+            Analyze this food image and provide detailed nutritional information. 
+
+            Please provide:
+            1. List of individual food items visible in the image
+            2. Estimated weight/portion size for each item
+            3. Calories for each individual item
+            4. Total nutritional summary
+
+            Return ONLY a JSON object with the following structure:
+            {
+                "food_items": [
+                    {
+                        "name": "product name",
+                        "weight": "estimated weight with units (e.g., 150g, 1 cup)",
+                        "calories": number
+                    }
+                ],
+                "total_nutrition": {
+                    "calories": number,
+                    "proteins": number,
+                    "fats": number,
+                    "carbohydrates": number
+                }
+            }
+
+            Estimate values for the actual serving size shown in the image.
+            All numeric values should be numbers (not strings).
+            Be specific about food items and realistic about portions.
+            """
         
         # Call OpenAI Vision API
         response = openai_client.chat.completions.create(
@@ -149,7 +181,8 @@ async def analyze_food_with_openai(image_bytes: bytes) -> dict:
 async def analyze_file(
     photo: UploadFile = File(...),
     telegram_user_id: str = Form(...),
-    provider: str = Form(default="openai")
+    provider: str = Form(default="openai"),
+    user_language: str = Form(default="en")
 ):
     """
     Analyze food image and return KBZHU data
@@ -169,7 +202,7 @@ async def analyze_file(
         
         # Analyze with OpenAI (default provider)
         if provider == "openai" or not provider:
-            analysis_result = await analyze_food_with_openai(image_bytes)
+            analysis_result = await analyze_food_with_openai(image_bytes, user_language)
         elif provider == "gemini":
             # For now, only OpenAI is supported
             raise HTTPException(status_code=400, detail=f"Provider '{provider}' not supported")

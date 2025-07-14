@@ -144,6 +144,75 @@ class I18nManager:
                 "profile_calories": "Daily calories target: {calories}",
                 "profile_edit_btn": "✏️ Edit Profile",
                 
+                # Profile setup messages
+                "profile_setup_age": "👶 **Step 1/6: Your Age**\n\nPlease enter your age in years (e.g., 25):",
+                "profile_setup_gender": "👥 **Step 2/6: Your Gender**\n\nPlease select your gender:",
+                "profile_setup_height": "📏 **Step 3/6: Your Height**\n\nPlease enter your height in centimeters (e.g., 175):",
+                "profile_setup_weight": "⚖️ **Step 4/6: Your Weight**\n\nPlease enter your weight in kilograms (e.g., 70 or 70.5):",
+                "profile_setup_activity": "🏃 **Step 5/6: Activity Level**\n\nPlease select your activity level:",
+                "profile_setup_goal": "🎯 **Step 6/6: Your Goal**\n\nPlease select your nutrition goal:",
+                "profile_setup_complete": "✅ **Profile Setup Complete!**\n\nYour daily calorie target: **{calories:,} calories**\n\nYou can now get personalized nutrition recommendations!",
+                
+                # Profile validation messages
+                "profile_error_age": "❌ **Invalid age**\n\nPlease enter an age between 10 and 120 years:",
+                "profile_error_age_number": "❌ **Invalid age format**\n\nPlease enter your age as a number (e.g., 25):",
+                "profile_error_height": "❌ **Invalid height**\n\nPlease enter height between 100 and 250 cm:",
+                "profile_error_height_number": "❌ **Invalid height format**\n\nPlease enter your height as a number in centimeters (e.g., 175):",
+                "profile_error_weight": "❌ **Invalid weight**\n\nPlease enter weight between 30 and 300 kg:",
+                "profile_error_weight_number": "❌ **Invalid weight format**\n\nPlease enter your weight as a number (e.g., 70 or 70.5):",
+                
+                # Profile skip messages
+                "profile_skip_title": "⏭️ **Profile setup skipped**",
+                "profile_skip_benefits": "💡 **Benefits of setting up a profile:**\n• Personalized daily calorie targets\n• Progress tracking\n• Better nutrition recommendations",
+                "profile_skip_continue": "📸 You can still analyze food photos without a profile!",
+                "profile_skip_setup_btn": "👤 Set Up Profile",
+                
+                # Photo analysis messages
+                "photo_uploading": "Uploading and analyzing your photo... ⏳",
+                "photo_no_food_title": "🤔 **No food detected in this photo**",
+                "photo_no_food_tips": "📸 **Tips for better results:**\n• Make sure the food is clearly visible\n• Use good lighting\n• Focus on the food, not the background\n• Try taking the photo from above",
+                "photo_no_food_try_again": "📤 **Try again with a clearer photo!**",
+                "photo_no_food_credit": "💡 *Don't worry - your credit wasn't used since no food was detected.*",
+                "photo_analysis_failed": "❌ **Analysis failed**\n\nThe food analysis couldn't be completed properly. Please try again with a clearer photo.\n\n💡 *Your credit wasn't used since the analysis failed.*",
+                "photo_service_unavailable": "❌ **Analysis service temporarily unavailable**\n\nPlease try again in a few minutes.\n\n💡 *Your credit wasn't used since the analysis failed.*",
+                "photo_error_analysis": "❌ **An error occurred during analysis**\n\nPlease try again later.\n\n💡 *Your credit wasn't used since the analysis failed.*",
+                
+                # Daily plan messages
+                "daily_title": "📊 **Daily Plan**",
+                "daily_no_profile": "🎯 To show your personalized daily nutrition plan, I need your profile information.",
+                "daily_benefits": "💡 **With a profile, you'll see:**\n• Daily calorie target based on your goals\n• Real-time progress tracking\n• Nutritional balance recommendations\n• Meal planning suggestions",
+                "daily_no_profile_continue": "📸 You can still analyze food photos without a profile!",
+                "daily_setup_btn": "👤 Set Up Profile",
+                "daily_analyze_btn": "📸 Analyze Food",
+                "daily_plan_title": "📊 **Your Daily Plan** - {date}",
+                "daily_goal_lose": "📉 **Goal:** Lose weight (15% calorie deficit)",
+                "daily_goal_maintain": "⚖️ **Goal:** Maintain weight",
+                "daily_goal_gain": "📈 **Goal:** Gain weight (15% calorie surplus)",
+                "daily_goal_custom": "🎯 **Goal:** Custom plan",
+                "daily_calorie_progress": "🔥 **Calorie Progress:**",
+                "daily_target": "Target: {target:,} calories",
+                "daily_consumed": "Consumed: {consumed:,} calories",
+                "daily_remaining": "Remaining: {remaining:,} calories",
+                "daily_progress": "📈 **Progress:** {progress_bar} {percent}%",
+                "daily_status_on_track": "🟢 You're on track!",
+                "daily_status_close": "🟡 Getting close to your target",
+                "daily_status_limit": "🟠 Almost at your limit",
+                "daily_status_over": "🔴 Over your daily target",
+                "daily_nutrition_breakdown": "🍽️ **Nutrition Breakdown:**",
+                "daily_protein": "🥩 **Protein:** {current}g / {target}g {status}",
+                "daily_fats": "🥑 **Fats:** {current}g / {target}g {status}",
+                "daily_carbs": "🍞 **Carbs:** {current}g / {target}g {status}",
+                "daily_activity": "📱 **Today's Activity:**",
+                "daily_meals_analyzed": "🍎 Meals analyzed: {count}",
+                "daily_recommendations": "💡 **Recommendations:**",
+                "daily_add_meal_btn": "📸 Add Meal",
+                "daily_insights_btn": "🔬 Insights",
+                
+                # Nutrition insights messages
+                "nutrition_title": "🔬 **Your Nutrition Analysis**",
+                "nutrition_incomplete": "🔍 **Nutrition Insights**\n\nAlmost ready! Please complete your profile to get personalized analysis.\n\n**Missing:** {missing_fields}\n\nUse /profile to complete your information.",
+                "nutrition_error": "❌ **Error**\n\nSorry, there was an error generating your nutrition insights.\n\nPlease try again or contact support if the problem persists.",
+                
                 # Main menu
                 "main_menu_title": "🚀 **Choose an option:**",
             },
@@ -247,6 +316,75 @@ class I18nManager:
                 "profile_goal": "Цель: {goal}",
                 "profile_calories": "Дневная цель калорий: {calories}",
                 "profile_edit_btn": "✏️ Редактировать профиль",
+                
+                # Profile setup messages
+                "profile_setup_age": "👶 **Шаг 1/6: Ваш возраст**\n\nПожалуйста, введите ваш возраст в годах (например, 25):",
+                "profile_setup_gender": "👥 **Шаг 2/6: Ваш пол**\n\nПожалуйста, выберите ваш пол:",
+                "profile_setup_height": "📏 **Шаг 3/6: Ваш рост**\n\nПожалуйста, введите ваш рост в сантиметрах (например, 175):",
+                "profile_setup_weight": "⚖️ **Шаг 4/6: Ваш вес**\n\nПожалуйста, введите ваш вес в килограммах (например, 70 или 70.5):",
+                "profile_setup_activity": "🏃 **Шаг 5/6: Уровень активности**\n\nПожалуйста, выберите ваш уровень активности:",
+                "profile_setup_goal": "🎯 **Шаг 6/6: Ваша цель**\n\nПожалуйста, выберите вашу цель по питанию:",
+                "profile_setup_complete": "✅ **Настройка профиля завершена!**\n\nВаша дневная цель калорий: **{calories:,} калорий**\n\nТеперь вы можете получать персональные рекомендации по питанию!",
+                
+                # Profile validation messages
+                "profile_error_age": "❌ **Неверный возраст**\n\nПожалуйста, введите возраст от 10 до 120 лет:",
+                "profile_error_age_number": "❌ **Неверный формат возраста**\n\nПожалуйста, введите ваш возраст числом (например, 25):",
+                "profile_error_height": "❌ **Неверный рост**\n\nПожалуйста, введите рост от 100 до 250 см:",
+                "profile_error_height_number": "❌ **Неверный формат роста**\n\nПожалуйста, введите ваш рост числом в сантиметрах (например, 175):",
+                "profile_error_weight": "❌ **Неверный вес**\n\nПожалуйста, введите вес от 30 до 300 кг:",
+                "profile_error_weight_number": "❌ **Неверный формат веса**\n\nПожалуйста, введите ваш вес числом (например, 70 или 70.5):",
+                
+                # Profile skip messages
+                "profile_skip_title": "⏭️ **Настройка профиля пропущена**",
+                "profile_skip_benefits": "💡 **Преимущества настройки профиля:**\n• Персональные дневные цели калорий\n• Отслеживание прогресса\n• Лучшие рекомендации по питанию",
+                "profile_skip_continue": "📸 Вы все еще можете анализировать фото еды без профиля!",
+                "profile_skip_setup_btn": "👤 Настроить профиль",
+                
+                # Photo analysis messages
+                "photo_uploading": "Загружаю и анализирую ваше фото... ⏳",
+                "photo_no_food_title": "🤔 **В этом фото не обнаружена еда**",
+                "photo_no_food_tips": "📸 **Советы для лучших результатов:**\n• Убедитесь, что еда хорошо видна\n• Используйте хорошее освещение\n• Фокусируйтесь на еде, а не на фоне\n• Попробуйте сфотографировать сверху",
+                "photo_no_food_try_again": "📤 **Попробуйте снова с более четким фото!**",
+                "photo_no_food_credit": "💡 *Не беспокойтесь - ваш кредит не был использован, так как еда не была обнаружена.*",
+                "photo_analysis_failed": "❌ **Анализ не удался**\n\nАнализ еды не мог быть выполнен должным образом. Пожалуйста, попробуйте снова с более четким фото.\n\n💡 *Ваш кредит не был использован, так как анализ не удался.*",
+                "photo_service_unavailable": "❌ **Служба анализа временно недоступна**\n\nПожалуйста, попробуйте через несколько минут.\n\n💡 *Ваш кредит не был использован, так как анализ не удался.*",
+                "photo_error_analysis": "❌ **Произошла ошибка во время анализа**\n\nПожалуйста, попробуйте позже.\n\n💡 *Ваш кредит не был использован, так как анализ не удался.*",
+                
+                # Daily plan messages
+                "daily_title": "📊 **Дневной план**",
+                "daily_no_profile": "🎯 Чтобы показать ваш персональный дневной план питания, мне нужна информация о вашем профиле.",
+                "daily_benefits": "💡 **С профилем вы увидите:**\n• Дневную цель калорий на основе ваших целей\n• Отслеживание прогресса в реальном времени\n• Рекомендации по балансу питания\n• Предложения по планированию приемов пищи",
+                "daily_no_profile_continue": "📸 Вы все еще можете анализировать фото еды без профиля!",
+                "daily_setup_btn": "👤 Настроить профиль",
+                "daily_analyze_btn": "📸 Анализировать еду",
+                "daily_plan_title": "📊 **Ваш дневной план** - {date}",
+                "daily_goal_lose": "📉 **Цель:** Похудение (дефицит 15% калорий)",
+                "daily_goal_maintain": "⚖️ **Цель:** Поддержание веса",
+                "daily_goal_gain": "📈 **Цель:** Набор веса (избыток 15% калорий)",
+                "daily_goal_custom": "🎯 **Цель:** Персональный план",
+                "daily_calorie_progress": "🔥 **Прогресс калорий:**",
+                "daily_target": "Цель: {target:,} калорий",
+                "daily_consumed": "Потреблено: {consumed:,} калорий",
+                "daily_remaining": "Осталось: {remaining:,} калорий",
+                "daily_progress": "📈 **Прогресс:** {progress_bar} {percent}%",
+                "daily_status_on_track": "🟢 Вы на правильном пути!",
+                "daily_status_close": "🟡 Приближаетесь к цели",
+                "daily_status_limit": "🟠 Почти достигли лимита",
+                "daily_status_over": "🔴 Превысили дневную цель",
+                "daily_nutrition_breakdown": "🍽️ **Разбор питания:**",
+                "daily_protein": "🥩 **Белки:** {current}г / {target}г {status}",
+                "daily_fats": "🥑 **Жиры:** {current}г / {target}г {status}",
+                "daily_carbs": "🍞 **Углеводы:** {current}г / {target}г {status}",
+                "daily_activity": "📱 **Активность сегодня:**",
+                "daily_meals_analyzed": "🍎 Проанализировано приемов пищи: {count}",
+                "daily_recommendations": "💡 **Рекомендации:**",
+                "daily_add_meal_btn": "📸 Добавить прием пищи",
+                "daily_insights_btn": "🔬 Анализ",
+                
+                # Nutrition insights messages
+                "nutrition_title": "🔬 **Ваш анализ питания**",
+                "nutrition_incomplete": "🔍 **Анализ питания**\n\nПочти готово! Пожалуйста, завершите настройку профиля для получения персонального анализа.\n\n**Отсутствует:** {missing_fields}\n\nИспользуйте /profile для завершения информации.",
+                "nutrition_error": "❌ **Ошибка**\n\nИзвините, произошла ошибка при создании анализа питания.\n\nПожалуйста, попробуйте снова или обратитесь в поддержку, если проблема сохраняется.",
                 
                 # Main menu
                 "main_menu_title": "🚀 **Выберите опцию:**",

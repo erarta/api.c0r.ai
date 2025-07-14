@@ -8,9 +8,11 @@ from datetime import datetime, timedelta
 from common.supabase_client import (
     get_user_with_profile, 
     get_daily_calories_consumed,
-    log_user_action
+    log_user_action,
+    get_or_create_user
 )
 from .keyboards import create_main_menu_keyboard
+from .i18n import i18n
 
 # /daily command handler
 async def daily_command(message: types.Message):
@@ -41,31 +43,34 @@ async def daily_command(message: types.Message):
             
     except Exception as e:
         logger.error(f"Error in /daily command for user {telegram_user_id}: {e}")
-        await message.answer("❌ An error occurred. Please try again later.", reply_markup=create_main_menu_keyboard())
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
 
 async def show_no_profile_message(message: types.Message):
     """Show message encouraging profile setup"""
+    # Get user's language
+    user = await get_or_create_user(message.from_user.id)
+    user_language = user.get('language', 'en')
+    
     no_profile_text = (
-        f"📊 **Daily Plan**\n\n"
-        f"🎯 To show your personalized daily nutrition plan, I need your profile information.\n\n"
-        f"💡 **With a profile, you'll see:**\n"
-        f"• Daily calorie target based on your goals\n"
-        f"• Real-time progress tracking\n"
-        f"• Nutritional balance recommendations\n"
-        f"• Meal planning suggestions\n\n"
-        f"📸 You can still analyze food photos without a profile!"
+        f"{i18n.get_text('daily_title', user_language)}\n\n"
+        f"{i18n.get_text('daily_no_profile', user_language)}\n\n"
+        f"{i18n.get_text('daily_benefits', user_language)}\n\n"
+        f"{i18n.get_text('daily_no_profile_continue', user_language)}"
     )
     
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
-                text="👤 Set Up Profile",
+                text=i18n.get_text("daily_setup_btn", user_language),
                 callback_data="profile_start_setup"
             )
         ],
         [
             types.InlineKeyboardButton(
-                text="📸 Analyze Food",
+                text=i18n.get_text("daily_analyze_btn", user_language),
                 callback_data="action_analyze_info"
             )
         ]
@@ -106,7 +111,10 @@ async def daily_callback(callback: types.CallbackQuery):
             
     except Exception as e:
         logger.error(f"Error in daily callback for user {telegram_user_id}: {e}")
-        await callback.message.answer("❌ An error occurred. Please try again later.", reply_markup=create_main_menu_keyboard())
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await callback.message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
 
 async def show_daily_plan(message: types.Message, user: dict, profile: dict):
     """Show comprehensive daily plan for user with profile"""
@@ -126,13 +134,16 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         # Create progress bar
         progress_bar = "▓" * (progress_percent // 10) + "░" * (10 - progress_percent // 10)
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
         # Format goal message
         goal_messages = {
-            'lose_weight': '📉 **Goal:** Lose weight (15% calorie deficit)',
-            'maintain_weight': '⚖️ **Goal:** Maintain weight',
-            'gain_weight': '📈 **Goal:** Gain weight (15% calorie surplus)'
+            'lose_weight': i18n.get_text('daily_goal_lose', user_language),
+            'maintain_weight': i18n.get_text('daily_goal_maintain', user_language),
+            'gain_weight': i18n.get_text('daily_goal_gain', user_language)
         }
-        goal_message = goal_messages.get(goal, '🎯 **Goal:** Custom plan')
+        goal_message = goal_messages.get(goal, i18n.get_text('daily_goal_custom', user_language))
         
         # Format macros
         protein = daily_data['total_protein']
@@ -163,40 +174,40 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         # Status message
         if progress_percent < 70:
             status_emoji = "🟢"
-            status_msg = "You're on track!"
+            status_msg = i18n.get_text('daily_status_on_track', user_language)
         elif progress_percent < 90:
             status_emoji = "🟡"
-            status_msg = "Getting close to your target"
+            status_msg = i18n.get_text('daily_status_close', user_language)
         elif progress_percent < 110:
             status_emoji = "🟠"
-            status_msg = "Almost at your limit"
+            status_msg = i18n.get_text('daily_status_limit', user_language)
         else:
             status_emoji = "🔴"
-            status_msg = "Over your daily target"
+            status_msg = i18n.get_text('daily_status_over', user_language)
         
         # Get recommendations
         recommendations = get_daily_recommendations(progress_percent, remaining, goal, daily_data['food_items_count'])
         
         plan_text = (
-            f"📊 **Your Daily Plan** - {today}\n\n"
+            f"{i18n.get_text('daily_plan_title', user_language, date=today)}\n\n"
             f"{goal_message}\n\n"
-            f"🔥 **Calorie Progress:**\n"
-            f"Target: {daily_target:,} calories\n"
-            f"Consumed: {consumed_today:,} calories\n"
-            f"Remaining: {remaining:,} calories\n\n"
-            f"📈 **Progress:** {progress_bar} {progress_percent}%\n"
+            f"{i18n.get_text('daily_calorie_progress', user_language)}\n"
+            f"{i18n.get_text('daily_target', user_language, target=daily_target)}\n"
+            f"{i18n.get_text('daily_consumed', user_language, consumed=consumed_today)}\n"
+            f"{i18n.get_text('daily_remaining', user_language, remaining=remaining)}\n\n"
+            f"{i18n.get_text('daily_progress', user_language, progress_bar=progress_bar, percent=progress_percent)}\n"
             f"{status_emoji} {status_msg}\n\n"
-            f"🍽️ **Nutrition Breakdown:**\n"
+            f"{i18n.get_text('daily_nutrition_breakdown', user_language)}\n"
             f"{macro_progress}\n"
-            f"📱 **Today's Activity:**\n"
-            f"🍎 Meals analyzed: {daily_data['food_items_count']}\n\n"
-            f"💡 **Recommendations:**\n{recommendations}"
+            f"{i18n.get_text('daily_activity', user_language)}\n"
+            f"{i18n.get_text('daily_meals_analyzed', user_language, count=daily_data['food_items_count'])}\n\n"
+            f"{i18n.get_text('daily_recommendations', user_language)}\n{recommendations}"
         )
         
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text="📸 Add Meal",
+                    text=i18n.get_text("daily_add_meal_btn", user_language),
                     callback_data="action_analyze_info"
                 ),
                 types.InlineKeyboardButton(
@@ -226,7 +237,10 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         
     except Exception as e:
         logger.error(f"Error showing daily plan: {e}")
-        await message.answer("❌ An error occurred while loading your daily plan.", reply_markup=create_main_menu_keyboard())
+        # Get user's language for error message
+        user = await get_or_create_user(message.from_user.id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
 
 def get_daily_recommendations(progress_percent: int, remaining: int, goal: str, meals_count: int) -> str:
     """Generate personalized recommendations based on progress"""
