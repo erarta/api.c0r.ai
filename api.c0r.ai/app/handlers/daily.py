@@ -186,7 +186,7 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
             status_msg = i18n.get_text('daily_status_over', user_language)
         
         # Get recommendations
-        recommendations = get_daily_recommendations(progress_percent, remaining, goal, daily_data['food_items_count'])
+        recommendations = get_daily_recommendations(progress_percent, remaining, goal, daily_data['food_items_count'], user_language)
         
         plan_text = (
             f"{i18n.get_text('daily_plan_title', user_language, date=today)}\n\n"
@@ -242,142 +242,142 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         user_language = user.get('language', 'en')
         await message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
 
-def get_daily_recommendations(progress_percent: int, remaining: int, goal: str, meals_count: int) -> str:
-    """Generate personalized recommendations based on progress"""
+def get_daily_recommendations(progress_percent: int, remaining: int, goal: str, meals_count: int, language: str) -> str:
+    """Generate personalized recommendations based on progress, fully localized"""
     import random
-    
+    from .i18n import i18n
     recommendations = []
-    
+
     # Progress-based recommendations with variety
     if progress_percent < 30:
         if meals_count == 0:
             morning_tips = [
-                "🍳 Start with a protein-rich breakfast to boost metabolism",
-                "🥞 Try oatmeal with berries and nuts for sustained energy",
-                "🥑 Avocado toast with eggs provides healthy fats and protein",
-                "🥤 A protein smoothie is perfect for busy mornings",
-                "🍌 Banana with peanut butter offers quick energy"
+                i18n.get_text("rec_morning_1", language),
+                i18n.get_text("rec_morning_2", language),
+                i18n.get_text("rec_morning_3", language),
+                i18n.get_text("rec_morning_4", language),
+                i18n.get_text("rec_morning_5", language),
             ]
             recommendations.append(random.choice(morning_tips))
         else:
             early_day_tips = [
-                "🥗 You have plenty of room for nutritious, satisfying meals",
-                "🍽️ Focus on getting quality proteins and complex carbs",
-                "🌈 Try to eat colorful vegetables with each meal",
-                "🥜 Don't forget healthy fats like nuts and olive oil",
-                "🐟 Consider fish or lean meats for protein"
+                i18n.get_text("rec_early_1", language),
+                i18n.get_text("rec_early_2", language),
+                i18n.get_text("rec_early_3", language),
+                i18n.get_text("rec_early_4", language),
+                i18n.get_text("rec_early_5", language),
             ]
             recommendations.append(random.choice(early_day_tips))
-    
+
     elif progress_percent < 70:
         mid_day_tips = [
-            "👍 Great progress! Keep up the balanced eating",
-            "🎯 You're on track - maintain this steady pace",
-            "⚖️ Perfect balance between nutrition and calories",
-            "💪 Your body is getting the fuel it needs",
-            "🔥 Keep this momentum going!"
+            i18n.get_text("rec_mid_1", language),
+            i18n.get_text("rec_mid_2", language),
+            i18n.get_text("rec_mid_3", language),
+            i18n.get_text("rec_mid_4", language),
+            i18n.get_text("rec_mid_5", language),
         ]
         recommendations.append(random.choice(mid_day_tips))
-        
+
         if remaining > 500:
             meal_suggestions = [
-                "🍽️ You can fit in another substantial, nutritious meal",
-                "🥘 Try a protein-rich dinner with vegetables",
-                "🍲 A hearty soup or stew would be perfect",
-                "🥙 Consider a wrap with lean protein and veggies",
-                "🍝 Pasta with lean meat and vegetables is a good option"
+                i18n.get_text("rec_meal_1", language),
+                i18n.get_text("rec_meal_2", language),
+                i18n.get_text("rec_meal_3", language),
+                i18n.get_text("rec_meal_4", language),
+                i18n.get_text("rec_meal_5", language),
             ]
             recommendations.append(random.choice(meal_suggestions))
-    
+
     elif progress_percent < 100:
         approaching_tips = [
-            "⚠️ Getting close to your target - choose lighter, nutrient-dense options",
-            "🎨 Time for creative, low-calorie but satisfying choices",
-            "🥗 Focus on volume with vegetables and lean proteins",
-            "⏰ Consider the timing of your remaining calories",
-            "🍃 Light but nutritious options will keep you satisfied"
+            i18n.get_text("rec_approach_1", language),
+            i18n.get_text("rec_approach_2", language),
+            i18n.get_text("rec_approach_3", language),
+            i18n.get_text("rec_approach_4", language),
+            i18n.get_text("rec_approach_5", language),
         ]
         recommendations.append(random.choice(approaching_tips))
-        
+
         if remaining > 200:
             light_meal_tips = [
-                "🥗 Try a large salad with grilled chicken or fish",
-                "🍲 Vegetable soup with lean protein works well",
-                "🥒 Raw vegetables with hummus are filling and nutritious",
-                "🐟 Grilled fish with steamed vegetables is perfect",
-                "🥬 A lettuce wrap with turkey and avocado"
+                i18n.get_text("rec_light_1", language),
+                i18n.get_text("rec_light_2", language),
+                i18n.get_text("rec_light_3", language),
+                i18n.get_text("rec_light_4", language),
+                i18n.get_text("rec_light_5", language),
             ]
             recommendations.append(random.choice(light_meal_tips))
         else:
             snack_tips = [
-                "🍎 Consider fruits or small, protein-rich snacks",
-                "🥜 A handful of nuts or seeds is perfect",
-                "🥛 Greek yogurt with berries is satisfying",
-                "🥕 Carrot sticks with almond butter work great",
-                "🍓 Fresh berries are low-calorie and nutritious"
+                i18n.get_text("rec_snack_1", language),
+                i18n.get_text("rec_snack_2", language),
+                i18n.get_text("rec_snack_3", language),
+                i18n.get_text("rec_snack_4", language),
+                i18n.get_text("rec_snack_5", language),
             ]
             recommendations.append(random.choice(snack_tips))
-    
+
     else:
         if goal == 'lose_weight':
             over_limit_tips = [
-                "🛑 You've exceeded your weight loss target for today",
-                "💧 Focus on hydration and light physical activity",
-                "🚶‍♀️ A walk can help with digestion and mood",
-                "🧘‍♀️ Consider meditation or light stretching",
-                "💤 Ensure you get quality sleep tonight"
+                i18n.get_text("rec_over_lose_1", language),
+                i18n.get_text("rec_over_lose_2", language),
+                i18n.get_text("rec_over_lose_3", language),
+                i18n.get_text("rec_over_lose_4", language),
+                i18n.get_text("rec_over_lose_5", language),
             ]
             recommendations.extend(random.sample(over_limit_tips, 2))
         elif goal == 'gain_weight':
             gain_success_tips = [
-                "🎯 Excellent! You're meeting your calorie goals for muscle gain",
-                "💪 Your body has the energy it needs to build muscle",
-                "🏋️‍♂️ Perfect fuel for your workouts and recovery",
-                "🌟 Consistency like this will lead to great results",
-                "👏 Great job staying committed to your goals!"
+                i18n.get_text("rec_over_gain_1", language),
+                i18n.get_text("rec_over_gain_2", language),
+                i18n.get_text("rec_over_gain_3", language),
+                i18n.get_text("rec_over_gain_4", language),
+                i18n.get_text("rec_over_gain_5", language),
             ]
             recommendations.append(random.choice(gain_success_tips))
         else:
             maintenance_tips = [
-                "⚖️ You're over your maintenance calories for today",
-                "🔄 Tomorrow is a fresh start - stay consistent",
-                "💚 One day won't derail your progress",
-                "🎯 Focus on balance over perfection",
-                "⏰ Consider adjusting meal timing tomorrow"
+                i18n.get_text("rec_over_maintain_1", language),
+                i18n.get_text("rec_over_maintain_2", language),
+                i18n.get_text("rec_over_maintain_3", language),
+                i18n.get_text("rec_over_maintain_4", language),
+                i18n.get_text("rec_over_maintain_5", language),
             ]
             recommendations.append(random.choice(maintenance_tips))
-    
+
     # Activity and tracking recommendations
     if meals_count == 0:
         tracking_tips = [
-            "📱 Don't forget to log your meals for better tracking",
-            "📊 Consistent logging helps you understand your patterns",
-            "🎯 Tracking keeps you accountable to your goals",
-            "💡 Use photos to make logging easier and more accurate"
+            i18n.get_text("rec_track_1", language),
+            i18n.get_text("rec_track_2", language),
+            i18n.get_text("rec_track_3", language),
+            i18n.get_text("rec_track_4", language),
         ]
         recommendations.append(random.choice(tracking_tips))
     elif meals_count >= 5:
         tracking_praise = [
-            "📊 Outstanding job tracking your nutrition today!",
-            "🏆 Your dedication to logging is impressive",
-            "💪 This level of tracking will lead to great results",
-            "🎉 You're building excellent healthy habits!"
+            i18n.get_text("rec_track_praise_1", language),
+            i18n.get_text("rec_track_praise_2", language),
+            i18n.get_text("rec_track_praise_3", language),
+            i18n.get_text("rec_track_praise_4", language),
         ]
         recommendations.append(random.choice(tracking_praise))
-    
+
     # Add occasional motivational or educational tips
     if random.random() < 0.3:  # 30% chance
         bonus_tips = [
-            "💧 Remember to drink plenty of water throughout the day",
-            "🌅 Eating at regular intervals helps maintain energy",
-            "🥗 Aim for at least 5 servings of fruits and vegetables daily",
-            "😴 Quality sleep is just as important as nutrition",
-            "🚶‍♂️ Light movement after meals aids digestion",
-            "🧘‍♀️ Mindful eating helps with satisfaction and digestion",
-            "🏃‍♀️ Regular exercise complements your nutrition goals"
+            i18n.get_text("rec_bonus_1", language),
+            i18n.get_text("rec_bonus_2", language),
+            i18n.get_text("rec_bonus_3", language),
+            i18n.get_text("rec_bonus_4", language),
+            i18n.get_text("rec_bonus_5", language),
+            i18n.get_text("rec_bonus_6", language),
+            i18n.get_text("rec_bonus_7", language),
         ]
         recommendations.append(random.choice(bonus_tips))
-    
+
     return "\n".join(f"• {rec}" for rec in recommendations)
 
 # Daily callback handlers

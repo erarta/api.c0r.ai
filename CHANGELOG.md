@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.19] - 2024-12-19
+
+### Added
+- **Complete i18n refactor for all dynamic content**
+  - All daily recommendations now use i18n keys (both EN/RU)
+  - All goal-specific advice fully localized
+  - Weekly report messages fully i18n-based
+  - Water tracker messages fully i18n-based
+  - Nutrition insights headers and sections fully localized
+  - All error messages properly localized
+
+### Changed
+- **Refactored functions for language support**
+  - `get_daily_recommendations()` now accepts language parameter
+  - `get_goal_specific_advice()` now accepts language parameter
+  - `generate_nutrition_insights()` uses i18n for all headers
+  - `weekly_report_callback()` and `weekly_report_command()` fully i18n-based
+  - `water_tracker_callback()` and `water_tracker_command()` fully i18n-based
+
+### Fixed
+- **Eliminated all hardcoded English text**
+  - No more English "leakage" in recommendations for Russian users
+  - All dynamic advice and tips now respect user's language
+  - All report headers and sections properly localized
+  - Consistent language experience across all bot features
+
+### Technical
+- **Enhanced i18n system**
+  - Added 50+ new translation keys for recommendations
+  - Added 20+ new translation keys for advice and reports
+  - Added 15+ new translation keys for water tracker
+  - Added 10+ new translation keys for nutrition insights
+  - All translations provided in both English and Russian
+
 ## [0.3.18] - 2025-01-21
 
 ### Added
