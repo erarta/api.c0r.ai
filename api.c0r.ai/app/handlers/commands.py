@@ -156,49 +156,44 @@ async def help_callback(callback: types.CallbackQuery):
     try:
         telegram_user_id = callback.from_user.id
         user = await get_or_create_user(telegram_user_id)
-        
-        # Log user action with correct user data
+        user_language = user.get('language', 'en')
         await log_user_action(
             user_id=user['id'],
             action_type="help",
             metadata={
-                "username": callback.from_user.username,  # ← ПРАВИЛЬНО: используем callback.from_user
+                "username": callback.from_user.username,
                 "credits_remaining": user['credits_remaining']
             }
         )
-        
         help_text = (
-            "🤖 **c0r.ai Food Analyzer - Help Guide**\n\n"
-            "📸 **How to use:**\n"
-            "1. Send me a food photo\n"
-            "2. I'll analyze calories, protein, fats, and carbs\n"
-            "3. Get instant nutrition information\n\n"
-            "🆓 **Free credits:**\n"
-            "• You start with 3 free credits\n"
-            "• Each photo analysis costs 1 credit\n\n"
-            "🎯 **Features:**\n"
-            "• Accurate calorie counting\n"
-            "• Detailed macro breakdown\n"
-            "• Daily calorie calculation\n"
-            "• Personal nutrition tracking\n\n"
-            "💡 **Commands:**\n"
-            "• /start - Main menu with interactive buttons\n"
-            "• /help - This help guide\n"
-            "• /status - Check your account status\n"
-            "• /buy - Purchase more credits\n"
-            "• /profile - Set up your personal profile\n"
-            "• /daily - View daily nutrition plan & progress\n\n"
-            "💳 **Need more credits?**\n"
-            "Use /buy to purchase additional credits when you run out.\n\n"
-            "📞 **Support:** Contact team@c0r.ai"
+            f"{i18n.get_text('help_title', user_language)}\n\n"
+            f"{i18n.get_text('help_usage_title', user_language)}\n"
+            f"{i18n.get_text('help_usage_1', user_language)}\n"
+            f"{i18n.get_text('help_usage_2', user_language)}\n"
+            f"{i18n.get_text('help_usage_3', user_language)}\n\n"
+            f"{i18n.get_text('help_credits_title', user_language)}\n"
+            f"{i18n.get_text('help_credits_1', user_language)}\n"
+            f"{i18n.get_text('help_credits_2', user_language)}\n\n"
+            f"{i18n.get_text('help_features_title', user_language)}\n"
+            f"{i18n.get_text('help_features_1', user_language)}\n"
+            f"{i18n.get_text('help_features_2', user_language)}\n"
+            f"{i18n.get_text('help_features_3', user_language)}\n"
+            f"{i18n.get_text('help_features_4', user_language)}\n\n"
+            f"{i18n.get_text('help_commands_title', user_language)}\n"
+            f"{i18n.get_text('help_commands_1', user_language)}\n"
+            f"{i18n.get_text('help_commands_2', user_language)}\n"
+            f"{i18n.get_text('help_commands_3', user_language)}\n"
+            f"{i18n.get_text('help_commands_4', user_language)}\n"
+            f"{i18n.get_text('help_commands_5', user_language)}\n"
+            f"{i18n.get_text('help_commands_6', user_language)}\n\n"
+            f"{i18n.get_text('help_credits_need', user_language)}\n"
+            f"{i18n.get_text('help_credits_info', user_language)}\n\n"
+            f"{i18n.get_text('help_support', user_language)}"
         )
-        
         await callback.message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
-        logger.info(f"Help callback by user {telegram_user_id}")
-        
     except Exception as e:
-        logger.error(f"Error in help callback: {e}")
-        await callback.message.answer("An error occurred. Please try again later.")
+        logger.error(f"Error in help_callback: {e}")
+        await callback.message.answer(i18n.get_text("error_general", "en"))
 
 # /status command handler - NEW FEATURE
 async def status_command(message: types.Message):
@@ -295,18 +290,22 @@ async def status_callback(callback: types.CallbackQuery):
                 created_date = created_at
         else:
             created_date = 'Unknown'
-        
+
+        # Get user's language
+        user_language = user.get('language', 'en')
+
+        # Create status text using i18n
         status_text = (
-            f"📊 *Your Account Status*\n\n"
-            f"🆔 User ID: `{telegram_user_id}`\n"
-            f"💳 Credits remaining: *{user['credits_remaining']}*\n"
-            f"💰 Total paid: *{total_paid:.2f} RUB*\n"
-            f"📅 Member since: `{created_date}`\n\n"
-            f"🤖 System: *c0r.ai v{VERSION}*\n"
-            f"🌐 Status: *Online*\n"
-            f"⚡ Powered by c0r AI Vision"
+            f"{i18n.get_text('status_title', user_language)}\n\n"
+            f"{i18n.get_text('status_user_id', user_language, user_id=telegram_user_id)}\n"
+            f"{i18n.get_text('status_credits', user_language, credits=user['credits_remaining'])}\n"
+            f"{i18n.get_text('status_total_paid', user_language, total_paid=total_paid)}\n"
+            f"{i18n.get_text('status_member_since', user_language, date=created_date)}\n\n"
+            f"{i18n.get_text('status_system', user_language, version=VERSION)}\n"
+            f"{i18n.get_text('status_online', user_language)}\n"
+            f"{i18n.get_text('status_powered_by', user_language)}"
         )
-        
+
         logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")
         await callback.message.answer(status_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
         

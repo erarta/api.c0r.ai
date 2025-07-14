@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.20] - 2025-01-21
+
+### Added
+- **Complete UI Localization**: All remaining user-facing flows now fully localized
+  - /status command: All account status fields use i18n keys (EN/RU)
+  - /profile command: All profile field names, values, and button labels localized
+  - /daily command: All macro names, nutrition breakdown, and progress indicators localized
+  - /help command: Complete help guide text uses i18n keys
+  - All keyboard button labels use i18n for full localization
+
+### Changed
+- **Refactored Command Handlers for Language Support**
+  - `status_callback()` now uses i18n for all output fields
+  - `show_profile_menu()` and `show_profile_info()` use i18n for all field names and values
+  - `show_daily_plan()` uses i18n for all macro names and nutrition breakdown
+  - `help_callback()` uses i18n for all help text sections
+  - All keyboard creation functions use i18n for button labels
+
+### Fixed
+- **Eliminated All Hardcoded English Text in UI**
+  - No more English text in account status for Russian users
+  - All profile field names and values properly localized
+  - All macro names (Protein, Fats, Carbs) now use i18n keys
+  - All button labels and navigation elements fully translated
+  - Consistent language experience across all bot interactions
+
+### Technical
+- **Enhanced i18n System**
+  - Added 30+ new translation keys for profile fields and values
+  - Added 20+ new translation keys for macro names and nutrition terms
+  - Added 15+ new translation keys for button labels and UI elements
+  - Added 10+ new translation keys for activity levels and goals
+  - All translations provided in both English and Russian
+  - Complete coverage of all user-facing text elements
+
+### User Experience
+- **Fully Localized Interface**: Users now experience complete language consistency
+- **Seamless Multilingual Support**: All commands and UI elements respect user's language preference
+- **Professional Localization**: All text elements properly translated and formatted
+- **Consistent Experience**: No more mixed language content in any bot interaction
+
 ## [0.3.19] - 2025-01-21
 
 ### Added

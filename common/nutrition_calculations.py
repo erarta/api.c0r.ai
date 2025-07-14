@@ -7,40 +7,44 @@ import math
 from typing import Dict, Any, List, Tuple
 
 
-def calculate_bmi(weight_kg: float, height_cm: float) -> Dict[str, Any]:
+def calculate_bmi(weight_kg: float, height_cm: float, language: str = 'en') -> Dict[str, Any]:
     """
     Calculate BMI and determine category
     
     Args:
         weight_kg: Weight in kilograms
         height_cm: Height in centimeters
+        language: Language code ('en' or 'ru')
         
     Returns:
         Dict with BMI value and category
     """
+    # Import i18n here to avoid circular imports
+    from api.c0r.ai.app.handlers.i18n import i18n
+    
     height_m = height_cm / 100
     bmi = weight_kg / (height_m ** 2)
     
     if bmi < 18.5:
         category = "underweight"
         emoji = "⬇️"
-        description = "Below ideal range"
-        motivation = "Let's focus on healthy weight gain together! 🌱 Every nutritious meal is a step forward!"
+        description = i18n.get_text("bmi_underweight", language)
+        motivation = i18n.get_text("bmi_motivation_underweight", language)
     elif bmi < 25:
         category = "normal"
         emoji = "✅"
-        description = "Healthy weight range"
-        motivation = "Fantastic! You're in the ideal range! 🎉 Keep up the great work maintaining your health!"
+        description = i18n.get_text("bmi_normal", language)
+        motivation = i18n.get_text("bmi_motivation_normal", language)
     elif bmi < 30:
         category = "overweight"
         emoji = "⚠️"
-        description = "Above ideal range"
-        motivation = "You're taking the right steps by tracking! 💪 Small changes lead to big results!"
+        description = i18n.get_text("bmi_overweight", language)
+        motivation = i18n.get_text("bmi_motivation_overweight", language)
     else:
         category = "obese"
         emoji = "🔴"
-        description = "Well above ideal range"
-        motivation = "Every healthy choice counts! 🌟 You're already on the path to positive change!"
+        description = i18n.get_text("bmi_obese", language)
+        motivation = i18n.get_text("bmi_motivation_obese", language)
     
     return {
         "bmi": round(bmi, 1),
@@ -171,7 +175,7 @@ def calculate_macro_distribution(calories: int, goal: str) -> Dict[str, Any]:
     }
 
 
-def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: float, activity_level: str) -> Dict[str, Any]:
+def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: float, activity_level: str, language: str = 'en') -> Dict[str, Any]:
     """
     Estimate metabolic age based on BMR and lifestyle factors
     
@@ -181,10 +185,14 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
         weight_kg: Weight in kilograms
         height_cm: Height in centimeters
         activity_level: Activity level string
+        language: Language code ('en' or 'ru')
         
     Returns:
         Dict with metabolic age estimation
     """
+    # Import i18n here to avoid circular imports
+    from api.c0r.ai.app.handlers.i18n import i18n
+    
     # Calculate BMR using Mifflin-St Jeor
     if gender.lower() == 'male':
         bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
@@ -203,7 +211,7 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
     activity_factor = activity_factors.get(activity_level.lower(), 1.2)
     
     # BMI factor
-    bmi_data = calculate_bmi(weight_kg, height_cm)
+    bmi_data = calculate_bmi(weight_kg, height_cm, language)
     bmi = bmi_data['bmi']
     
     # Metabolic age estimation (simplified formula)
@@ -219,18 +227,18 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
     if difference <= -2:
         status = "younger"
         emoji = "🌟"
-        description = "Your metabolism is younger than your age!"
-        motivation = "Amazing! Your healthy lifestyle is paying off! Keep doing what you're doing! 🚀"
+        description = i18n.get_text("metabolic_younger", language)
+        motivation = i18n.get_text("metabolic_motivation_younger", language)
     elif difference >= 2:
         status = "older"
         emoji = "⚠️"
-        description = "Your metabolism is older than your age"
-        motivation = "No worries! With consistent nutrition and activity, you can improve this! 💪 You're on the right track!"
+        description = i18n.get_text("metabolic_older", language)
+        motivation = i18n.get_text("metabolic_motivation_older", language)
     else:
         status = "normal"
         emoji = "✅"
-        description = "Your metabolism matches your age"
-        motivation = "Perfect balance! You're maintaining great metabolic health! 🎯 Keep it up!"
+        description = i18n.get_text("metabolic_normal", language)
+        motivation = i18n.get_text("metabolic_motivation_normal", language)
     
     return {
         "metabolic_age": round(metabolic_age),
@@ -243,30 +251,44 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
     }
 
 
-def calculate_meal_portions(calories: int, meals_per_day: int = 3) -> Dict[str, Any]:
+def calculate_meal_portions(calories: int, meals_per_day: int = 3, language: str = 'en') -> Dict[str, Any]:
     """
     Calculate portion sizes for meals throughout the day
     
     Args:
         calories: Daily calorie target
         meals_per_day: Number of meals per day
+        language: Language code ('en' or 'ru')
         
     Returns:
         Dict with meal portion breakdowns
     """
+    # Import i18n here to avoid circular imports
+    from api.c0r.ai.app.handlers.i18n import i18n
+    
     if meals_per_day == 3:
         # Breakfast: 25%, Lunch: 40%, Dinner: 35%
         portions = [0.25, 0.40, 0.35]
-        meal_names = ["Breakfast", "Lunch", "Dinner"]
+        meal_names = [
+            i18n.get_text("meal_breakfast", language),
+            i18n.get_text("meal_lunch", language),
+            i18n.get_text("meal_dinner", language)
+        ]
     elif meals_per_day == 5:
         # Breakfast: 20%, Snack: 10%, Lunch: 30%, Snack: 10%, Dinner: 30%
         portions = [0.20, 0.10, 0.30, 0.10, 0.30]
-        meal_names = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner"]
+        meal_names = [
+            i18n.get_text("meal_breakfast", language),
+            i18n.get_text("meal_morning_snack", language),
+            i18n.get_text("meal_lunch", language),
+            i18n.get_text("meal_afternoon_snack", language),
+            i18n.get_text("meal_dinner", language)
+        ]
     else:
         # Equal portions
         portion_size = 1.0 / meals_per_day
         portions = [portion_size] * meals_per_day
-        meal_names = [f"Meal {i+1}" for i in range(meals_per_day)]
+        meal_names = [i18n.get_text("meal_generic", language, number=i+1) for i in range(meals_per_day)]
     
     meal_breakdown = []
     for i, (name, portion) in enumerate(zip(meal_names, portions)):
@@ -317,58 +339,62 @@ def analyze_weekly_progress(daily_logs: List[Dict]) -> Dict[str, Any]:
     }
 
 
-def get_nutrition_recommendations(profile: Dict, recent_logs: List[Dict]) -> List[str]:
+def get_nutrition_recommendations(profile: Dict, recent_logs: List[Dict], language: str = 'en') -> List[str]:
     """
     Generate nutrition recommendations based on profile and recent logs
     
     Args:
         profile: User profile data
         recent_logs: Recent nutrition logs
+        language: Language code ('en' or 'ru')
         
     Returns:
         List of personalized recommendations
     """
+    # Import i18n here to avoid circular imports
+    from api.c0r.ai.app.handlers.i18n import i18n
+    
     recommendations = []
     
     # BMI-based recommendations
     if 'weight_kg' in profile and 'height_cm' in profile:
-        bmi_data = calculate_bmi(profile['weight_kg'], profile['height_cm'])
+        bmi_data = calculate_bmi(profile['weight_kg'], profile['height_cm'], language)
         if bmi_data['category'] == 'underweight':
-            recommendations.append("🍽️ Let's build healthy weight together! Focus on nutrient-rich foods like nuts, avocados, and wholesome meals")
+            recommendations.append(i18n.get_text("rec_underweight", language))
         elif bmi_data['category'] == 'overweight' or bmi_data['category'] == 'obese':
-            recommendations.append("🥗 You're on the right path! Prioritize colorful vegetables, lean proteins, and feel-good whole grains")
+            recommendations.append(i18n.get_text("rec_overweight", language))
         else:  # normal weight
-            recommendations.append("🎉 You're maintaining great health! Keep enjoying balanced, nutritious meals")
+            recommendations.append(i18n.get_text("rec_normal_weight", language))
     
     # Activity-based recommendations
     if profile.get('activity_level') in ['very_active', 'extremely_active']:
-        recommendations.append("💪 Amazing dedication to fitness! Boost your protein to 1.6-2.2g per kg for optimal recovery")
-        recommendations.append("🍌 Fuel your workouts! Try post-exercise carbs within 30 minutes for best results")
+        recommendations.append(i18n.get_text("rec_very_active_protein", language))
+        recommendations.append(i18n.get_text("rec_very_active_carbs", language))
     elif profile.get('activity_level') in ['sedentary', 'lightly_active']:
-        recommendations.append("🚶‍♀️ Every step counts! Even light daily walks can boost your metabolism and mood")
+        recommendations.append(i18n.get_text("rec_sedentary", language))
     
     # Goal-based recommendations
     if profile.get('goal') == 'lose_weight':
-        recommendations.append("⏰ Smart strategy: Try eating your heartiest meal earlier when your metabolism is highest")
-        recommendations.append("🥛 Protein is your friend! Include it in every meal to preserve muscle while losing fat")
+        recommendations.append(i18n.get_text("rec_lose_weight_timing", language))
+        recommendations.append(i18n.get_text("rec_lose_weight_protein", language))
     elif profile.get('goal') == 'gain_weight':
-        recommendations.append("🍞 Building healthy weight! Include energizing carbs like oats, quinoa, and sweet potatoes")
-        recommendations.append("🥜 Power up with healthy fats! Nuts, seeds, and olive oil add nutritious calories")
+        recommendations.append(i18n.get_text("rec_gain_weight_carbs", language))
+        recommendations.append(i18n.get_text("rec_gain_weight_fats", language))
     else:  # maintain_weight
-        recommendations.append("🎯 Maintaining beautifully! Focus on consistent, enjoyable eating patterns")
+        recommendations.append(i18n.get_text("rec_maintain_weight", language))
     
     # Water recommendations
     if 'weight_kg' in profile:
         water_data = calculate_water_needs(profile['weight_kg'], profile.get('activity_level', 'sedentary'))
-        recommendations.append(f"💧 Stay hydrated for success! Aim for {water_data['liters']}L daily ({water_data['glasses']} glasses)")
+        recommendations.append(i18n.get_text("rec_water_hydration", language, liters=water_data['liters'], glasses=water_data['glasses']))
     
     # Add motivational "wins" - positive reinforcement
     wins = [
-        "🌟 You're taking control of your health by tracking nutrition!",
-        "🎉 Every food analysis brings you closer to your goals!",
-        "💪 Small consistent steps lead to amazing transformations!",
-        "🚀 You're investing in the most important asset - your health!",
-        "✨ Progress, not perfection - you're doing great!"
+        i18n.get_text("rec_win_1", language),
+        i18n.get_text("rec_win_2", language),
+        i18n.get_text("rec_win_3", language),
+        i18n.get_text("rec_win_4", language),
+        i18n.get_text("rec_win_5", language)
     ]
     
     # Add a random win to keep it fresh

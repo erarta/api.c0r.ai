@@ -202,7 +202,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     
     # 1. BMI Analysis
     if weight > 0 and height > 0:
-        bmi_data = calculate_bmi(weight, height)
+        bmi_data = calculate_bmi(weight, height, user_language)
         insights.append(f"{i18n.get_text('nutrition_bmi_title', user_language)}")
         insights.append(f"{bmi_data['emoji']} **{bmi_data['bmi']}** - {bmi_data['description']}")
         insights.append(f"💡 {bmi_data['motivation']}")
@@ -217,7 +217,7 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     
     # 2. Metabolic Age
     if age > 0 and weight > 0 and height > 0:
-        metabolic_data = calculate_metabolic_age(age, gender, weight, height, activity)
+        metabolic_data = calculate_metabolic_age(age, gender, weight, height, activity, user_language)
         insights.append(f"{i18n.get_text('nutrition_metabolic_age_title', user_language)}")
         insights.append(f"{metabolic_data['emoji']} **{metabolic_data['metabolic_age']} years** (vs {age} actual)")
         insights.append(f"{metabolic_data['description']}")
@@ -242,14 +242,14 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
         insights.append("")
         
         # Meal portions
-        meal_data = calculate_meal_portions(daily_calories, 3)
+        meal_data = calculate_meal_portions(daily_calories, 3, user_language)
         insights.append(f"{i18n.get_text('nutrition_meal_distribution_title', user_language)}")
         for meal in meal_data['meal_breakdown']:
             insights.append(f"**{meal['name']}:** {meal['calories']} cal ({meal['percent']}%)")
         insights.append("")
     
     # 5. Personalized Recommendations
-    recommendations = get_nutrition_recommendations(profile, [])
+    recommendations = get_nutrition_recommendations(profile, [], user_language)
     if recommendations:
         insights.append(f"{i18n.get_text('nutrition_personal_recommendations_title', user_language)}")
         for rec in recommendations[:4]:  # Show top 4 recommendations

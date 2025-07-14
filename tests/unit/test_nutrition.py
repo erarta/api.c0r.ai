@@ -205,7 +205,7 @@ class TestGenerateNutritionInsights:
             'goal': 'maintain_weight'
         }
         
-        user = {'id': 'user-uuid', 'credits_remaining': 10}
+        user = {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}
         
         with patch('handlers.nutrition.calculate_bmi') as mock_bmi:
             with patch('handlers.nutrition.calculate_ideal_weight') as mock_ideal:
@@ -221,20 +221,28 @@ class TestGenerateNutritionInsights:
                                             'bmi': 24.2,
                                             'category': 'normal',
                                             'emoji': '✅',
+                                            'description': 'Healthy weight range',
                                             'motivation': 'Great job!'
                                         }
-                                        mock_ideal.return_value = {'min_weight': 58, 'max_weight': 72}
-                                        mock_age.return_value = {'metabolic_age': 28, 'motivation': 'Excellent!'}
-                                        mock_water.return_value = {'liters': 2.5, 'glasses': 10}
+                                        mock_ideal.return_value = {'range': '58-72 kg', 'broca': 65.0}
+                                        mock_age.return_value = {
+                                            'metabolic_age': 28, 
+                                            'emoji': '✅',
+                                            'description': 'Your metabolism matches your age',
+                                            'motivation': 'Excellent!'
+                                        }
+                                        mock_water.return_value = {'liters': 2.5, 'glasses': 10, 'base_ml': 2450, 'activity_bonus': 50}
                                         mock_macro.return_value = {
                                             'protein': {'grams': 140, 'percent': 25},
                                             'fat': {'grams': 70, 'percent': 30},
                                             'carbs': {'grams': 250, 'percent': 45}
                                         }
                                         mock_portions.return_value = {
-                                            'breakfast': 500,
-                                            'lunch': 800,
-                                            'dinner': 700
+                                            'meal_breakdown': [
+                                                {'name': 'Breakfast', 'calories': 500, 'percent': 25},
+                                                {'name': 'Lunch', 'calories': 800, 'percent': 40},
+                                                {'name': 'Dinner', 'calories': 700, 'percent': 35}
+                                            ]
                                         }
                                         mock_advice.return_value = "Maintain your current approach"
                                         mock_recs.return_value = ["Drink more water", "Eat vegetables"]

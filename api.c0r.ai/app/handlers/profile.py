@@ -65,68 +65,75 @@ async def profile_command(message: types.Message, state: FSMContext):
 
 async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     """Show profile menu for existing profile"""
+    from .i18n import i18n
+    user_language = user.get('language', 'en')
     # Format profile data
     age = profile.get('age', 'Not set')
-    gender = "👨 Male" if profile.get('gender') == 'male' else "👩 Female" if profile.get('gender') == 'female' else 'Not set'
-    height = f"{profile.get('height_cm', 'Not set')} cm" if profile.get('height_cm') else 'Not set'
-    weight = f"{profile.get('weight_kg', 'Not set')} kg" if profile.get('weight_kg') else 'Not set'
+    gender_map = {
+        'male': '👨',
+        'female': '👩',
+        None: ''
+    }
+    gender = gender_map.get(profile.get('gender'), '')
+    gender_label = i18n.get_text('profile_gender', user_language, gender=gender + ' ' + (i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else ''))
+    height = i18n.get_text('profile_height', user_language, height=profile.get('height_cm', 'Not set')) if profile.get('height_cm') else i18n.get_text('profile_height', user_language, height='Not set')
+    weight = i18n.get_text('profile_weight', user_language, weight=profile.get('weight_kg', 'Not set')) if profile.get('weight_kg') else i18n.get_text('profile_weight', user_language, weight='Not set')
     
     activity_labels = {
-        'sedentary': '😴 Sedentary (little/no exercise)',
-        'lightly_active': '🚶 Lightly active (light exercise 1-3 days/week)',
-        'moderately_active': '🏃 Moderately active (moderate exercise 3-5 days/week)',
-        'very_active': '💪 Very active (hard exercise 6-7 days/week)',
-        'extremely_active': '🏋️ Extremely active (very hard exercise, physical job)'
+        'sedentary': i18n.get_text('activity_sedentary', user_language),
+        'lightly_active': i18n.get_text('activity_lightly_active', user_language),
+        'moderately_active': i18n.get_text('activity_moderately_active', user_language),
+        'very_active': i18n.get_text('activity_very_active', user_language),
+        'extremely_active': i18n.get_text('activity_extremely_active', user_language)
     }
-    activity = activity_labels.get(profile.get('activity_level'), 'Not set')
+    activity = i18n.get_text('profile_activity', user_language, activity=activity_labels.get(profile.get('activity_level'), i18n.get_text('activity_not_set', user_language)))
     
     goal_labels = {
-        'lose_weight': '📉 Lose weight',
-        'maintain_weight': '⚖️ Maintain weight',
-        'gain_weight': '📈 Gain weight'
+        'lose_weight': i18n.get_text('goal_lose_weight', user_language),
+        'maintain_weight': i18n.get_text('goal_maintain_weight', user_language),
+        'gain_weight': i18n.get_text('goal_gain_weight', user_language)
     }
-    goal = goal_labels.get(profile.get('goal'), 'Not set')
+    goal = i18n.get_text('profile_goal', user_language, goal=goal_labels.get(profile.get('goal'), i18n.get_text('goal_not_set', user_language)))
     
     daily_calories = profile.get('daily_calories_target', 'Not calculated')
-    if daily_calories != 'Not calculated':
-        daily_calories = f"{daily_calories:,} calories"
+    calories_label = i18n.get_text('profile_calories', user_language, calories=daily_calories if daily_calories != 'Not calculated' else i18n.get_text('calories_not_calculated', user_language))
     
     profile_text = (
-        f"👤 **Your Profile**\n\n"
-        f"📅 **Age:** {age}\n"
-        f"👤 **Gender:** {gender}\n"
-        f"📏 **Height:** {height}\n"
-        f"⚖️ **Weight:** {weight}\n"
-        f"🏃 **Activity Level:** {activity}\n"
-        f"🎯 **Goal:** {goal}\n\n"
-        f"🔥 **Daily Calorie Target:** {daily_calories}\n\n"
-        f"What would you like to do?"
+        f"{i18n.get_text('profile_title', user_language)}\n\n"
+        f"{i18n.get_text('profile_age', user_language, age=age)}\n"
+        f"{gender_label}\n"
+        f"{height}\n"
+        f"{weight}\n"
+        f"{activity}\n"
+        f"{goal}\n\n"
+        f"{calories_label}\n\n"
+        f"{i18n.get_text('profile_what_next', user_language)}"
     )
     
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
-                text="✏️ Edit Profile",
+                text=i18n.get_text('profile_edit_btn', user_language),
                 callback_data="profile_edit"
             ),
             types.InlineKeyboardButton(
-                text="🔄 Recalculate Calories",
+                text=i18n.get_text('profile_recalculate_btn', user_language),
                 callback_data="profile_recalculate"
             )
         ],
         [
             types.InlineKeyboardButton(
-                text="📊 Daily Plan",
+                text=i18n.get_text('btn_daily_plan', user_language),
                 callback_data="action_daily"
             ),
             types.InlineKeyboardButton(
-                text="📈 Progress",
+                text=i18n.get_text('profile_progress_btn', user_language),
                 callback_data="profile_progress"
             )
         ],
         [
             types.InlineKeyboardButton(
-                text="🏠 Main Menu",
+                text=i18n.get_text('btn_main_menu', user_language),
                 callback_data="profile_main_menu"
             )
         ]
@@ -392,6 +399,62 @@ async def show_progress(message: types.Message, telegram_user_id: int):
         user_language = user.get('language', 'en')
         await message.answer(i18n.get_text("error_general", user_language))
 
+async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: dict):
+    """Show profile information for existing profile"""
+    from .i18n import i18n
+    user_language = user.get('language', 'en')
+    age = profile.get('age', 'Not set')
+    gender_map = {
+        'male': '👨',
+        'female': '👩',
+        None: ''
+    }
+    gender = gender_map.get(profile.get('gender'), '')
+    gender_label = i18n.get_text('profile_gender', user_language, gender=gender + ' ' + (i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else ''))
+    height = i18n.get_text('profile_height', user_language, height=profile.get('height_cm', 'Not set')) if profile.get('height_cm') else i18n.get_text('profile_height', user_language, height='Not set')
+    weight = i18n.get_text('profile_weight', user_language, weight=profile.get('weight_kg', 'Not set')) if profile.get('weight_kg') else i18n.get_text('profile_weight', user_language, weight='Not set')
+    
+    activity_labels = {
+        'sedentary': i18n.get_text('activity_sedentary', user_language),
+        'lightly_active': i18n.get_text('activity_lightly_active', user_language),
+        'moderately_active': i18n.get_text('activity_moderately_active', user_language),
+        'very_active': i18n.get_text('activity_very_active', user_language),
+        'extremely_active': i18n.get_text('activity_extremely_active', user_language)
+    }
+    activity = i18n.get_text('profile_activity', user_language, activity=activity_labels.get(profile.get('activity_level'), i18n.get_text('activity_not_set', user_language)))
+    
+    goal_labels = {
+        'lose_weight': i18n.get_text('goal_lose_weight', user_language),
+        'maintain_weight': i18n.get_text('goal_maintain_weight', user_language),
+        'gain_weight': i18n.get_text('goal_gain_weight', user_language)
+    }
+    goal = i18n.get_text('profile_goal', user_language, goal=goal_labels.get(profile.get('goal'), i18n.get_text('goal_not_set', user_language)))
+    
+    daily_calories = profile.get('daily_calories_target', 'Not calculated')
+    calories_label = i18n.get_text('profile_calories', user_language, calories=daily_calories if daily_calories != 'Not calculated' else i18n.get_text('calories_not_calculated', user_language))
+    
+    profile_text = (
+        f"{i18n.get_text('profile_title', user_language)}\n\n"
+        f"{i18n.get_text('profile_age', user_language, age=age)}\n"
+        f"{gender_label}\n"
+        f"{height}\n"
+        f"{weight}\n"
+        f"{activity}\n"
+        f"{goal}\n\n"
+        f"{calories_label}"
+    )
+    
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('profile_edit_btn', user_language),
+                callback_data="profile_edit"
+            )
+        ]
+    ])
+    
+    await callback.message.answer(profile_text, parse_mode="Markdown", reply_markup=keyboard)
+
 # FSM handlers for profile setup steps
 async def process_age(message: types.Message, state: FSMContext):
     """Process age input"""
@@ -426,7 +489,7 @@ async def process_age(message: types.Message, state: FSMContext):
         user_language = user.get('language', 'en')
         
         await message.answer(
-            f"✅ Age: {age} years\n\n"
+            f"✅ {i18n.get_text('profile_setup_age_success', user_language, age=age)}\n\n"
             f"{i18n.get_text('profile_setup_gender', user_language)}",
             parse_mode="Markdown",
             reply_markup=keyboard
@@ -459,8 +522,7 @@ async def process_gender(callback: types.CallbackQuery, state: FSMContext):
     
     await callback.answer()
     await callback.message.answer(
-        f"✅ Gender: {gender_label}\n\n"
-        f"{i18n.get_text('profile_setup_height', user_language)}",
+        f"✅ {i18n.get_text('profile_setup_gender_success', user_language, gender=gender_label)}",
         parse_mode="Markdown"
     )
 
@@ -490,8 +552,7 @@ async def process_height(message: types.Message, state: FSMContext):
         user_language = user.get('language', 'en')
         
         await message.answer(
-            f"✅ Height: {height} cm\n\n"
-            f"{i18n.get_text('profile_setup_weight', user_language)}",
+            f"✅ {i18n.get_text('profile_setup_height_success', user_language, height=height)}",
             parse_mode="Markdown"
         )
         
@@ -527,11 +588,11 @@ async def process_weight(message: types.Message, state: FSMContext):
         await state.set_state(ProfileStates.waiting_for_activity)
         
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-            [types.InlineKeyboardButton(text="😴 Sedentary", callback_data="activity_sedentary")],
-            [types.InlineKeyboardButton(text="🚶 Lightly Active", callback_data="activity_lightly_active")],
-            [types.InlineKeyboardButton(text="🏃 Moderately Active", callback_data="activity_moderately_active")],
-            [types.InlineKeyboardButton(text="💪 Very Active", callback_data="activity_very_active")],
-            [types.InlineKeyboardButton(text="🏋️ Extremely Active", callback_data="activity_extremely_active")]
+            [types.InlineKeyboardButton(text=i18n.get_text('activity_sedentary', user_language), callback_data="activity_sedentary")],
+            [types.InlineKeyboardButton(text=i18n.get_text('activity_lightly_active', user_language), callback_data="activity_lightly_active")],
+            [types.InlineKeyboardButton(text=i18n.get_text('activity_moderately_active', user_language), callback_data="activity_moderately_active")],
+            [types.InlineKeyboardButton(text=i18n.get_text('activity_very_active', user_language), callback_data="activity_very_active")],
+            [types.InlineKeyboardButton(text=i18n.get_text('activity_extremely_active', user_language), callback_data="activity_extremely_active")]
         ])
         
         # Get user's language
@@ -539,8 +600,7 @@ async def process_weight(message: types.Message, state: FSMContext):
         user_language = user.get('language', 'en')
         
         await message.answer(
-            f"✅ Weight: {weight} kg\n\n"
-            f"{i18n.get_text('profile_setup_activity', user_language)}",
+            f"✅ {i18n.get_text('profile_setup_weight_success', user_language, weight=weight)}",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -574,9 +634,9 @@ async def process_activity(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(ProfileStates.waiting_for_goal)
     
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="📉 Lose Weight", callback_data="goal_lose_weight")],
-        [types.InlineKeyboardButton(text="⚖️ Maintain Weight", callback_data="goal_maintain_weight")],
-        [types.InlineKeyboardButton(text="📈 Gain Weight", callback_data="goal_gain_weight")]
+        [types.InlineKeyboardButton(text=i18n.get_text('goal_lose_weight', user_language), callback_data="goal_lose_weight")],
+        [types.InlineKeyboardButton(text=i18n.get_text('goal_maintain_weight', user_language), callback_data="goal_maintain_weight")],
+        [types.InlineKeyboardButton(text=i18n.get_text('goal_gain_weight', user_language), callback_data="goal_gain_weight")]
     ])
     
     # Get user's language
@@ -585,8 +645,7 @@ async def process_activity(callback: types.CallbackQuery, state: FSMContext):
     
     await callback.answer()
     await callback.message.answer(
-        f"✅ Activity Level: {activity_label}\n\n"
-        f"{i18n.get_text('profile_setup_goal', user_language)}",
+        f"✅ {i18n.get_text('profile_setup_activity_success', user_language, activity=activity_label)}",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
