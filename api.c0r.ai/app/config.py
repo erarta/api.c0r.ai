@@ -25,7 +25,7 @@ PAYMENT_PLANS = {
     "pro": {
         "title": "Pro Plan", 
         "description": "100 credits for food analysis",
-        "price": 14900,  # 149 RUB in kopecks
+        "price": 34900,  # 149 RUB in kopecks
         "credits": 100,
         "currency": "RUB",
         "recurring": True,
