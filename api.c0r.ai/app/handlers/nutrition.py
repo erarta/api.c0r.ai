@@ -244,8 +244,8 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
         # Meal portions
         meal_data = calculate_meal_portions(daily_calories, 3, user_language)
         insights.append(f"{i18n.get_text('nutrition_meal_distribution_title', user_language)}")
-        for meal in meal_data['meal_breakdown']:
-            insights.append(f"**{meal['name']}:** {meal['calories']} cal ({meal['percent']}%)")
+        for meal in meal_data['meals']:
+            insights.append(f"**{meal['name']}:** {meal['calories']} cal ({meal['percentage']}%)")
         insights.append("")
     
     # 5. Personalized Recommendations
@@ -260,7 +260,11 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     goal_advice = get_goal_specific_advice(goal, profile, user_language)
     if goal_advice:
         insights.append(f"{i18n.get_text('nutrition_goal_advice_title', user_language)}")
-        insights.append(goal_advice)
+        # Split the advice into lines and add each line
+        advice_lines = goal_advice.split('\n')
+        for line in advice_lines:
+            if line.strip():  # Only add non-empty lines
+                insights.append(line)
         insights.append("")
     
     # Footer

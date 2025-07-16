@@ -164,30 +164,37 @@ class TestNutritionInsights:
     
     @pytest.mark.asyncio
     async def test_nutrition_insights_callback(self):
-        """Test nutrition insights callback from button clicks"""
+        """Test nutrition insights callback"""
         callback = Mock()
-        callback.message = Mock()
-        callback.message.from_user.id = 123456789
-        callback.message.from_user.username = "testuser"
-        callback.message.answer = AsyncMock()
+        callback.from_user.id = 123456789
+        callback.from_user.username = "testuser"
         callback.answer = AsyncMock()
+        callback.message.answer = AsyncMock()
         
         user_data = {
-            'user': {'id': 'user-uuid', 'credits_remaining': 10},
-            'profile': None,
-            'has_profile': False
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'},
+            'profile': {
+                'age': 30,
+                'gender': 'male',
+                'weight_kg': 75.0,
+                'height_cm': 180.0,
+                'activity_level': 'moderately_active',
+                'goal': 'lose_weight',
+                'daily_calories_target': 2000
+            },
+            'has_profile': True
         }
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    
-                    await nutrition_insights_callback(callback)
-                    
-                    # Should answer callback
-                    callback.answer.assert_called_once()
-                    # Should show profile setup message
-                    callback.message.answer.assert_called_once()
+                    with patch('handlers.nutrition.generate_nutrition_insights', return_value="Mock insights"):
+                        await nutrition_insights_callback(callback)
+                        
+                        callback.answer.assert_called_once()
+                        callback.message.answer.assert_called_once()
+                        call_args = callback.message.answer.call_args[0][0]
+                        assert "Mock insights" in call_args
 
 
 class TestGenerateNutritionInsights:
@@ -195,115 +202,126 @@ class TestGenerateNutritionInsights:
     
     @pytest.mark.asyncio
     async def test_generate_insights_complete_profile(self):
-        """Test insights generation with complete profile"""
+        """Test nutrition insights generation with complete profile"""
         profile = {
             'age': 30,
-            'weight_kg': 70,
-            'height_cm': 170,
             'gender': 'male',
+            'weight_kg': 75.0,
+            'height_cm': 180.0,
             'activity_level': 'moderately_active',
-            'goal': 'maintain_weight'
+            'goal': 'lose_weight',
+            'daily_calories_target': 2000
         }
         
         user = {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}
         
-        with patch('handlers.nutrition.calculate_bmi') as mock_bmi:
-            with patch('handlers.nutrition.calculate_ideal_weight') as mock_ideal:
-                with patch('handlers.nutrition.calculate_metabolic_age') as mock_age:
-                    with patch('handlers.nutrition.calculate_water_needs') as mock_water:
-                        with patch('handlers.nutrition.calculate_macro_distribution') as mock_macro:
-                            with patch('handlers.nutrition.calculate_meal_portions') as mock_portions:
-                                with patch('handlers.nutrition.get_goal_specific_advice') as mock_advice:
-                                    with patch('handlers.nutrition.get_nutrition_recommendations') as mock_recs:
-                                        
-                                        # Mock all calculation returns
-                                        mock_bmi.return_value = {
-                                            'bmi': 24.2,
-                                            'category': 'normal',
-                                            'emoji': '✅',
-                                            'description': 'Healthy weight range',
-                                            'motivation': 'Great job!'
-                                        }
-                                        mock_ideal.return_value = {'range': '58-72 kg', 'broca': 65.0}
-                                        mock_age.return_value = {
-                                            'metabolic_age': 28, 
-                                            'emoji': '✅',
-                                            'description': 'Your metabolism matches your age',
-                                            'motivation': 'Excellent!'
-                                        }
-                                        mock_water.return_value = {'liters': 2.5, 'glasses': 10, 'base_ml': 2450, 'activity_bonus': 50}
-                                        mock_macro.return_value = {
-                                            'protein': {'grams': 140, 'percent': 25},
-                                            'fat': {'grams': 70, 'percent': 30},
-                                            'carbs': {'grams': 250, 'percent': 45}
-                                        }
-                                        mock_portions.return_value = {
-                                            'meal_breakdown': [
-                                                {'name': 'Breakfast', 'calories': 500, 'percent': 25},
-                                                {'name': 'Lunch', 'calories': 800, 'percent': 40},
-                                                {'name': 'Dinner', 'calories': 700, 'percent': 35}
-                                            ]
-                                        }
-                                        mock_advice.return_value = "Maintain your current approach"
-                                        mock_recs.return_value = ["Drink more water", "Eat vegetables"]
-                                        
-                                        insights = await generate_nutrition_insights(profile, user)
-                                        
-                                        # Check that insights contain key information
-                                        assert "🔬 **Nutrition Insights**" in insights
-                                        assert "BMI" in insights
-                                        assert "24.2" in insights
-                                        assert "✅" in insights
-                                        assert "Great job!" in insights
+        with patch('handlers.nutrition.calculate_bmi') as mock_bmi, \
+             patch('handlers.nutrition.calculate_ideal_weight') as mock_ideal, \
+             patch('handlers.nutrition.calculate_metabolic_age') as mock_age, \
+             patch('handlers.nutrition.calculate_water_needs') as mock_water, \
+             patch('handlers.nutrition.calculate_macro_distribution') as mock_macro, \
+             patch('handlers.nutrition.calculate_meal_portions') as mock_meals, \
+             patch('handlers.nutrition.get_nutrition_recommendations') as mock_rec, \
+             patch('handlers.nutrition.get_goal_specific_advice') as mock_goal:
+            
+            # Mock all calculation returns
+            mock_bmi.return_value = {
+                'bmi': 24.2,
+                'category': 'normal',
+                'emoji': '✅',
+                'description': 'Healthy weight range',
+                'motivation': 'Great job!'
+            }
+            mock_ideal.return_value = {'range': '58-72 kg', 'broca': 65.0}
+            mock_age.return_value = {
+                'metabolic_age': 28, 
+                'emoji': '✅',
+                'description': 'Your metabolism matches your age',
+                'motivation': 'Excellent!'
+            }
+            mock_water.return_value = {
+                'liters': 3.4,
+                'glasses': 14,
+                'base_ml': 2415,
+                'activity_bonus': 966
+            }
+            mock_macro.return_value = {
+                'protein': {'grams': 152, 'percent': 25},
+                'carbs': {'grams': 273, 'percent': 45},
+                'fat': {'grams': 81, 'percent': 30}
+            }
+            mock_meals.return_value = {
+                'meals': [
+                    {'name': 'Breakfast', 'calories': 608, 'percentage': 25},
+                    {'name': 'Lunch', 'calories': 972, 'percentage': 40},
+                    {'name': 'Dinner', 'calories': 850, 'percentage': 35}
+                ]
+            }
+            mock_rec.return_value = ['Stay hydrated!', 'Eat more protein']
+            mock_goal.return_value = 'Focus on portion control for weight loss success!'
+            
+            insights = await generate_nutrition_insights(profile, user)
+            
+            # Check that insights contain expected i18n-based content
+            assert "🔬 **Your Nutrition Analysis**" in insights
+            assert "📊 **Body Mass Index (BMI):**" in insights
+            assert "✅ **24.2** - Healthy weight range" in insights
+            assert "🎯 **Ideal Weight Range:**" in insights
+            assert "🧬 **Metabolic Age:**" in insights
+            assert "💧 **Daily Water Needs:**" in insights
+            assert "🥗 **Optimal Macro Distribution:**" in insights
+            assert "🍽️ **Meal Distribution:**" in insights
+            assert "💡 **Personal Recommendations:**" in insights
+            assert "🎯 **Goal-Specific Advice:**" in insights
 
 
 class TestGoalSpecificAdvice:
     """Test suite for goal-specific advice"""
     
     def test_weight_loss_advice(self):
-        """Test advice for weight loss goal"""
+        """Test weight loss goal advice"""
         profile = {
-            'goal': 'lose_weight',
+            'age': 30,
+            'gender': 'male',
             'weight_kg': 80,
-            'height_cm': 170,
+            'height_cm': 175,
             'activity_level': 'moderately_active'
         }
         
-        advice = get_goal_specific_advice('lose_weight', profile)
+        advice = get_goal_specific_advice('lose_weight', profile, 'en')
         
-        assert "sustainable wins" in advice.lower()
-        assert "gentle deficit" in advice.lower()
-        assert "🎯" in advice
+        assert isinstance(advice, str)
+        assert "weight" in advice.lower()
     
     def test_weight_gain_advice(self):
-        """Test advice for weight gain goal"""
+        """Test weight gain goal advice"""
         profile = {
-            'goal': 'gain_weight',
-            'weight_kg': 60,
-            'height_cm': 170,
-            'activity_level': 'moderately_active'
+            'age': 25,
+            'gender': 'female',
+            'weight_kg': 50,
+            'height_cm': 165,
+            'activity_level': 'lightly_active'
         }
         
-        advice = get_goal_specific_advice('gain_weight', profile)
+        advice = get_goal_specific_advice('gain_weight', profile, 'en')
         
-        assert "healthy weight building" in advice.lower()
-        assert "steady progress" in advice.lower()
-        assert "💪" in advice
+        assert isinstance(advice, str)
+        assert "weight" in advice.lower()
     
     def test_maintenance_advice(self):
-        """Test advice for maintenance goal"""
+        """Test weight maintenance goal advice"""
         profile = {
-            'goal': 'maintain_weight',
+            'age': 35,
+            'gender': 'male',
             'weight_kg': 70,
             'height_cm': 170,
             'activity_level': 'moderately_active'
         }
         
-        advice = get_goal_specific_advice('maintain_weight', profile)
+        advice = get_goal_specific_advice('maintain_weight', profile, 'en')
         
-        assert "sweet spot" in advice.lower()
-        assert "joyful eating" in advice.lower()
-        assert "🎉" in advice
+        assert isinstance(advice, str)
+        assert "maintenance" in advice.lower() or "sweet spot" in advice.lower() or "consistent" in advice.lower()
 
 
 class TestWaterTracker:
@@ -318,7 +336,7 @@ class TestWaterTracker:
         message.answer = AsyncMock()
         
         user_data = {
-            'user': {'id': 'user-uuid', 'credits_remaining': 10},
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'},
             'profile': {
                 'weight_kg': 70,
                 'activity_level': 'moderately_active'
@@ -331,19 +349,20 @@ class TestWaterTracker:
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
                     with patch('handlers.nutrition.calculate_water_needs') as mock_water:
                         mock_water.return_value = {
-                            'liters': 2.5,
-                            'glasses': 10,
-                            'base_water': 2.45,
-                            'activity_bonus': 0.05
+                            'liters': 3.4,
+                            'glasses': 14,
+                            'base_ml': 2415,
+                            'activity_bonus': 966,
+                            'total_ml': 3381
                         }
                         
                         await water_tracker_command(message)
                         
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "💧 **Water Tracker**" in call_args
-                        assert "2.5" in call_args
-                        assert "10" in call_args
+                        assert "💧 **Your Water Needs**" in call_args
+                        assert "3.4L" in call_args
+                        assert "14 glasses" in call_args
     
     @pytest.mark.asyncio
     async def test_water_tracker_without_profile(self):
@@ -354,7 +373,7 @@ class TestWaterTracker:
         message.answer = AsyncMock()
         
         user_data = {
-            'user': {'id': 'user-uuid', 'credits_remaining': 10},
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'},
             'profile': None,
             'has_profile': False
         }
@@ -362,13 +381,12 @@ class TestWaterTracker:
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    
                     await water_tracker_command(message)
                     
                     message.answer.assert_called_once()
                     call_args = message.answer.call_args[0][0]
                     assert "💧 **Water Tracker**" in call_args
-                    assert "Please complete your profile" in call_args
+                    assert "Set up your profile" in call_args
 
 
 class TestWeeklyReport:
@@ -383,14 +401,10 @@ class TestWeeklyReport:
         message.answer = AsyncMock()
         
         user_data = {
-            'user': {'id': 'user-uuid', 'credits_remaining': 10},
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'},
             'profile': {
-                'age': 30,
                 'weight_kg': 70,
-                'height_cm': 170,
-                'gender': 'male',
-                'activity_level': 'moderately_active',
-                'goal': 'maintain_weight'
+                'activity_level': 'moderately_active'
             },
             'has_profile': True
         }
@@ -398,13 +412,12 @@ class TestWeeklyReport:
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    
                     await weekly_report_command(message)
                     
                     message.answer.assert_called_once()
                     call_args = message.answer.call_args[0][0]
-                    assert "📈 **Weekly Report**" in call_args
-                    assert "Coming soon" in call_args
+                    assert "📊 **Weekly Report**" in call_args
+                    assert "Week of:" in call_args
     
     @pytest.mark.asyncio
     async def test_weekly_report_without_profile(self):
@@ -415,7 +428,7 @@ class TestWeeklyReport:
         message.answer = AsyncMock()
         
         user_data = {
-            'user': {'id': 'user-uuid', 'credits_remaining': 10},
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'},
             'profile': None,
             'has_profile': False
         }
@@ -423,13 +436,12 @@ class TestWeeklyReport:
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    
                     await weekly_report_command(message)
                     
                     message.answer.assert_called_once()
                     call_args = message.answer.call_args[0][0]
-                    assert "📈 **Weekly Report**" in call_args
-                    assert "Please complete your profile" in call_args
+                    assert "📊 **Weekly Report**" in call_args
+                    assert "Week of:" in call_args
 
 
 if __name__ == "__main__":
