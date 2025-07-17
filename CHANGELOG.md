@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.28] - 2025-01-21
+
+### Fixed
+- **Critical Docker Deployment Issue**: Fixed `ModuleNotFoundError: No module named 'i18n'` in production API container
+- **Dockerfile Update**: Added missing `COPY i18n ./i18n` command to include i18n folder in Docker image
+- **Production API Service**: Resolved API service startup failure that was causing 502 errors
+- **Container Build Process**: Ensured i18n module is properly included in Docker container build
+
+### Technical
+- **Dockerfile Enhancement**: Updated `api.c0r.ai/Dockerfile` to copy i18n folder to container
+- **Module Resolution**: Fixed import path resolution for i18n module in production environment
+- **Container Structure**: Ensured proper file structure in Docker container matches local development
+- **Deployment Reliability**: Improved production deployment reliability with complete module inclusion
+
+### Production Impact
+- **API Service Recovery**: API service now starts successfully without import errors
+- **Health Check Resolution**: Fixed 502 errors in production health checks
+- **Service Availability**: All API endpoints now accessible in production environment
+- **Deployment Stability**: Improved overall deployment stability and reliability
+
+### Root Cause
+- **Missing Module**: i18n folder was not copied to Docker container during build process
+- **Import Failure**: API service failed to start due to missing i18n module dependencies
+- **Deployment Gap**: Dockerfile was not updated after i18n folder structure refactoring
+
 ## [0.3.27] - 2025-01-21
 
 ### Added
