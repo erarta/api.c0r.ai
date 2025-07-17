@@ -343,28 +343,31 @@ async def buy_credits_command(message: types.Message):
             }
         )
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
         # Get prices from config
         basic_price = PAYMENT_PLANS['basic']['price'] // 100  # Convert kopecks to rubles
         pro_price = PAYMENT_PLANS['pro']['price'] // 100
         
         # Show current credits and payment options
         await message.answer(
-            f"💳 **Buy Credits**\n\n"
-            f"Current credits: *{user['credits_remaining']}*\n\n"
-            f"📦 **Basic Plan**: {PAYMENT_PLANS['basic']['credits']} credits for {basic_price} RUB\n"
-            f"📦 **Pro Plan**: {PAYMENT_PLANS['pro']['credits']} credits for {pro_price} RUB\n\n"
-            f"Choose a plan to continue:",
+            f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
+            f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
+            f"📦 **{i18n.get_text('basic_plan_title', user_language)}**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
+            f"📦 **{i18n.get_text('pro_plan_title', user_language)}**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
+            f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text=f"💰 Basic Plan ({basic_price} RUB)",
+                        text=f"💰 {i18n.get_text('basic_plan_btn', user_language, price=basic_price)}",
                         callback_data="buy_basic"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text=f"💎 Pro Plan ({pro_price} RUB)", 
+                        text=f"💎 {i18n.get_text('pro_plan_btn', user_language, price=pro_price)}", 
                         callback_data="buy_pro"
                     )
                 ]
@@ -373,7 +376,7 @@ async def buy_credits_command(message: types.Message):
         
     except Exception as e:
         logger.error(f"Error in /buy for user {telegram_user_id}: {e}")
-        await message.answer("An error occurred. Please try again later.")
+        await message.answer(i18n.get_text("error_general", user_language))
 
 # Buy callback handler - handles button clicks
 async def buy_callback(callback: types.CallbackQuery):
@@ -401,28 +404,31 @@ async def buy_callback(callback: types.CallbackQuery):
             }
         )
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
         # Get prices from config
         basic_price = PAYMENT_PLANS['basic']['price'] // 100  # Convert kopecks to rubles
         pro_price = PAYMENT_PLANS['pro']['price'] // 100
         
         # Show current credits and payment options
         await callback.message.answer(
-            f"💳 **Buy Credits**\n\n"
-            f"Current credits: *{user['credits_remaining']}*\n\n"
-            f"📦 **Basic Plan**: {PAYMENT_PLANS['basic']['credits']} credits for {basic_price} RUB\n"
-            f"📦 **Pro Plan**: {PAYMENT_PLANS['pro']['credits']} credits for {pro_price} RUB\n\n"
-            f"Choose a plan to continue:",
+            f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
+            f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
+            f"📦 **{i18n.get_text('basic_plan_title', user_language)}**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
+            f"📦 **{i18n.get_text('pro_plan_title', user_language)}**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
+            f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text=f"💰 Basic Plan ({basic_price} RUB)",
+                        text=f"💰 {i18n.get_text('basic_plan_btn', user_language, price=basic_price)}",
                         callback_data="buy_basic"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text=f"💎 Pro Plan ({pro_price} RUB)", 
+                        text=f"💎 {i18n.get_text('pro_plan_btn', user_language, price=pro_price)}", 
                         callback_data="buy_pro"
                     )
                 ]
@@ -431,7 +437,7 @@ async def buy_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in buy callback for user {telegram_user_id}: {e}")
-        await callback.message.answer("An error occurred. Please try again later.")
+        await callback.message.answer(i18n.get_text("error_general", user_language))
 
 # Profile callback handler - handles button clicks
 async def profile_callback(callback: types.CallbackQuery):
@@ -467,52 +473,61 @@ async def profile_callback(callback: types.CallbackQuery):
             
     except Exception as e:
         logger.error(f"Error in profile callback for user {telegram_user_id}: {e}")
-        await callback.message.answer("❌ An error occurred. Please try again later.")
+        await callback.message.answer("❌ " + i18n.get_text("error_profile", user_language))
 
 async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: dict):
     """Show profile information for existing profile"""
+    # Get user's language
+    user_language = user.get('language', 'en')
+    
     # Format profile data
     age = profile.get('age', 'Not set')
-    gender = "👨 Male" if profile.get('gender') == 'male' else "👩 Female" if profile.get('gender') == 'female' else 'Not set'
-    height = f"{profile.get('height_cm', 'Not set')} cm" if profile.get('height_cm') else 'Not set'
-    weight = f"{profile.get('weight_kg', 'Not set')} kg" if profile.get('weight_kg') else 'Not set'
+    gender = "👨 " + i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else "👩 " + i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else 'Not set'
+    height = f"{profile.get('height_cm', 'Not set')} {i18n.get_text('cm', user_language)}" if profile.get('height_cm') else 'Not set'
+    weight = f"{profile.get('weight_kg', 'Not set')} {i18n.get_text('kg', user_language)}" if profile.get('weight_kg') else 'Not set'
     
     activity_labels = {
-        'sedentary': '😴 Sedentary',
-        'lightly_active': '🚶 Lightly Active',
-        'moderately_active': '🏃 Moderately Active',
-        'very_active': '💪 Very Active',
-        'extremely_active': '🏋️ Extremely Active'
+        'sedentary': '😴 ' + i18n.get_text('activity_sedentary', user_language),
+        'lightly_active': '🚶 ' + i18n.get_text('activity_lightly_active', user_language),
+        'moderately_active': '🏃 ' + i18n.get_text('activity_moderately_active', user_language),
+        'very_active': '💪 ' + i18n.get_text('activity_very_active', user_language),
+        'extremely_active': '🏋️ ' + i18n.get_text('activity_extremely_active', user_language)
     }
     activity = activity_labels.get(profile.get('activity_level'), 'Not set')
     
     goal_labels = {
-        'lose_weight': '📉 Lose weight',
-        'maintain_weight': '⚖️ Maintain weight',
-        'gain_weight': '📈 Gain weight'
+        'lose_weight': '📉 ' + i18n.get_text('goal_lose_weight', user_language),
+        'maintain_weight': '⚖️ ' + i18n.get_text('goal_maintain_weight', user_language),
+        'gain_weight': '📈 ' + i18n.get_text('goal_gain_weight', user_language)
     }
     goal = goal_labels.get(profile.get('goal'), 'Not set')
     
     daily_calories = profile.get('daily_calories_target', 'Not calculated')
     if daily_calories != 'Not calculated':
-        daily_calories = f"{daily_calories:,} calories"
+        daily_calories = f"{daily_calories:,} {i18n.get_text('calories', user_language)}"
     
     profile_text = (
-        f"👤 **Your Profile**\n\n"
-        f"📅 **Age:** {age}\n"
-        f"👤 **Gender:** {gender}\n"
-        f"📏 **Height:** {height}\n"
-        f"⚖️ **Weight:** {weight}\n"
-        f"🏃 **Activity Level:** {activity}\n"
-        f"🎯 **Goal:** {goal}\n\n"
-        f"🔥 **Daily Calorie Target:** {daily_calories}"
+        f"{i18n.get_text('profile_title', user_language)}\n\n"
+        f"{i18n.get_text('profile_age', user_language, age=age)}\n"
+        f"{i18n.get_text('profile_gender', user_language, gender=gender)}\n"
+        f"{i18n.get_text('profile_height', user_language, height=height)}\n"
+        f"{i18n.get_text('profile_weight', user_language, weight=weight)}\n"
+        f"{i18n.get_text('profile_activity', user_language, activity=activity)}\n"
+        f"{i18n.get_text('profile_goal', user_language, goal=goal)}\n\n"
+        f"{i18n.get_text('profile_calories', user_language, calories=daily_calories)}"
     )
     
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
-                text="✏️ Edit Profile",
+                text=i18n.get_text('profile_edit_btn', user_language),
                 callback_data="profile_edit"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('btn_back', user_language),
+                callback_data="action_main_menu"
             )
         ]
     ])
@@ -521,22 +536,24 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
 
 async def show_profile_setup_info(callback: types.CallbackQuery, user: dict):
     """Show profile setup information for new users"""
+    # Get user's language
+    user_language = user.get('language', 'en')
+    
     setup_text = (
-        f"👤 **Profile Setup**\n\n"
-        f"🎯 To provide you with personalized nutrition recommendations and daily calorie targets, "
-        f"I need some information about you.\n\n"
-        f"📊 **What I'll calculate for you:**\n"
-        f"• Daily calorie target based on your goals\n"
-        f"• Personalized nutrition recommendations\n"
-        f"• Progress tracking towards your goals\n\n"
-        f"🔒 **Your data is private and secure.**\n\n"
-        f"Ready to get started?"
+        f"👤 **{i18n.get_text('profile_setup_title', user_language)}**\n\n"
+        f"🎯 {i18n.get_text('profile_setup_info_1', user_language)}\n\n"
+        f"📊 **{i18n.get_text('profile_setup_what_i_will_calculate', user_language)}**: \n"
+        f"• {i18n.get_text('profile_setup_daily_calorie_target', user_language)}\n"
+        f"• {i18n.get_text('profile_setup_personalized_nutrition', user_language)}\n"
+        f"• {i18n.get_text('profile_setup_progress_tracking', user_language)}\n\n"
+        f"🔒 **{i18n.get_text('profile_setup_your_data_is_private', user_language)}**\n\n"
+        f"{i18n.get_text('profile_setup_ready_to_start', user_language)}?"
     )
     
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
-                text="🚀 Set Up Profile",
+                text=i18n.get_text('profile_setup_set_up_profile_btn', user_language),
                 callback_data="profile_start_setup"
             )
         ]
@@ -557,22 +574,37 @@ async def handle_action_callback(callback: types.CallbackQuery):
         await callback.answer()
         
         if action == "analyze_info":
+            # Get user's language
+            user = await get_or_create_user(telegram_user_id)
+            user_language = user.get('language', 'en')
+            
+            # Create keyboard with back button
+            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text('btn_back', user_language),
+                        callback_data="action_main_menu"
+                    )
+                ]
+            ])
+            
             await callback.message.answer(
-                "📸 **How to Analyze Food Photos:**\n\n"
-                "1. Take a clear photo of your food\n"
-                "2. Make sure the food is well-lit and visible\n"
-                "3. Send the photo to me\n"
-                "4. I'll analyze it and give you:\n"
-                "   • Calories\n"
-                "   • Protein\n"
-                "   • Fats\n"
-                "   • Carbohydrates\n\n"
-                "💡 **Tips for better results:**\n"
-                "• Include the whole meal in the photo\n"
-                "• Avoid blurry or dark photos\n"
-                "• One dish per photo works best\n\n"
-                "📤 **Ready?** Send me your food photo now!",
-                parse_mode="Markdown"
+                f"📸 **{i18n.get_text('how_to_analyze_food_photos_title', user_language)}**\n\n"
+                f"1. {i18n.get_text('how_to_analyze_food_photos_step_1', user_language)}\n"
+                f"2. {i18n.get_text('how_to_analyze_food_photos_step_2', user_language)}\n"
+                f"3. {i18n.get_text('how_to_analyze_food_photos_step_3', user_language)}\n"
+                f"4. {i18n.get_text('how_to_analyze_food_photos_step_4', user_language)}\n"
+                f"   • {i18n.get_text('how_to_analyze_food_photos_result_calories', user_language)}\n"
+                f"   • {i18n.get_text('how_to_analyze_food_photos_result_protein', user_language)}\n"
+                f"   • {i18n.get_text('how_to_analyze_food_photos_result_fats', user_language)}\n"
+                f"   • {i18n.get_text('how_to_analyze_food_photos_result_carbohydrates', user_language)}\n\n"
+                f"💡 **{i18n.get_text('how_to_analyze_food_photos_tips', user_language)}**: \n"
+                f"• {i18n.get_text('how_to_analyze_food_photos_tip_1', user_language)}\n"
+                f"• {i18n.get_text('how_to_analyze_food_photos_tip_2', user_language)}\n"
+                f"• {i18n.get_text('how_to_analyze_food_photos_tip_3', user_language)}\n\n"
+                f"📤 **{i18n.get_text('how_to_analyze_food_photos_ready', user_language)}**? {i18n.get_text('how_to_analyze_food_photos_send_photo_now', user_language)}!",
+                parse_mode="Markdown",
+                reply_markup=keyboard
             )
         elif action == "status":
             await status_callback(callback)  # ← ИСПРАВЛЕНО: используем callback вместо callback.message

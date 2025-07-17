@@ -322,10 +322,14 @@ async def get_daily_calories_consumed(user_id: str, date: str = None):
     for log in logs:
         if log.get('kbzhu'):
             kbzhu = log['kbzhu']
+            logger.info(f"Processing kbzhu data: {kbzhu}")
+            
             calories = float(kbzhu.get('calories', 0))
-            protein = float(kbzhu.get('protein', 0))
+            protein = float(kbzhu.get('proteins', 0))  # Changed from 'protein' to 'proteins'
             fats = float(kbzhu.get('fats', 0))
-            carbs = float(kbzhu.get('carbs', 0))
+            carbs = float(kbzhu.get('carbohydrates', 0))  # Changed from 'carbs' to 'carbohydrates'
+            
+            logger.info(f"Extracted values - calories: {calories}, protein: {protein}, fats: {fats}, carbs: {carbs}")
             
             total_calories += calories
             total_protein += protein
@@ -352,7 +356,7 @@ async def get_daily_calories_consumed(user_id: str, date: str = None):
         'food_items': food_items
     }
     
-    logger.info(f"Daily calories for user {user_id} on {date}: {total_calories}")
+    logger.info(f"Daily summary for user {user_id} on {date}: {result}")
     return result
 
 # LOGS

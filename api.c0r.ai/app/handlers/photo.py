@@ -17,7 +17,7 @@ from config import PAYMENT_PLANS
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
 
 # Helper to format KBZHU nicely with detailed breakdown
-def format_analysis_result(result: dict) -> str:
+def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     message_parts = []
     
     # Add food items breakdown if available
@@ -27,16 +27,16 @@ def format_analysis_result(result: dict) -> str:
             name = item.get("name", "Unknown")
             weight = item.get("weight", "Unknown")
             calories = item.get("calories", 0)
-            message_parts.append(f"• {name} ({weight}) - {calories} kcal")
+            message_parts.append(f"• {name} ({weight}) - {calories} {i18n.get_text('cal', user_language)}")
         message_parts.append("")  # Empty line
     
     # Add total KBZHU
     kbzhu = result.get("kbzhu", {})
     message_parts.append("🍽️ *Total Nutrition:*")
-    message_parts.append(f"Calories: {kbzhu.get('calories', '?')} kcal")
-    message_parts.append(f"Proteins: {kbzhu.get('proteins', '?')} g")
-    message_parts.append(f"Fats: {kbzhu.get('fats', '?')} g")
-    message_parts.append(f"Carbohydrates: {kbzhu.get('carbohydrates', '?')} g")
+    message_parts.append(f"Calories: {kbzhu.get('calories', '?')} {i18n.get_text('cal', user_language)}")
+    message_parts.append(f"Proteins: {kbzhu.get('proteins', '?')} {i18n.get_text('g', user_language)}")
+    message_parts.append(f"Fats: {kbzhu.get('fats', '?')} {i18n.get_text('g', user_language)}")
+    message_parts.append(f"Carbohydrates: {kbzhu.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
     
     return "\n".join(message_parts)
 
@@ -70,24 +70,29 @@ async def photo_handler(message: types.Message):
         
         if credits <= 0:
             logger.warning(f"User {telegram_user_id} has no credits ({credits}), showing payment options")
+            
+            # Get user's language for localization
+            user = await get_or_create_user(telegram_user_id)
+            user_language = user.get('language', 'en')
+            
             # Out of credits - show payment options
             await message.answer(
-                f"💳 **Your credits are running low!**\n\n"
-                f"Current credits: *{user['credits_remaining']}*\n\n"
-                f"📦 Basic Plan: {PAYMENT_PLANS['basic']['credits']} credits for {PAYMENT_PLANS['basic']['price'] // 100} RUB\n"
-                f"📦 Pro Plan: {PAYMENT_PLANS['pro']['credits']} credits for {PAYMENT_PLANS['pro']['price'] // 100} RUB\n\n"
-                f"Choose a plan to continue analyzing your food:",
+                f"{i18n.get_text('photo_out_of_credits_title', user_language)}\n\n"
+                f"{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}: *{user['credits_remaining']}*\n\n"
+                f"📦 {i18n.get_text('basic_plan_title', user_language)}: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {PAYMENT_PLANS['basic']['price'] // 100} {i18n.get_text('rubles', user_language)}\n"
+                f"📦 {i18n.get_text('pro_plan_title', user_language)}: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {PAYMENT_PLANS['pro']['price'] // 100} {i18n.get_text('rubles', user_language)}\n\n"
+                f"{i18n.get_text('photo_out_of_credits_choose_plan', user_language)}:",
                 parse_mode="Markdown",
                 reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                     [
                         types.InlineKeyboardButton(
-                            text=f"💰 Basic Plan ({PAYMENT_PLANS['basic']['price'] // 100} RUB)",
+                            text=f"💰 {i18n.get_text('basic_plan_btn', user_language, price=PAYMENT_PLANS['basic']['price'] // 100)}",
                             callback_data="buy_basic"
                         )
                     ],
                     [
                         types.InlineKeyboardButton(
-                            text=f"💎 Pro Plan ({PAYMENT_PLANS['pro']['price'] // 100} RUB)",
+                            text=f"💎 {i18n.get_text('pro_plan_btn', user_language, price=PAYMENT_PLANS['pro']['price'] // 100)}",
                             callback_data="buy_pro"
                         )
                     ]
@@ -214,24 +219,24 @@ async def photo_handler(message: types.Message):
             progress_bar = "▓" * (progress_percent // 10) + "░" * (10 - progress_percent // 10)
             
             result_message = (
-                f"{format_analysis_result(result)}\n\n"
-                f"📊 **Your Daily Progress:**\n"
-                f"🎯 Daily Target: {daily_target:,} calories\n"
-                f"📈 Consumed Today: {consumed_today:,} calories ({progress_percent}%)\n"
-                f"⏳ Remaining: {remaining:,} calories\n\n"
-                f"📈 Daily Progress:\n{progress_bar} {progress_percent}%\n\n"
-                f"🍎 Meals Analyzed Today: {daily_data['food_items_count']}\n"
-                f"💳 Credits Remaining: {credits_left}"
+                f"{format_analysis_result(result, user_language)}\n\n"
+                f"{i18n.get_text('daily_progress_title', user_language)}\n"
+                f"{i18n.get_text('daily_progress_target', user_language, target=daily_target, calories=i18n.get_text('cal', user_language))}\n"
+                f"{i18n.get_text('daily_progress_consumed', user_language, consumed=consumed_today, calories=i18n.get_text('cal', user_language), percent=progress_percent)}\n"
+                f"{i18n.get_text('daily_progress_remaining', user_language, remaining=remaining, calories=i18n.get_text('cal', user_language))}\n\n"
+                f"{i18n.get_text('daily_progress_bar', user_language, bar=progress_bar, percent=progress_percent)}\n\n"
+                f"{i18n.get_text('daily_progress_meals', user_language, count=daily_data['food_items_count'])}\n"
+                f"{i18n.get_text('credits_remaining', user_language, credits=credits_left)}"
             )
             
             keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text="📊 Daily Plan", 
+                        text=i18n.get_text('btn_daily_plan', user_language), 
                         callback_data="action_daily"
                     ),
                     types.InlineKeyboardButton(
-                        text="👤 Profile", 
+                        text=i18n.get_text('btn_my_profile', user_language), 
                         callback_data="action_profile"
                     )
                 ]
@@ -239,22 +244,21 @@ async def photo_handler(message: types.Message):
         else:
             # User without profile - encourage to set up profile
             result_message = (
-                f"{format_analysis_result(result)}\n\n"
-                f"💡 **Want to see how this fits your daily goals?**\n"
-                f"Set up your profile for personalized recommendations!\n\n"
-                f"💳 Credits Remaining: {credits_left}"
+                f"{format_analysis_result(result, user_language)}\n\n"
+                f"{i18n.get_text('daily_progress_setup_prompt', user_language)}\n\n"
+                f"{i18n.get_text('credits_remaining', user_language, credits=credits_left)}"
             )
             
             keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text="👤 Set Up Profile", 
+                        text=i18n.get_text('profile_setup_btn', user_language), 
                         callback_data="action_profile"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text="🏠 Main Menu",
+                        text=i18n.get_text('btn_main_menu', user_language),
                         callback_data="action_main_menu"
                     )
                 ]

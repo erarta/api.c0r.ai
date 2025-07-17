@@ -156,19 +156,21 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
             fat_target = int(daily_target * 0.30 / 9)      # 30% calories from fat  
             carb_target = int(daily_target * 0.45 / 4)     # 45% calories from carbs
             
+            # Determine status for each macro
+            protein_status = i18n.get_text('daily_status_good', user_language) if protein >= protein_target * 0.8 else i18n.get_text('daily_status_low', user_language)
+            fat_status = i18n.get_text('daily_status_good', user_language) if fats >= fat_target * 0.8 else i18n.get_text('daily_status_low', user_language)
+            carb_status = i18n.get_text('daily_status_good', user_language) if carbs >= carb_target * 0.8 else i18n.get_text('daily_status_low', user_language)
+            
             macro_progress = (
-                f"🥩 **Protein:** {protein}g / {protein_target}g "
-                f"({'✅' if protein >= protein_target * 0.8 else '⚠️'})\n"
-                f"🥑 **Fats:** {fats}g / {fat_target}g "
-                f"({'✅' if fats >= fat_target * 0.8 else '⚠️'})\n"
-                f"🍞 **Carbs:** {carbs}g / {carb_target}g "
-                f"({'✅' if carbs >= carb_target * 0.8 else '⚠️'})\n"
+                f"{i18n.get_text('daily_protein', user_language, current=protein, target=protein_target, status=protein_status)}\n"
+                f"{i18n.get_text('daily_fats', user_language, current=fats, target=fat_target, status=fat_status)}\n"
+                f"{i18n.get_text('daily_carbs', user_language, current=carbs, target=carb_target, status=carb_status)}\n"
             )
         else:
             macro_progress = (
-                f"🥩 **Protein:** {protein}g\n"
-                f"🥑 **Fats:** {fats}g\n"
-                f"🍞 **Carbs:** {carbs}g\n"
+                f"{i18n.get_text('daily_protein', user_language, current=protein, target='-', status='')}\n"
+                f"{i18n.get_text('daily_fats', user_language, current=fats, target='-', status='')}\n"
+                f"{i18n.get_text('daily_carbs', user_language, current=carbs, target='-', status='')}\n"
             )
         
         # Status message
@@ -397,7 +399,10 @@ async def handle_daily_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in daily callback: {e}")
-        await callback.answer("❌ An error occurred. Please try again later.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await callback.answer(i18n.get_text("error_general", user_language))
 
 async def show_weekly_progress(message: types.Message, telegram_user_id: int):
     """Show weekly progress summary"""
@@ -405,6 +410,9 @@ async def show_weekly_progress(message: types.Message, telegram_user_id: int):
         user_data = await get_user_with_profile(telegram_user_id)
         user = user_data['user']
         profile = user_data['profile']
+        
+        # Get user's language
+        user_language = user.get('language', 'en')
         
         # Get data for last 7 days
         weekly_data = []
@@ -431,36 +439,39 @@ async def show_weekly_progress(message: types.Message, telegram_user_id: int):
         
         # Format weekly summary
         weekly_text = (
-            f"📈 **Weekly Progress Summary**\n\n"
-            f"📅 **Last 7 Days:**\n"
-            f"🍽️ Days tracked: {total_days_tracked}/7\n"
-            f"📊 Average calories: {avg_calories:,}/day\n"
+            f"{i18n.get_text('weekly_progress_title', user_language)}\n\n"
+            f"{i18n.get_text('weekly_progress_last_7_days', user_language)}\n"
+            f"{i18n.get_text('weekly_progress_days_tracked', user_language, tracked=total_days_tracked)}\n"
+            f"{i18n.get_text('weekly_progress_avg_calories', user_language, calories=avg_calories)}\n"
         )
         
         if daily_target > 0:
             avg_vs_target = int((avg_calories / daily_target) * 100)
-            weekly_text += f"🎯 Target adherence: {avg_vs_target}%\n"
+            weekly_text += f"{i18n.get_text('weekly_progress_target_adherence', user_language, percent=avg_vs_target)}\n"
         
-        weekly_text += "\n📊 **Daily Breakdown:**\n"
+        weekly_text += f"\n{i18n.get_text('weekly_progress_daily_breakdown', user_language)}\n"
         
         for day_data in weekly_data:
             date_obj = datetime.strptime(day_data['date'], '%Y-%m-%d')
             day_name = date_obj.strftime('%a')
             
             if day_data['meals'] > 0:
-                weekly_text += f"• {day_name}: {day_data['calories']:,} cal ({day_data['meals']} meals)\n"
+                weekly_text += f"{i18n.get_text('weekly_progress_day_with_meals', user_language, day=day_name, calories=day_data['calories'], meals=day_data['meals'])}\n"
             else:
-                weekly_text += f"• {day_name}: No data\n"
+                weekly_text += f"{i18n.get_text('weekly_progress_day_no_data', user_language, day=day_name)}\n"
         
         weekly_text += (
-            f"\n💡 **Keep tracking consistently for better insights!**"
+            f"\n{i18n.get_text('weekly_progress_keep_tracking', user_language)}"
         )
         
         await message.answer(weekly_text, parse_mode="Markdown")
         
     except Exception as e:
         logger.error(f"Error showing weekly progress: {e}")
-        await message.answer("❌ An error occurred while loading weekly data.")
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language))
 
 async def show_meal_history(message: types.Message, telegram_user_id: int):
     """Show recent meal history"""
@@ -468,18 +479,21 @@ async def show_meal_history(message: types.Message, telegram_user_id: int):
         user_data = await get_user_with_profile(telegram_user_id)
         user = user_data['user']
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
         today = datetime.now().strftime('%Y-%m-%d')
         daily_data = await get_daily_calories_consumed(user['id'], today)
         
         if daily_data['food_items_count'] == 0:
             await message.answer(
-                f"📱 **No meals logged today**\n\n"
-                f"📸 Send me a food photo to start tracking your nutrition!",
+                f"{i18n.get_text('meal_history_no_meals', user_language)}\n\n"
+                f"{i18n.get_text('meal_history_no_meals_tip', user_language)}",
                 parse_mode="Markdown"
             )
             return
         
-        history_text = f"🍽️ **Today's Meals** ({today})\n\n"
+        history_text = f"{i18n.get_text('meal_history_title', user_language, date=today)}\n\n"
         
         for i, item in enumerate(daily_data['food_items'], 1):
             # Format timestamp
@@ -487,23 +501,22 @@ async def show_meal_history(message: types.Message, telegram_user_id: int):
             time_str = timestamp.strftime('%H:%M')
             
             history_text += (
-                f"**{i}. {time_str}**\n"
-                f"🔥 {item['calories']} cal | "
-                f"🥩 {item['protein']}g | "
-                f"🥑 {item['fats']}g | "
-                f"🍞 {item['carbs']}g\n\n"
+                f"{i18n.get_text('meal_history_item_format', user_language, number=i, time=time_str, calories=item['calories'], protein=item['protein'], fats=item['fats'], carbs=item['carbs'])}\n\n"
             )
         
         history_text += (
-            f"📊 **Total Today:**\n"
-            f"🔥 {daily_data['total_calories']} calories\n"
-            f"🥩 {daily_data['total_protein']}g protein\n"
-            f"🥑 {daily_data['total_fats']}g fats\n"
-            f"🍞 {daily_data['total_carbs']}g carbs"
+            f"{i18n.get_text('meal_history_total_title', user_language)}\n"
+            f"{i18n.get_text('meal_history_total_calories', user_language, calories=daily_data['total_calories'])}\n"
+            f"{i18n.get_text('meal_history_total_protein', user_language, protein=daily_data['total_protein'])}\n"
+            f"{i18n.get_text('meal_history_total_fats', user_language, fats=daily_data['total_fats'])}\n"
+            f"{i18n.get_text('meal_history_total_carbs', user_language, carbs=daily_data['total_carbs'])}"
         )
         
         await message.answer(history_text, parse_mode="Markdown")
         
     except Exception as e:
         logger.error(f"Error showing meal history: {e}")
-        await message.answer("❌ An error occurred while loading meal history.") 
+        # Get user's language for error message
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        await message.answer(i18n.get_text("error_general", user_language)) 

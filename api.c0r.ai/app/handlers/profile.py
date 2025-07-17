@@ -356,6 +356,10 @@ async def show_progress(message: types.Message, telegram_user_id: int):
     """Show user progress and statistics"""
     try:
         user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        
+        # Get user's language
+        user_language = user.get('language', 'en')
         
         # Get daily calories data
         from common.supabase_client import get_daily_calories_consumed
@@ -365,13 +369,13 @@ async def show_progress(message: types.Message, telegram_user_id: int):
         daily_data = await get_daily_calories_consumed(user_data['user']['id'], today)
         
         progress_text = (
-            f"📈 **Your Progress**\n\n"
-            f"📅 **Today ({today}):**\n"
-            f"🍽️ Meals analyzed: {daily_data['food_items_count']}\n"
-            f"🔥 Calories consumed: {daily_data['total_calories']:,}\n"
-            f"🥩 Protein: {daily_data['total_protein']}g\n"
-            f"🥑 Fats: {daily_data['total_fats']}g\n"
-            f"🍞 Carbs: {daily_data['total_carbs']}g\n\n"
+            f"{i18n.get_text('progress_title', user_language)}\n\n"
+            f"{i18n.get_text('progress_today', user_language, date=today)}\n"
+            f"{i18n.get_text('progress_meals_analyzed', user_language, count=daily_data['food_items_count'])}\n"
+            f"{i18n.get_text('progress_calories_consumed', user_language, calories=daily_data['total_calories'])}\n"
+            f"{i18n.get_text('progress_protein', user_language, protein=daily_data['total_protein'])}\n"
+            f"{i18n.get_text('progress_fats', user_language, fats=daily_data['total_fats'])}\n"
+            f"{i18n.get_text('progress_carbs', user_language, carbs=daily_data['total_carbs'])}\n\n"
         )
         
         if user_data['has_profile'] and user_data['profile'].get('daily_calories_target'):
@@ -382,13 +386,13 @@ async def show_progress(message: types.Message, telegram_user_id: int):
             progress_bar = "▓" * (progress_percent // 10) + "░" * (10 - progress_percent // 10)
             
             progress_text += (
-                f"🎯 **Daily Goal Progress:**\n"
-                f"Target: {target:,} calories\n"
-                f"Remaining: {remaining:,} calories\n\n"
-                f"Progress: {progress_bar} {progress_percent}%"
+                f"{i18n.get_text('progress_goal_title', user_language)}\n"
+                f"{i18n.get_text('progress_target', user_language, target=target)}\n"
+                f"{i18n.get_text('progress_remaining', user_language, remaining=remaining)}\n\n"
+                f"{i18n.get_text('progress_bar', user_language, progress_bar=progress_bar, percent=progress_percent)}"
             )
         else:
-            progress_text += "💡 Set up your profile to see daily goal progress!"
+            progress_text += i18n.get_text('progress_setup_needed', user_language)
         
         await message.answer(progress_text, parse_mode="Markdown")
         

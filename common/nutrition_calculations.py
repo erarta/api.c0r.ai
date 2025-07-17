@@ -205,7 +205,7 @@ def calculate_macro_distribution(calories: int, goal: str) -> Dict[str, Any]:
     fat_calories = calories * fat_percent
     carb_calories = calories * carb_percent
     
-    # Convert to grams (protein: 4 cal/g, fat: 9 cal/g, carbs: 4 cal/g)
+    # Convert to grams (protein: 4 kcal/g, fat: 9 kcal/g, carbs: 4 kcal/g)
     protein_grams = protein_calories / 4
     fat_grams = fat_calories / 9
     carb_grams = carb_calories / 4

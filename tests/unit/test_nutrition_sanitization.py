@@ -134,9 +134,9 @@ Base: 2625ml + Activity: 0ml
 **Fats:** 67g (30%)
 
 🍽️ **Meal Distribution:**
-**Breakfast:** 600 cal (30%)
-**Lunch:** 800 cal (40%)
-**Dinner:** 600 cal (30%)
+**Breakfast:** 600 kcal (30%)
+**Lunch:** 800 kcal (40%)
+**Dinner:** 600 kcal (30%)
 
 💡 **Personal Recommendations:**
 • 🎉 You're maintaining great health!

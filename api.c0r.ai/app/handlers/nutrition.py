@@ -211,15 +211,15 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
         # Ideal weight
         ideal_weight = calculate_ideal_weight(height, gender)
         insights.append(f"{i18n.get_text('nutrition_ideal_weight_title', user_language)}")
-        insights.append(f"**{ideal_weight['range']}** (BMI-based)")
-        insights.append(f"**{ideal_weight['broca']} kg** (Broca formula)")
+        insights.append(f"**{ideal_weight['range']}** ({i18n.get_text('bmi_based', user_language)})")
+        insights.append(f"**{ideal_weight['broca']} {i18n.get_text('kg', user_language)}** ({i18n.get_text('broca_formula', user_language)})")
         insights.append("")
     
     # 2. Metabolic Age
     if age > 0 and weight > 0 and height > 0:
         metabolic_data = calculate_metabolic_age(age, gender, weight, height, activity, user_language)
         insights.append(f"{i18n.get_text('nutrition_metabolic_age_title', user_language)}")
-        insights.append(f"{metabolic_data['emoji']} **{metabolic_data['metabolic_age']} years** (vs {age} actual)")
+        insights.append(f"{metabolic_data['emoji']} **{metabolic_data['metabolic_age']} {i18n.get_text('years', user_language)}** (vs {age} {i18n.get_text('actual', user_language)})")
         insights.append(f"{metabolic_data['description']}")
         insights.append(f"💡 {metabolic_data['motivation']}")
         insights.append("")
@@ -228,24 +228,24 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
     if weight > 0:
         water_data = calculate_water_needs(weight, activity)
         insights.append(f"{i18n.get_text('nutrition_water_needs_title', user_language)}")
-        insights.append(f"**{water_data['liters']}L** ({water_data['glasses']} glasses)")
-        insights.append(f"Base: {water_data['base_ml']}ml + Activity: {water_data['activity_bonus']}ml")
+        insights.append(f"**{water_data['liters']}{i18n.get_text('L', user_language)}** ({water_data['glasses']} {i18n.get_text('glasses', user_language)})")
+        insights.append(f"{i18n.get_text('base', user_language).capitalize()}: {water_data['base_ml']}{i18n.get_text('ml', user_language)} + {i18n.get_text('activity', user_language).capitalize()}: {water_data['activity_bonus']}{i18n.get_text('ml', user_language)}")
         insights.append("")
     
     # 4. Macro Distribution
     if daily_calories > 0:
         macro_data = calculate_macro_distribution(daily_calories, goal)
         insights.append(f"{i18n.get_text('nutrition_macro_title', user_language)}")
-        insights.append(f"**Protein:** {macro_data['protein']['grams']}g ({macro_data['protein']['percent']}%)")
-        insights.append(f"**Carbs:** {macro_data['carbs']['grams']}g ({macro_data['carbs']['percent']}%)")
-        insights.append(f"**Fats:** {macro_data['fat']['grams']}g ({macro_data['fat']['percent']}%)")
+        insights.append(f"**Protein:** {macro_data['protein']['grams']}{i18n.get_text('g', user_language)} ({macro_data['protein']['percent']}%)")
+        insights.append(f"**Carbs:** {macro_data['carbs']['grams']}{i18n.get_text('g', user_language)} ({macro_data['carbs']['percent']}%)")
+        insights.append(f"**Fats:** {macro_data['fat']['grams']}{i18n.get_text('g', user_language)} ({macro_data['fat']['percent']}%)")
         insights.append("")
         
         # Meal portions
         meal_data = calculate_meal_portions(daily_calories, 3, user_language)
         insights.append(f"{i18n.get_text('nutrition_meal_distribution_title', user_language)}")
         for meal in meal_data['meals']:
-            insights.append(f"**{meal['name']}:** {meal['calories']} cal ({meal['percentage']}%)")
+            insights.append(f"**{meal['name']}:** {meal['calories']} {i18n.get_text('cal', user_language)} ({meal['percentage']}%)")
         insights.append("")
     
     # 5. Personalized Recommendations

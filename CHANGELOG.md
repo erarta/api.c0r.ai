@@ -2,6 +2,110 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.23] - 2025-01-21
+
+### Added
+- **Complete Calorie Unit Localization**: Full Russian translation of "Weekly Progress Summary" section
+- **Enhanced Daily Progress Localization**: Complete Russian translation of daily progress display in photo analysis
+- **Comprehensive Unit Standardization**: Replaced all "cal" units with "kcal" throughout the application
+- **Back Button for Analyze Info**: Added "⬅️ Назад" button to "How to Analyze Food Photos" section for easy navigation
+- **Complete Buy Credits Localization**: Full Russian translation of all buy credits sections including buttons and payment plans
+
+### Changed
+- **BREAKING**: Replaced all "cal" units with "kcal" for consistency across the application
+- **English Localization**: Updated English localization to use "kcal" instead of "cal"
+- **Russian Localization**: Updated Russian localization to use "ккал" instead of "cal"
+- **Photo Analysis Results**: Enhanced photo analysis result formatting with proper i18n support
+- **Daily Progress Display**: Improved daily progress display with localized units and labels
+- **Weekly Progress Summary**: Complete Russian translation including units and meal counts
+- **Analyze Info Navigation**: Added back button to return to main menu from analyze info section
+- **Buy Credits Interface**: Complete localization of all buy credits text, buttons, and payment plan descriptions
+- **Photo Analysis Credits**: Localized all credit-related messages in photo analysis results
+
+### Fixed
+- **Unit Consistency**: Ensured all calorie displays use consistent "kcal" format
+- **Localization Coverage**: Added missing i18n keys for daily progress section
+- **Photo Analysis Formatting**: Fixed hardcoded unit displays in photo analysis results
+- **Navigation Flow**: Improved user navigation with back button in analyze info section
+- **Buy Credits Hardcoded Text**: Replaced all hardcoded English text in buy credits with proper i18n keys
+- **Payment Plan Display**: Fixed hardcoded "за" preposition to use proper i18n localization
+- **Out of Credits Messages**: Localized all out of credits messages in photo analysis
+
+### Technical
+- **Test Data Updates**: Updated test data to use "kcal" instead of "cal" for consistency
+- **Code Comments**: Improved code comments to use "kcal" instead of "cal"
+- **Photo Handler Enhancement**: Enhanced photo.py to use i18n for all unit displays
+- **I18n Key Expansion**: Added new translation keys for daily progress and weekly summary
+- **Keyboard Enhancement**: Added back button functionality to analyze info callback handler
+- **Buy Credits Localization**: Added comprehensive i18n keys for all buy credits functionality
+- **Payment System Integration**: Enhanced payment plan display with proper localization
+
+### User Experience
+- **Consistent Unit Display**: All calorie values now display with proper "kcal" units
+- **Fully Localized Weekly Summary**: Russian users see complete Russian translation of weekly progress
+- **Enhanced Daily Progress**: Photo analysis results now show localized daily progress information
+- **Professional Localization**: All unit displays properly translated and formatted
+- **Improved Navigation**: Users can easily return to main menu from analyze info section
+- **Complete Buy Credits Experience**: Russian users see fully localized buy credits interface
+- **Seamless Payment Flow**: All payment plan descriptions and buttons properly translated
+
+## [0.3.22] - 2025-01-21
+
+### Added
+- **Complete Currency Localization**: Replaced all "RUB" currency displays with "Р" symbol for Russian users
+- **Full Nutrition Analysis Localization**: Complete Russian translation of nutrition analysis output including:
+  - All units: `g` → `гр`, `kg` → `кг`, `ml` → `мл`, `L` → `л`, `cal` → `ккал`
+  - All labels: `years` → `лет`, `actual` → `фактический`, `base` → `базовый уровень`
+  - All formulas: `BMI-based` → `по ИМТ`, `Broca formula` → `по формуле Брока`
+  - All status indicators: `glasses` → `стаканов`
+- **Complete Profile Localization**: Full Russian translation of profile display including:
+  - Profile title: "👤 **Мой профиль**"
+  - All field names: Age, Gender, Height, Weight, Activity Level, Goal
+  - All values: Male/Female, activity levels, goals, units
+  - Back button with arrow: "⬅️ Назад"
+- **Enhanced i18n System**: Added 50+ new translation keys for nutrition units, profile fields, and UI elements
+
+### Changed
+- **Currency Display**: All payment plans and price displays now use "Р" instead of "RUB"
+- **Nutrition Analysis Output**: All nutrition analysis now fully localized with proper Russian units and labels
+- **Profile Interface**: Complete profile display now uses i18n for all text elements
+- **Buy Command**: Payment plan displays now use user's language preference
+- **Daily Plan**: Nutrition breakdown section now fully localized with Russian macro names
+
+### Fixed
+- **Critical Protein Data Bug**: Fixed critical issue where protein data (0.0g) was not displaying correctly in daily plan
+  - **Root Cause**: Key name mismatch between ML service (`proteins`) and database extraction (`protein`)
+  - **Solution**: Updated `get_daily_calories_consumed()` to use correct keys: `proteins`, `carbohydrates`
+  - **Impact**: Protein values now correctly display (e.g., 25.5г instead of 0.0г)
+- **Data Extraction Consistency**: Fixed key name inconsistencies across the entire data pipeline
+- **Language Consistency**: Eliminated all hardcoded English text in Russian user interface
+- **Profile Display**: Fixed profile information display to use proper language-specific formatting
+
+### Technical
+- **Database Key Alignment**: Fixed key name mismatches between ML service response and database extraction
+- **Enhanced Logging**: Added comprehensive debug logging for nutrition data extraction
+- **I18n Key Expansion**: Added extensive new translation keys for complete localization
+- **Data Pipeline Validation**: Ensured consistent key names throughout data flow
+- **Error Prevention**: Added validation to prevent similar key name mismatches in future
+
+### User Experience
+- **Fully Localized Interface**: Russian users now see complete Russian interface with proper units
+- **Accurate Nutrition Data**: Protein, fats, and carbs now display correct values from food analysis
+- **Consistent Currency**: All prices display with "Р" symbol for Russian users
+- **Professional Localization**: All text elements properly translated and formatted
+- **Seamless Experience**: No more mixed language content or incorrect data display
+
+### Database
+- **Data Extraction Fix**: Fixed protein and carbohydrate data extraction from kbzhu field
+- **Logging Enhancement**: Added detailed logging for nutrition data processing
+- **Key Name Standardization**: Ensured consistent key names across all data operations
+
+### Testing
+- **Data Pipeline Validation**: Verified correct data extraction from ML service to database
+- **Localization Testing**: Confirmed all new translation keys work correctly
+- **Currency Display Testing**: Verified "Р" symbol displays correctly in all contexts
+- **Profile Localization Testing**: Confirmed complete profile translation functionality
+
 ## [0.3.21] - 2025-01-21
 
 ### Added
