@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.29] - 2025-01-21
+
+### Added
+- **Nutrition Insights Two-Column Layout**: Redesigned nutrition analysis menu with buttons arranged in two columns for better UI
+- **Complete Section Generation Functions**: Added all missing functions for nutrition section content generation
+- **Enhanced Nutrition Menu**: Improved user experience with better organized nutrition analysis interface
+- **Section-Specific Content**: Each nutrition section now generates personalized content based on user profile
+
+### Changed
+- **UI Layout**: Nutrition insights menu now displays buttons in two columns instead of single column
+- **Button Organization**: Reorganized nutrition section buttons for better visual balance and usability
+- **Content Generation**: Each nutrition section now has dedicated content generation function
+
+### Fixed
+- **Critical Function Missing Error**: Fixed `name 'generate_bmi_section' is not defined` error in production
+- **Nutrition Section Callbacks**: Resolved all nutrition section button functionality issues
+- **Missing Function Definitions**: Added all required section generation functions:
+  - `generate_bmi_section()` - BMI analysis content
+  - `generate_ideal_weight_section()` - Ideal weight calculations
+  - `generate_metabolic_age_section()` - Metabolic age analysis
+  - `generate_water_needs_section()` - Daily water requirements
+  - `generate_macro_distribution_section()` - Macronutrient breakdown
+  - `generate_meal_distribution_section()` - Meal timing recommendations
+  - `generate_recommendations_section()` - Personalized nutrition advice
+  - `generate_goal_advice_section()` - Goal-specific recommendations
+
+### Technical
+- **Function Implementation**: Added comprehensive section generation functions with proper i18n support
+- **UI Enhancement**: Improved keyboard layout with two-column button arrangement
+- **Error Resolution**: Fixed all undefined function errors in nutrition section callbacks
+- **Content Localization**: All section content properly localized with i18n system
+
+### User Experience
+- **Better Visual Layout**: Two-column button layout provides cleaner, more organized interface
+- **Functional Nutrition Sections**: All nutrition analysis sections now work properly
+- **Personalized Content**: Each section generates content specific to user's profile data
+- **Improved Navigation**: Better organized menu structure for easier navigation
+
+### Production Impact
+- **Error Resolution**: Eliminated all "function not defined" errors in production
+- **Button Functionality**: All nutrition section buttons now work correctly
+- **User Interface**: Improved nutrition analysis interface usability
+- **Content Generation**: Complete nutrition analysis functionality restored
+
 ## [0.3.28] - 2025-01-21
 
 ### Fixed

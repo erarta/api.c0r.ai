@@ -666,15 +666,13 @@ async def show_nutrition_insights_menu(message_or_callback, user: dict, profile:
     
     menu_text = f"{i18n.get_text('nutrition_analysis_title', user_language)}\n\n{i18n.get_text('nutrition_menu_select_section', user_language)}"
     
-    # Create keyboard with section buttons
+    # Create keyboard with section buttons in two columns
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_bmi', user_language),
                 callback_data="nutrition_section_bmi"
-            )
-        ],
-        [
+            ),
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_ideal_weight', user_language),
                 callback_data="nutrition_section_ideal_weight"
@@ -684,9 +682,7 @@ async def show_nutrition_insights_menu(message_or_callback, user: dict, profile:
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_metabolic_age', user_language),
                 callback_data="nutrition_section_metabolic_age"
-            )
-        ],
-        [
+            ),
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_water_needs', user_language),
                 callback_data="nutrition_section_water_needs"
@@ -696,9 +692,7 @@ async def show_nutrition_insights_menu(message_or_callback, user: dict, profile:
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_macro_distribution', user_language),
                 callback_data="nutrition_section_macro_distribution"
-            )
-        ],
-        [
+            ),
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_meal_distribution', user_language),
                 callback_data="nutrition_section_meal_distribution"
@@ -708,9 +702,7 @@ async def show_nutrition_insights_menu(message_or_callback, user: dict, profile:
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_recommendations', user_language),
                 callback_data="nutrition_section_recommendations"
-            )
-        ],
-        [
+            ),
             types.InlineKeyboardButton(
                 text=i18n.get_text('nutrition_menu_goal_advice', user_language),
                 callback_data="nutrition_section_goal_advice"
@@ -797,4 +789,167 @@ async def handle_nutrition_menu_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in nutrition menu callback: {e}")
-        await callback.message.answer(i18n.get_text("nutrition_error", "en")) 
+        await callback.message.answer(i18n.get_text("nutrition_error", "en"))
+
+
+# Section generation functions
+async def generate_bmi_section(profile: dict, user: dict) -> str:
+    """Generate BMI section content"""
+    user_language = user.get('language', 'en')
+    
+    weight = profile.get('weight_kg', 70)
+    height = profile.get('height_cm', 170)
+    
+    bmi_data = calculate_bmi(weight, height)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_bmi_title', user_language)}**\n\n"
+        f"{i18n.get_text('nutrition_bmi_value', user_language, bmi=bmi_data['bmi'])}\n"
+        f"{i18n.get_text('nutrition_bmi_category', user_language, category=bmi_data['category'])}\n\n"
+        f"{i18n.get_text('nutrition_bmi_description', user_language)}\n"
+        f"{i18n.get_text('nutrition_bmi_healthy_range', user_language, min_bmi=bmi_data['healthy_min'], max_bmi=bmi_data['healthy_max'])}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_ideal_weight_section(profile: dict, user: dict) -> str:
+    """Generate ideal weight section content"""
+    user_language = user.get('language', 'en')
+    
+    weight = profile.get('weight_kg', 70)
+    height = profile.get('height_cm', 170)
+    gender = profile.get('gender', 'male')
+    
+    ideal_weight_data = calculate_ideal_weight(height, gender)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_ideal_weight_title', user_language)}**\n\n"
+        f"{i18n.get_text('nutrition_ideal_weight_bmi', user_language, min_weight=ideal_weight_data['bmi_min'], max_weight=ideal_weight_data['bmi_max'])}\n"
+        f"{i18n.get_text('nutrition_ideal_weight_broca', user_language, broca_weight=ideal_weight_data['broca_weight'])}\n\n"
+        f"{i18n.get_text('nutrition_ideal_weight_current', user_language, current_weight=weight)}\n"
+        f"{i18n.get_text('nutrition_ideal_weight_recommendation', user_language, recommendation=ideal_weight_data['recommendation'])}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_metabolic_age_section(profile: dict, user: dict) -> str:
+    """Generate metabolic age section content"""
+    user_language = user.get('language', 'en')
+    
+    weight = profile.get('weight_kg', 70)
+    height = profile.get('height_cm', 170)
+    age = profile.get('age', 30)
+    gender = profile.get('gender', 'male')
+    
+    metabolic_age_data = calculate_metabolic_age(weight, height, age, gender)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_metabolic_age_title', user_language)}**\n\n"
+        f"{i18n.get_text('nutrition_metabolic_age_value', user_language, metabolic_age=metabolic_age_data['metabolic_age'])}\n"
+        f"{i18n.get_text('nutrition_metabolic_age_comparison', user_language, actual_age=age)}\n\n"
+        f"{i18n.get_text('nutrition_metabolic_age_interpretation', user_language, interpretation=metabolic_age_data['interpretation'])}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_water_needs_section(profile: dict, user: dict) -> str:
+    """Generate water needs section content"""
+    user_language = user.get('language', 'en')
+    
+    weight = profile.get('weight_kg', 70)
+    activity = profile.get('activity_level', 'sedentary')
+    
+    water_data = calculate_water_needs(weight, activity)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_water_needs_title', user_language)}**\n\n"
+        f"{i18n.get_text('nutrition_water_needs_daily', user_language, liters=water_data['liters'])}\n"
+        f"{i18n.get_text('nutrition_water_needs_glasses', user_language, glasses=water_data['glasses'])}\n\n"
+        f"{i18n.get_text('nutrition_water_needs_breakdown', user_language)}\n"
+        f"{i18n.get_text('nutrition_water_needs_base', user_language, base_ml=water_data['base_ml'])}\n"
+        f"{i18n.get_text('nutrition_water_needs_activity', user_language, activity_bonus=water_data['activity_bonus'])}\n"
+        f"{i18n.get_text('nutrition_water_needs_total', user_language, total_ml=water_data['total_ml'])}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_macro_distribution_section(profile: dict, user: dict) -> str:
+    """Generate macro distribution section content"""
+    user_language = user.get('language', 'en')
+    
+    weight = profile.get('weight_kg', 70)
+    height = profile.get('height_cm', 170)
+    age = profile.get('age', 30)
+    gender = profile.get('gender', 'male')
+    activity = profile.get('activity_level', 'sedentary')
+    goal = profile.get('goal', 'maintain')
+    
+    macro_data = calculate_macro_distribution(weight, height, age, gender, activity, goal)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_macro_distribution_title', user_language)}**\n\n"
+        f"{i18n.get_text('nutrition_macro_protein', user_language, protein_g=macro_data['protein_g'], protein_percent=macro_data['protein_percent'])}\n"
+        f"{i18n.get_text('nutrition_macro_fats', user_language, fats_g=macro_data['fats_g'], fats_percent=macro_data['fats_percent'])}\n"
+        f"{i18n.get_text('nutrition_macro_carbs', user_language, carbs_g=macro_data['carbs_g'], carbs_percent=macro_data['carbs_percent'])}\n\n"
+        f"{i18n.get_text('nutrition_macro_total_calories', user_language, total_calories=macro_data['total_calories'])}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_meal_distribution_section(profile: dict, user: dict) -> str:
+    """Generate meal distribution section content"""
+    user_language = user.get('language', 'en')
+    
+    weight = profile.get('weight_kg', 70)
+    height = profile.get('height_cm', 170)
+    age = profile.get('age', 30)
+    gender = profile.get('gender', 'male')
+    activity = profile.get('activity_level', 'sedentary')
+    goal = profile.get('goal', 'maintain')
+    
+    meal_data = calculate_meal_portions(weight, height, age, gender, activity, goal)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_meal_distribution_title', user_language)}**\n\n"
+        f"{i18n.get_text('nutrition_meal_breakfast', user_language, calories=meal_data['breakfast_calories'], percent=meal_data['breakfast_percent'])}\n"
+        f"{i18n.get_text('nutrition_meal_lunch', user_language, calories=meal_data['lunch_calories'], percent=meal_data['lunch_percent'])}\n"
+        f"{i18n.get_text('nutrition_meal_dinner', user_language, calories=meal_data['dinner_calories'], percent=meal_data['dinner_percent'])}\n"
+        f"{i18n.get_text('nutrition_meal_snacks', user_language, calories=meal_data['snacks_calories'], percent=meal_data['snacks_percent'])}\n\n"
+        f"{i18n.get_text('nutrition_meal_tips', user_language)}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_recommendations_section(profile: dict, user: dict) -> str:
+    """Generate recommendations section content"""
+    user_language = user.get('language', 'en')
+    
+    recommendations = get_nutrition_recommendations(profile, user_language)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_recommendations_title', user_language)}**\n\n"
+        f"{recommendations}"
+    )
+    
+    return sanitize_markdown_text(content)
+
+
+async def generate_goal_advice_section(profile: dict, user: dict) -> str:
+    """Generate goal advice section content"""
+    user_language = user.get('language', 'en')
+    
+    goal = profile.get('goal', 'maintain')
+    goal_advice = get_goal_specific_advice(goal, profile, user_language)
+    
+    content = (
+        f"**{i18n.get_text('nutrition_goal_advice_title', user_language)}**\n\n"
+        f"{goal_advice}"
+    )
+    
+    return sanitize_markdown_text(content) 
