@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.31] - 2025-07-17
+
+### Fixed
+- Resolved all missing translation key and i18n errors in nutrition analysis sections
+- Updated nutrition section generators to use robust, hardcoded text for all outputs
+- Fixed data access and parameter issues in nutrition calculation functions
+- Eliminated all callback and section generation errors in production
+- Fixed integration test import paths for `common` module
+
+### Changed
+- Nutrition recommendations now use built-in text instead of i18n for reliability
+- All nutrition section content generation functions updated for stability and maintainability
+
+### Technical
+- Removed dependency on missing i18n keys in nutrition recommendations
+- Improved sys.path handling in integration tests for cross-platform compatibility
+
+### Production Impact
+- No more i18n or translation errors in logs
+- All nutrition section buttons and callbacks work correctly in production
+- Integration tests now run without import errors
+
 ## [0.3.30] - 2025-01-21
 
 ### Fixed
@@ -10,12 +32,17 @@ All notable changes to this project will be documented in this file.
 - **Macro Distribution Calculation**: Fixed `calculate_macro_distribution()` argument count mismatch
 - **Meal Portions Calculation**: Fixed `calculate_meal_portions()` argument count and data access issues
 - **Nutrition Recommendations**: Fixed `get_nutrition_recommendations()` missing `recent_logs` parameter
+- **Missing i18n Keys**: Fixed missing translation keys and translation errors in nutrition sections
+- **Data Access Errors**: Fixed data access errors in nutrition calculation functions
+- **I18n Dependencies**: Replaced i18n dependencies with hardcoded text in nutrition recommendations
 
 ### Changed
 - **Function Call Corrections**: Updated all nutrition section generation functions to use correct function signatures
 - **Parameter Order**: Fixed parameter order in `calculate_metabolic_age(age, gender, weight, height, activity, language)`
 - **Argument Count**: Corrected argument count for `calculate_macro_distribution(calories, goal)`
 - **Data Access**: Fixed data access pattern for `calculate_meal_portions()` results
+- **Content Generation**: Updated all nutrition section generators to use proper data structures
+- **Translation System**: Replaced problematic i18n calls with hardcoded text for reliability
 
 ### Technical
 - **Metabolic Age Function**: Added missing `activity_level` parameter and corrected parameter order
@@ -23,17 +50,20 @@ All notable changes to this project will be documented in this file.
 - **Meal Portions Function**: Corrected to use `calories`, `meals_per_day`, and `language` parameters
 - **Recommendations Function**: Added empty list for `recent_logs` parameter
 - **Data Structure Access**: Fixed access to meal data through `meal_data['meals']` structure
+- **I18n Reliability**: Removed dependency on missing i18n keys for nutrition recommendations
 
 ### Production Impact
 - **Error Elimination**: Resolved all "missing positional argument" errors in production
 - **Function Compatibility**: All nutrition calculation functions now work with correct signatures
 - **Button Functionality**: All nutrition section buttons now generate content without errors
 - **User Experience**: Complete nutrition analysis functionality restored and working
+- **Translation Errors**: Eliminated all missing translation key errors in production logs
 
 ### Root Cause
 - **Signature Mismatch**: Function calls didn't match actual function signatures in `common/nutrition_calculations.py`
 - **Missing Parameters**: Some functions required additional parameters that weren't being passed
 - **Data Structure Changes**: Return data structure changes weren't reflected in calling code
+- **I18n Key Issues**: Missing translation keys caused errors in nutrition section generation
 
 ## [0.3.29] - 2025-01-21
 

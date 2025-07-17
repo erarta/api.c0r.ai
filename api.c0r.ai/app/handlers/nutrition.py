@@ -800,14 +800,18 @@ async def generate_bmi_section(profile: dict, user: dict) -> str:
     weight = profile.get('weight_kg', 70)
     height = profile.get('height_cm', 170)
     
-    bmi_data = calculate_bmi(weight, height)
+    bmi_data = calculate_bmi(weight, height, user_language)
     
     content = (
         f"**{i18n.get_text('nutrition_bmi_title', user_language)}**\n\n"
-        f"{i18n.get_text('nutrition_bmi_value', user_language, bmi=bmi_data['bmi'])}\n"
-        f"{i18n.get_text('nutrition_bmi_category', user_language, category=bmi_data['category'])}\n\n"
-        f"{i18n.get_text('nutrition_bmi_description', user_language)}\n"
-        f"{i18n.get_text('nutrition_bmi_healthy_range', user_language, min_bmi=bmi_data['healthy_min'], max_bmi=bmi_data['healthy_max'])}"
+        f"**ИМТ:** {bmi_data['bmi']}\n"
+        f"**Категория:** {bmi_data['description']}\n\n"
+        f"**Интерпретация:**\n"
+        f"• ИМТ < 18.5: Недостаточный вес\n"
+        f"• ИМТ 18.5-24.9: Нормальный вес\n"
+        f"• ИМТ 25-29.9: Избыточный вес\n"
+        f"• ИМТ ≥ 30: Ожирение\n\n"
+        f"**Мотивация:**\n{bmi_data['motivation']}"
     )
     
     return sanitize_markdown_text(content)
@@ -824,11 +828,13 @@ async def generate_ideal_weight_section(profile: dict, user: dict) -> str:
     ideal_weight_data = calculate_ideal_weight(height, gender)
     
     content = (
-        f"**{i18n.get_text('nutrition_ideal_weight_title', user_language)}**\n\n"
-        f"{i18n.get_text('nutrition_ideal_weight_bmi', user_language, min_weight=ideal_weight_data['bmi_min'], max_weight=ideal_weight_data['bmi_max'])}\n"
-        f"{i18n.get_text('nutrition_ideal_weight_broca', user_language, broca_weight=ideal_weight_data['broca_weight'])}\n\n"
-        f"{i18n.get_text('nutrition_ideal_weight_current', user_language, current_weight=weight)}\n"
-        f"{i18n.get_text('nutrition_ideal_weight_recommendation', user_language, recommendation=ideal_weight_data['recommendation'])}"
+        f"**Идеальный диапазон веса**\n\n"
+        f"**По ИМТ (18.5-25):** {ideal_weight_data['ideal_min']} - {ideal_weight_data['ideal_max']} кг\n"
+        f"**По формуле Брока:** {ideal_weight_data['broca']} кг\n\n"
+        f"**Ваш текущий вес:** {weight} кг\n\n"
+        f"**Рекомендации:**\n"
+        f"• Идеальный диапазон: {ideal_weight_data['range']}\n"
+        f"• Формула Брока: {ideal_weight_data['broca']} кг"
     )
     
     return sanitize_markdown_text(content)
@@ -847,10 +853,11 @@ async def generate_metabolic_age_section(profile: dict, user: dict) -> str:
     metabolic_age_data = calculate_metabolic_age(age, gender, weight, height, activity, user_language)
     
     content = (
-        f"**{i18n.get_text('nutrition_metabolic_age_title', user_language)}**\n\n"
-        f"{i18n.get_text('nutrition_metabolic_age_value', user_language, metabolic_age=metabolic_age_data['metabolic_age'])}\n"
-        f"{i18n.get_text('nutrition_metabolic_age_comparison', user_language, actual_age=age)}\n\n"
-        f"{i18n.get_text('nutrition_metabolic_age_interpretation', user_language, interpretation=metabolic_age_data['description'])}"
+        f"**Метаболический возраст**\n\n"
+        f"**Ваш метаболический возраст:** {metabolic_age_data['metabolic_age']} лет\n"
+        f"**Ваш хронологический возраст:** {age} лет\n\n"
+        f"**Интерпретация:**\n{metabolic_age_data['description']}\n\n"
+        f"**Мотивация:**\n{metabolic_age_data['motivation']}"
     )
     
     return sanitize_markdown_text(content)
@@ -866,13 +873,17 @@ async def generate_water_needs_section(profile: dict, user: dict) -> str:
     water_data = calculate_water_needs(weight, activity)
     
     content = (
-        f"**{i18n.get_text('nutrition_water_needs_title', user_language)}**\n\n"
-        f"{i18n.get_text('nutrition_water_needs_daily', user_language, liters=water_data['liters'])}\n"
-        f"{i18n.get_text('nutrition_water_needs_glasses', user_language, glasses=water_data['glasses'])}\n\n"
-        f"{i18n.get_text('nutrition_water_needs_breakdown', user_language)}\n"
-        f"{i18n.get_text('nutrition_water_needs_base', user_language, base_ml=water_data['base_ml'])}\n"
-        f"{i18n.get_text('nutrition_water_needs_activity', user_language, activity_bonus=water_data['activity_bonus'])}\n"
-        f"{i18n.get_text('nutrition_water_needs_total', user_language, total_ml=water_data['total_ml'])}"
+        f"**Дневные потребности в воде**\n\n"
+        f"**Ежедневная норма:** {water_data['liters']} л ({water_data['glasses']} стаканов)\n\n"
+        f"**Расчет:**\n"
+        f"• Базовая потребность: {water_data['base_ml']} мл\n"
+        f"• Активность: +{water_data['activity_bonus']} мл\n"
+        f"• **Итого:** {water_data['total_ml']} мл\n\n"
+        f"**Советы:**\n"
+        f"• Пейте воду утром натощак\n"
+        f"• Пейте воду во время еды\n"
+        f"• Носите с собой бутылку воды\n"
+        f"• Установите напоминания"
     )
     
     return sanitize_markdown_text(content)
@@ -888,11 +899,15 @@ async def generate_macro_distribution_section(profile: dict, user: dict) -> str:
     macro_data = calculate_macro_distribution(calories, goal)
     
     content = (
-        f"**{i18n.get_text('nutrition_macro_distribution_title', user_language)}**\n\n"
-        f"{i18n.get_text('nutrition_macro_protein', user_language, protein_g=macro_data['protein_g'], protein_percent=macro_data['protein_percent'])}\n"
-        f"{i18n.get_text('nutrition_macro_fats', user_language, fats_g=macro_data['fats_g'], fats_percent=macro_data['fats_percent'])}\n"
-        f"{i18n.get_text('nutrition_macro_carbs', user_language, carbs_g=macro_data['carbs_g'], carbs_percent=macro_data['carbs_percent'])}\n\n"
-        f"{i18n.get_text('nutrition_macro_total_calories', user_language, total_calories=macro_data['total_calories'])}"
+        f"**Оптимальное распределение макронутриентов**\n\n"
+        f"**Белки:** {macro_data['protein_g']}г ({macro_data['protein_percent']}%)\n"
+        f"**Жиры:** {macro_data['fats_g']}г ({macro_data['fats_percent']}%)\n"
+        f"**Углеводы:** {macro_data['carbs_g']}г ({macro_data['carbs_percent']}%)\n\n"
+        f"**Общее количество калорий:** {macro_data['total_calories']} ккал\n\n"
+        f"**Рекомендации:**\n"
+        f"• Белки: строительный материал для мышц\n"
+        f"• Жиры: источник энергии и витаминов\n"
+        f"• Углеводы: основной источник энергии"
     )
     
     return sanitize_markdown_text(content)
@@ -907,13 +922,17 @@ async def generate_meal_distribution_section(profile: dict, user: dict) -> str:
     meal_data = calculate_meal_portions(calories, 3, user_language)
     
     content = (
-        f"**{i18n.get_text('nutrition_meal_distribution_title', user_language)}**\n\n"
+        f"**Распределение приемов пищи**\n\n"
     )
     
     for meal in meal_data['meals']:
         content += f"**{meal['name']}:** {meal['calories']} ккал ({meal['percentage']}%)\n"
     
-    content += f"\n{i18n.get_text('nutrition_meal_tips', user_language)}"
+    content += f"\n**Советы:**\n"
+    content += f"• Завтрак: 25% калорий - запускает метаболизм\n"
+    content += f"• Обед: 40% калорий - основная энергия дня\n"
+    content += f"• Ужин: 35% калорий - легкая пища перед сном\n"
+    content += f"• Ешьте каждые 3-4 часа для стабильного уровня сахара"
     
     return sanitize_markdown_text(content)
 
@@ -926,7 +945,7 @@ async def generate_recommendations_section(profile: dict, user: dict) -> str:
     recommendations = get_nutrition_recommendations(profile, [], user_language)
     
     content = (
-        f"**{i18n.get_text('nutrition_recommendations_title', user_language)}**\n\n"
+        f"**Персональные рекомендации**\n\n"
     )
     
     for recommendation in recommendations:
@@ -939,11 +958,11 @@ async def generate_goal_advice_section(profile: dict, user: dict) -> str:
     """Generate goal advice section content"""
     user_language = user.get('language', 'en')
     
-    goal = profile.get('goal', 'maintain')
+    goal = profile.get('goal', 'maintain_weight')
     goal_advice = get_goal_specific_advice(goal, profile, user_language)
     
     content = (
-        f"**{i18n.get_text('nutrition_goal_advice_title', user_language)}**\n\n"
+        f"**Советы по цели**\n\n"
         f"{goal_advice}"
     )
     

@@ -13,11 +13,6 @@ from aiogram import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../api.c0r.ai/app'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
 
-# Patch common module imports
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
-
 from handlers.commands import start_command, status_command, help_command
 from handlers.nutrition import nutrition_insights_command, water_tracker_command
 from handlers.keyboards import create_main_menu_keyboard

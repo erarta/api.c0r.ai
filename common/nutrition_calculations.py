@@ -479,34 +479,27 @@ def get_nutrition_recommendations(profile: Dict, recent_logs: List[Dict], langua
     Returns:
         List of personalized recommendations
     """
-    # Try to import i18n, fallback to hardcoded text if not available
-    try:
-        from i18n.i18n import i18n
-        use_i18n = True
-    except ImportError:
-        # Fallback for test environment
-        use_i18n = False
-        # Fallback text for tests
-        fallback_texts = {
-            'en': {
-                'recommendation_underweight': 'Focus on nutrient-dense foods to build healthy weight',
-                'recommendation_normal': 'You\'re maintaining great health! Keep enjoying balanced, nutritious meals',
-                'recommendation_overweight': 'Focus on portion control and regular physical activity',
-                'recommendation_obese': 'Start with small, sustainable changes to build healthy habits',
-                'recommendation_water': 'Stay hydrated for success! Aim for adequate water intake daily',
-                'recommendation_protein': 'Include lean protein sources in your meals',
-                'recommendation_consistency': 'Small consistent steps lead to amazing transformations!'
-            },
-            'ru': {
-                'recommendation_underweight': 'Сосредоточьтесь на питательных продуктах для набора здорового веса',
-                'recommendation_normal': 'Вы отлично поддерживаете здоровье! Продолжайте наслаждаться сбалансированным питанием',
-                'recommendation_overweight': 'Сосредоточьтесь на контроле порций и регулярной физической активности',
-                'recommendation_obese': 'Начните с небольших, устойчивых изменений для формирования здоровых привычек',
-                'recommendation_water': 'Оставайтесь гидратированными для успеха! Стремитесь к адекватному потреблению воды',
-                'recommendation_protein': 'Включайте нежирные источники белка в приемы пищи',
-                'recommendation_consistency': 'Маленькие последовательные шаги приводят к удивительным трансформациям!'
-            }
+    # Fallback text for all environments
+    fallback_texts = {
+        'en': {
+            'recommendation_underweight': 'Focus on nutrient-dense foods to build healthy weight',
+            'recommendation_normal': 'You\'re maintaining great health! Keep enjoying balanced, nutritious meals',
+            'recommendation_overweight': 'Focus on portion control and regular physical activity',
+            'recommendation_obese': 'Start with small, sustainable changes to build healthy habits',
+            'recommendation_water': 'Stay hydrated for success! Aim for adequate water intake daily',
+            'recommendation_protein': 'Include lean protein sources in your meals',
+            'recommendation_consistency': 'Small consistent steps lead to amazing transformations!'
+        },
+        'ru': {
+            'recommendation_underweight': 'Сосредоточьтесь на питательных продуктах для набора здорового веса',
+            'recommendation_normal': 'Вы отлично поддерживаете здоровье! Продолжайте наслаждаться сбалансированным питанием',
+            'recommendation_overweight': 'Сосредоточьтесь на контроле порций и регулярной физической активности',
+            'recommendation_obese': 'Начните с небольших, устойчивых изменений для формирования здоровых привычек',
+            'recommendation_water': 'Оставайтесь гидратированными для успеха! Стремитесь к адекватному потреблению воды',
+            'recommendation_protein': 'Включайте нежирные источники белка в приемы пищи',
+            'recommendation_consistency': 'Маленькие последовательные шаги приводят к удивительным трансформациям!'
         }
+    }
     
     recommendations = []
     
@@ -514,42 +507,21 @@ def get_nutrition_recommendations(profile: Dict, recent_logs: List[Dict], langua
     if 'weight_kg' in profile and 'height_cm' in profile:
         bmi_data = calculate_bmi(profile['weight_kg'], profile['height_cm'], language)
         if bmi_data['category'] == 'underweight':
-            if use_i18n:
-                recommendations.append(i18n.get_text("recommendation_underweight", language))
-            else:
-                recommendations.append(fallback_texts[language]['recommendation_underweight'])
+            recommendations.append(fallback_texts[language]['recommendation_underweight'])
         elif bmi_data['category'] == 'normal':
-            if use_i18n:
-                recommendations.append(i18n.get_text("recommendation_normal", language))
-            else:
-                recommendations.append(fallback_texts[language]['recommendation_normal'])
+            recommendations.append(fallback_texts[language]['recommendation_normal'])
         elif bmi_data['category'] == 'overweight':
-            if use_i18n:
-                recommendations.append(i18n.get_text("recommendation_overweight", language))
-            else:
-                recommendations.append(fallback_texts[language]['recommendation_overweight'])
+            recommendations.append(fallback_texts[language]['recommendation_overweight'])
         else:  # obese
-            if use_i18n:
-                recommendations.append(i18n.get_text("recommendation_obese", language))
-            else:
-                recommendations.append(fallback_texts[language]['recommendation_obese'])
+            recommendations.append(fallback_texts[language]['recommendation_obese'])
     
     # Water intake recommendation
-    if use_i18n:
-        recommendations.append(i18n.get_text("recommendation_water", language))
-    else:
-        recommendations.append(fallback_texts[language]['recommendation_water'])
+    recommendations.append(fallback_texts[language]['recommendation_water'])
     
     # Protein recommendation
-    if use_i18n:
-        recommendations.append(i18n.get_text("recommendation_protein", language))
-    else:
-        recommendations.append(fallback_texts[language]['recommendation_protein'])
+    recommendations.append(fallback_texts[language]['recommendation_protein'])
     
     # Consistency recommendation
-    if use_i18n:
-        recommendations.append(i18n.get_text("recommendation_consistency", language))
-    else:
-        recommendations.append(fallback_texts[language]['recommendation_consistency'])
+    recommendations.append(fallback_texts[language]['recommendation_consistency'])
     
     return recommendations 
