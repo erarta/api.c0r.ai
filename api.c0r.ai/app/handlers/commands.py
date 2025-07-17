@@ -126,6 +126,7 @@ async def help_command(message: types.Message):
             f"{i18n.get_text('help_credits_title', user_language)}\n"
             f"{i18n.get_text('help_credits_1', user_language)}\n"
             f"{i18n.get_text('help_credits_2', user_language)}\n\n"
+            f"{i18n.get_text('help_credits_explanation', user_language)}\n\n"
             f"{i18n.get_text('help_features_title', user_language)}\n"
             f"{i18n.get_text('help_features_1', user_language)}\n"
             f"{i18n.get_text('help_features_2', user_language)}\n"
@@ -174,6 +175,7 @@ async def help_callback(callback: types.CallbackQuery):
             f"{i18n.get_text('help_credits_title', user_language)}\n"
             f"{i18n.get_text('help_credits_1', user_language)}\n"
             f"{i18n.get_text('help_credits_2', user_language)}\n\n"
+            f"{i18n.get_text('help_credits_explanation', user_language)}\n\n"
             f"{i18n.get_text('help_features_title', user_language)}\n"
             f"{i18n.get_text('help_features_1', user_language)}\n"
             f"{i18n.get_text('help_features_2', user_language)}\n"
@@ -247,7 +249,17 @@ async def status_command(message: types.Message):
         )
         
         logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}, language={user_language}")
-        await message.answer(status_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
+        
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        await message.answer(status_text, parse_mode="Markdown", reply_markup=keyboard)
         
     except Exception as e:
         logger.error(f"Error in /status for user {telegram_user_id}: {e}")
@@ -307,7 +319,17 @@ async def status_callback(callback: types.CallbackQuery):
         )
 
         logger.info(f"Sending status to user {telegram_user_id}: credits={user['credits_remaining']}")
-        await callback.message.answer(status_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
+        
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        await callback.message.answer(status_text, parse_mode="Markdown", reply_markup=keyboard)
         
     except Exception as e:
         logger.error(f"Error in status callback for user {telegram_user_id}: {e}")
@@ -354,6 +376,7 @@ async def buy_credits_command(message: types.Message):
         await message.answer(
             f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
             f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
+            f"{i18n.get_text('credits_explanation', user_language)}\n\n"
             f"📦 **{i18n.get_text('basic_plan_title', user_language)}**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
             f"📦 **{i18n.get_text('pro_plan_title', user_language)}**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
             f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
@@ -415,6 +438,7 @@ async def buy_callback(callback: types.CallbackQuery):
         await callback.message.answer(
             f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
             f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
+            f"{i18n.get_text('credits_explanation', user_language)}\n\n"
             f"📦 **{i18n.get_text('basic_plan_title', user_language)}**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
             f"📦 **{i18n.get_text('pro_plan_title', user_language)}**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
             f"{i18n.get_text('choose_plan_to_continue', user_language)}:",

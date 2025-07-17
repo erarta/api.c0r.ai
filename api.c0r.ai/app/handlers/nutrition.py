@@ -52,20 +52,43 @@ async def nutrition_insights_command(message: types.Message):
             user = await get_or_create_user(message.from_user.id)
             user_language = user.get('language', 'en')
             
+            # Create keyboard with back button
+            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text('btn_back', user_language),
+                        callback_data="action_main_menu"
+                    )
+                ]
+            ])
+            
             await message.answer(
                 i18n.get_text("nutrition_incomplete", user_language, missing_fields=', '.join(missing_fields)),
                 parse_mode="Markdown",
-                reply_markup=create_main_menu_keyboard()
+                reply_markup=keyboard
             )
             return
         
         # Generate comprehensive nutrition insights
         insights_text = await generate_nutrition_insights(profile, user)
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await message.answer(
             insights_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
         
     except Exception as e:
@@ -74,10 +97,20 @@ async def nutrition_insights_command(message: types.Message):
         user = await get_or_create_user(message.from_user.id)
         user_language = user.get('language', 'en')
         
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await message.answer(
             i18n.get_text("nutrition_error", user_language),
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
 
 
@@ -118,20 +151,43 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
             user = await get_or_create_user(callback.from_user.id)
             user_language = user.get('language', 'en')
             
+            # Create keyboard with back button
+            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text('btn_back', user_language),
+                        callback_data="action_main_menu"
+                    )
+                ]
+            ])
+            
             await callback.message.answer(
                 i18n.get_text("nutrition_incomplete", user_language, missing_fields=', '.join(missing_fields)),
                 parse_mode="Markdown",
-                reply_markup=create_main_menu_keyboard()
+                reply_markup=keyboard
             )
             return
         
         # Generate comprehensive nutrition insights
         insights_text = await generate_nutrition_insights(profile, user)
         
+        # Get user's language
+        user_language = user.get('language', 'en')
+        
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await callback.message.answer(
             insights_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
         
     except Exception as e:
@@ -140,10 +196,20 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
         user = await get_or_create_user(callback.from_user.id)
         user_language = user.get('language', 'en')
         
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await callback.message.answer(
             i18n.get_text("nutrition_error", user_language),
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
 
 
@@ -338,10 +404,19 @@ async def weekly_report_callback(callback: types.CallbackQuery):
         # Get user's language for error message
         user = await get_or_create_user(callback.from_user.id)
         user_language = user.get('language', 'en')
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
         await callback.message.answer(
             i18n.get_text("weekly_report_error", user_language),
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
 
 
@@ -384,10 +459,19 @@ async def weekly_report_command(message: types.Message):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
         await message.answer(
             i18n.get_text("weekly_report_error", user_language),
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
 
 
@@ -427,10 +511,19 @@ async def water_tracker_callback(callback: types.CallbackQuery):
                 f"{i18n.get_text('water_tracker_urine', user_language)}\n\n"
                 f"{i18n.get_text('water_tracker_setup_profile', user_language)}"
             )
+            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text("btn_back", user_language),
+                        callback_data="action_main_menu"
+                    )
+                ]
+            ])
+            
             await callback.message.answer(
                 water_text,
                 parse_mode="Markdown",
-                reply_markup=create_main_menu_keyboard()
+                reply_markup=keyboard
             )
             return
         
@@ -455,10 +548,19 @@ async def water_tracker_callback(callback: types.CallbackQuery):
             f"{i18n.get_text('water_tracker_coming_soon', user_language)}"
         )
         
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await callback.message.answer(
             water_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
         
     except Exception as e:
@@ -466,10 +568,19 @@ async def water_tracker_callback(callback: types.CallbackQuery):
         # Get user's language for error message
         user = await get_or_create_user(callback.from_user.id)
         user_language = user.get('language', 'en')
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
         await callback.message.answer(
             i18n.get_text("water_tracker_error", user_language),
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
 
 
@@ -497,10 +608,19 @@ async def water_tracker_command(message: types.Message):
                 f"{i18n.get_text('water_tracker_urine', user_language)}\n\n"
                 f"{i18n.get_text('water_tracker_setup_profile', user_language)}"
             )
+            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text("btn_back", user_language),
+                        callback_data="action_main_menu"
+                    )
+                ]
+            ])
+            
             await message.answer(
                 water_text,
                 parse_mode="Markdown",
-                reply_markup=create_main_menu_keyboard()
+                reply_markup=keyboard
             )
             return
         
@@ -525,10 +645,19 @@ async def water_tracker_command(message: types.Message):
             f"{i18n.get_text('water_tracker_coming_soon', user_language)}"
         )
         
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await message.answer(
             water_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
         
     except Exception as e:
@@ -536,8 +665,17 @@ async def water_tracker_command(message: types.Message):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
         await message.answer(
             i18n.get_text("water_tracker_error", user_language),
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         ) 

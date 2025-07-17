@@ -733,7 +733,7 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
             ],
             [
                 types.InlineKeyboardButton(
-                    text="🏠 Main Menu",
+                    text=i18n.get_text("btn_main_menu", user_language),
                     callback_data="profile_main_menu"
                 )
             ]

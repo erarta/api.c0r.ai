@@ -64,14 +64,8 @@ async def show_no_profile_message(message: types.Message):
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
-                text=i18n.get_text("daily_setup_btn", user_language),
-                callback_data="profile_start_setup"
-            )
-        ],
-        [
-            types.InlineKeyboardButton(
-                text=i18n.get_text("daily_analyze_btn", user_language),
-                callback_data="action_analyze_info"
+                text=i18n.get_text("btn_back", user_language),
+                callback_data="action_main_menu"
             )
         ]
     ])
@@ -201,6 +195,7 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
             f"{status_emoji} {status_msg}\n\n"
             f"{i18n.get_text('daily_nutrition_breakdown', user_language)}\n"
             f"{macro_progress}\n"
+            f"💡 {i18n.get_text('daily_status_explanation', user_language)}\n\n"
             f"{i18n.get_text('daily_activity', user_language)}\n"
             f"{i18n.get_text('daily_meals_analyzed', user_language, count=daily_data['food_items_count'])}\n\n"
             f"{i18n.get_text('daily_recommendations', user_language)}\n{recommendations}"
@@ -209,28 +204,8 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text=i18n.get_text("daily_add_meal_btn", user_language),
-                    callback_data="action_analyze_info"
-                ),
-                types.InlineKeyboardButton(
-                    text="📈 Weekly Progress",
-                    callback_data="daily_weekly"
-                )
-            ],
-            [
-                types.InlineKeyboardButton(
-                    text="👤 Edit Profile",
-                    callback_data="profile_edit"
-                ),
-                types.InlineKeyboardButton(
-                    text="🍽️ Meal History",
-                    callback_data="daily_history"
-                )
-            ],
-            [
-                types.InlineKeyboardButton(
-                    text="🏠 Main Menu",
-                    callback_data="profile_main_menu"
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
                 )
             ]
         ])
@@ -464,7 +439,16 @@ async def show_weekly_progress(message: types.Message, telegram_user_id: int):
             f"\n{i18n.get_text('weekly_progress_keep_tracking', user_language)}"
         )
         
-        await message.answer(weekly_text, parse_mode="Markdown")
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        await message.answer(weekly_text, parse_mode="Markdown", reply_markup=keyboard)
         
     except Exception as e:
         logger.error(f"Error showing weekly progress: {e}")
@@ -512,7 +496,16 @@ async def show_meal_history(message: types.Message, telegram_user_id: int):
             f"{i18n.get_text('meal_history_total_carbs', user_language, carbs=daily_data['total_carbs'])}"
         )
         
-        await message.answer(history_text, parse_mode="Markdown")
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        await message.answer(history_text, parse_mode="Markdown", reply_markup=keyboard)
         
     except Exception as e:
         logger.error(f"Error showing meal history: {e}")

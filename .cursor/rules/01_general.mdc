@@ -9,3 +9,4 @@ alwaysApply: true
 - Format with Black, Flake8/Ruff for linting.
 - Use `.env` for all secrets; never hardcode keys.
 - Add clear logging (INFO, ERROR, DEBUG).
+- Always after update code also update CHANGELOG.md

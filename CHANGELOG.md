@@ -2,6 +2,70 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.25] - 2025-01-21
+
+### Added
+- **Consistent Back Button Navigation**: Replaced "Main Menu" buttons with "⬅️ Назад" buttons across all major sections
+- **Unified Navigation Experience**: Standardized back button usage in status, buy credits, and water tracker sections
+- **Simplified User Interface**: Streamlined navigation with consistent back button pattern
+
+### Changed
+- **Status Section Navigation**: Replaced "Main Menu" button with "⬅️ Назад" button in account status display
+- **Buy Credits Navigation**: Updated buy credits section to use back button instead of main menu
+- **Water Tracker Navigation**: Replaced main menu button with back button in water tracking interface
+- **Navigation Consistency**: All major sections now use consistent back button navigation pattern
+
+### Fixed
+- **Navigation Flow**: Improved user navigation flow across all bot sections with simplified button structure
+- **Interface Consistency**: Eliminated mixed navigation patterns for better user experience
+- **Button Clarity**: Removed potential confusion from inconsistent button labeling
+
+### Technical
+- **Keyboard Standardization**: Unified keyboard creation across all major sections
+- **Navigation Pattern**: Established consistent back button pattern throughout the application
+- **Code Consistency**: Standardized button creation and callback handling
+
+### User Experience
+- **Consistent Navigation**: Users experience consistent back button navigation across all sections
+- **Simplified Interface**: Cleaner, more intuitive navigation with single back button
+- **Reduced Cognitive Load**: Users no longer need to remember different navigation patterns
+
+### Testing
+- **Unit Tests Validation**: All nutrition calculation tests pass (39/39)
+- **Formatting Tests**: All nutrition formatting tests pass (4/4)
+- **Sanitization Tests**: All nutrition sanitization tests pass (4/4)
+- **Language Detection Tests**: All language detection tests pass (25/25)
+- **Translation Tests**: All translation tests pass (9/9)
+- **I18n Tests**: All i18n functionality tests pass
+- **Syntax Validation**: All modified files compile without errors
+- **Import Validation**: All function imports remain intact
+
+## [0.3.24] - 2025-01-21
+
+### Added
+- **Simplified Daily Plan Navigation**: Replaced all buttons in daily plan with single "⬅️ Назад" button for cleaner interface
+- **Consistent Back Navigation**: Added back buttons to weekly progress and meal history views for seamless navigation
+- **Streamlined User Experience**: Simplified daily plan interface to focus on information display rather than multiple action buttons
+
+### Changed
+- **Daily Plan Interface**: Removed multiple action buttons (Add Meal, Weekly Progress, Edit Profile, Meal History, Main Menu) from daily plan
+- **Navigation Consistency**: All daily plan related views now use consistent back button navigation
+- **User Interface Simplification**: Daily plan now shows only essential information with single back button
+
+### Fixed
+- **Navigation Flow**: Improved user navigation flow in daily plan section with simplified button structure
+- **Interface Clarity**: Removed potential confusion from multiple button options in daily plan display
+
+### Technical
+- **Keyboard Simplification**: Streamlined keyboard creation in daily plan functions
+- **Navigation Consistency**: Standardized back button usage across daily plan related functions
+- **Code Cleanup**: Removed unused button handlers and simplified callback structure
+
+### User Experience
+- **Cleaner Interface**: Daily plan now has cleaner, less cluttered interface
+- **Simplified Navigation**: Users can easily return to main menu with single back button
+- **Focused Information Display**: Daily plan focuses on displaying nutrition information rather than multiple action options
+
 ## [0.3.23] - 2025-01-21
 
 ### Added
@@ -10,6 +74,10 @@ All notable changes to this project will be documented in this file.
 - **Comprehensive Unit Standardization**: Replaced all "cal" units with "kcal" throughout the application
 - **Back Button for Analyze Info**: Added "⬅️ Назад" button to "How to Analyze Food Photos" section for easy navigation
 - **Complete Buy Credits Localization**: Full Russian translation of all buy credits sections including buttons and payment plans
+- **Enhanced I18n System**: Added 20+ new translation keys for complete localization coverage
+- **Status Symbols Explanation**: Added clear explanation of nutrition status symbols (⚠️ low, 🟡 medium, ✅ good, 🔴 exceeded)
+- **Credits Explanation**: Added comprehensive explanation of what credits are and how they work (1 credit = 1 photo analysis)
+- **Back Button in Nutrition Insights**: Replaced "Main Menu" button with "⬅️ Назад" button in nutrition analysis results
 
 ### Changed
 - **BREAKING**: Replaced all "cal" units with "kcal" for consistency across the application
@@ -21,6 +89,10 @@ All notable changes to this project will be documented in this file.
 - **Analyze Info Navigation**: Added back button to return to main menu from analyze info section
 - **Buy Credits Interface**: Complete localization of all buy credits text, buttons, and payment plan descriptions
 - **Photo Analysis Credits**: Localized all credit-related messages in photo analysis results
+- **Payment Plan Display**: Fixed hardcoded "за" preposition to use proper i18n localization
+- **Nutrition Insights Navigation**: Improved user experience with back button instead of main menu
+- **Help Section Enhancement**: Added detailed credits explanation in help section
+- **Daily Plan Enhancement**: Added status symbols explanation for better user understanding
 
 ### Fixed
 - **Unit Consistency**: Ensured all calorie displays use consistent "kcal" format
@@ -28,8 +100,13 @@ All notable changes to this project will be documented in this file.
 - **Photo Analysis Formatting**: Fixed hardcoded unit displays in photo analysis results
 - **Navigation Flow**: Improved user navigation with back button in analyze info section
 - **Buy Credits Hardcoded Text**: Replaced all hardcoded English text in buy credits with proper i18n keys
-- **Payment Plan Display**: Fixed hardcoded "за" preposition to use proper i18n localization
 - **Out of Credits Messages**: Localized all out of credits messages in photo analysis
+- **Payment Plan Prepositions**: Fixed hardcoded Russian preposition "за" to use i18n system
+- **Credit Display Messages**: Localized "Credits Remaining" text throughout the application
+- **Hardcoded "Edit Profile"**: Fixed hardcoded "Edit Profile" text in daily plan to use i18n
+- **Hardcoded "Main Menu"**: Fixed all hardcoded "Main Menu" text to use i18n keys
+- **Status Symbols Clarity**: Added explanation for nutrition status symbols to prevent user confusion
+- **Credits Understanding**: Added clear explanation of credit system to help users understand the pricing model
 
 ### Technical
 - **Test Data Updates**: Updated test data to use "kcal" instead of "cal" for consistency
@@ -39,6 +116,9 @@ All notable changes to this project will be documented in this file.
 - **Keyboard Enhancement**: Added back button functionality to analyze info callback handler
 - **Buy Credits Localization**: Added comprehensive i18n keys for all buy credits functionality
 - **Payment System Integration**: Enhanced payment plan display with proper localization
+- **Database Key Alignment**: Ensured consistent key names throughout data pipeline
+- **Navigation System**: Improved navigation consistency across all bot sections
+- **Error Handling**: Enhanced error handling with proper localized back buttons
 
 ### User Experience
 - **Consistent Unit Display**: All calorie values now display with proper "kcal" units
@@ -48,6 +128,21 @@ All notable changes to this project will be documented in this file.
 - **Improved Navigation**: Users can easily return to main menu from analyze info section
 - **Complete Buy Credits Experience**: Russian users see fully localized buy credits interface
 - **Seamless Payment Flow**: All payment plan descriptions and buttons properly translated
+- **Consistent Language Experience**: No more mixed language content in any bot interaction
+- **Clear Status Understanding**: Users now understand what nutrition status symbols mean
+- **Transparent Credit System**: Users clearly understand that 1 credit = 1 photo analysis
+- **Intuitive Navigation**: Back buttons provide consistent navigation experience
+
+### Testing
+- **Unit Tests Validation**: All nutrition calculation tests pass (39/39)
+- **Formatting Tests**: All nutrition formatting tests pass (4/4)
+- **Sanitization Tests**: All nutrition sanitization tests pass (7/7)
+- **Simple Sanitization Tests**: All simple sanitization tests pass (4/4)
+- **Test Data Consistency**: Updated all test data to use "kcal" instead of "cal"
+- **Localization Testing**: Verified all new i18n keys work correctly
+- **Navigation Testing**: Confirmed back button functionality works properly
+- **Credits Explanation Testing**: Verified credits explanation displays correctly
+- **Status Symbols Testing**: Confirmed status symbols explanation works properly
 
 ## [0.3.22] - 2025-01-21
 
