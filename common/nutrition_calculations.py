@@ -21,7 +21,7 @@ def calculate_bmi(weight_kg: float, height_cm: float, language: str = 'en') -> D
     """
     # Try to import i18n, fallback to hardcoded text if not available
     try:
-        from api.c0r.ai.app.handlers.i18n import i18n
+        from i18n.i18n import i18n
         use_i18n = True
     except ImportError:
         # Fallback for test environment
@@ -246,7 +246,7 @@ def calculate_metabolic_age(age: int, gender: str, weight_kg: float, height_cm: 
     """
     # Try to import i18n, fallback to hardcoded text if not available
     try:
-        from api.c0r.ai.app.handlers.i18n import i18n
+        from i18n.i18n import i18n
         use_i18n = True
     except ImportError:
         # Fallback for test environment
@@ -349,7 +349,7 @@ def calculate_meal_portions(calories: int, meals_per_day: int = 3, language: str
     """
     # Try to import i18n, fallback to hardcoded text if not available
     try:
-        from api.c0r.ai.app.handlers.i18n import i18n
+        from i18n.i18n import i18n
         use_i18n = True
     except ImportError:
         # Fallback for test environment
@@ -481,7 +481,7 @@ def get_nutrition_recommendations(profile: Dict, recent_logs: List[Dict], langua
     """
     # Try to import i18n, fallback to hardcoded text if not available
     try:
-        from api.c0r.ai.app.handlers.i18n import i18n
+        from i18n.i18n import i18n
         use_i18n = True
     except ImportError:
         # Fallback for test environment

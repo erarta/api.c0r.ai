@@ -13,7 +13,7 @@ from common.supabase_client import (
     calculate_daily_calories,
     get_or_create_user
 )
-from .i18n import i18n
+from i18n.i18n import i18n
 
 # FSM States for profile setup
 class ProfileStates(StatesGroup):
@@ -65,7 +65,6 @@ async def profile_command(message: types.Message, state: FSMContext):
 
 async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     """Show profile menu for existing profile"""
-    from .i18n import i18n
     user_language = user.get('language', 'en')
     # Format profile data
     age = profile.get('age', 'Not set')
@@ -133,8 +132,8 @@ async def show_profile_menu(message: types.Message, user: dict, profile: dict):
         ],
         [
             types.InlineKeyboardButton(
-                text=i18n.get_text('btn_main_menu', user_language),
-                callback_data="profile_main_menu"
+                text=i18n.get_text('btn_back', user_language),
+                callback_data="action_main_menu"
             )
         ]
     ])
@@ -405,7 +404,6 @@ async def show_progress(message: types.Message, telegram_user_id: int):
 
 async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: dict):
     """Show profile information for existing profile"""
-    from .i18n import i18n
     user_language = user.get('language', 'en')
     age = profile.get('age', 'Not set')
     gender_map = {

@@ -12,7 +12,7 @@ from common.supabase_client import (
     get_or_create_user
 )
 from .keyboards import create_main_menu_keyboard
-from .i18n import i18n
+from i18n.i18n import i18n
 
 # /daily command handler
 async def daily_command(message: types.Message):
@@ -46,7 +46,15 @@ async def daily_command(message: types.Message):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
-        await message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        await message.answer(i18n.get_text("error_general", user_language), reply_markup=keyboard)
 
 async def show_no_profile_message(message: types.Message):
     """Show message encouraging profile setup"""
@@ -108,7 +116,15 @@ async def daily_callback(callback: types.CallbackQuery):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
-        await callback.message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        await callback.message.answer(i18n.get_text("error_general", user_language), reply_markup=keyboard)
 
 async def show_daily_plan(message: types.Message, user: dict, profile: dict):
     """Show comprehensive daily plan for user with profile"""
@@ -217,12 +233,20 @@ async def show_daily_plan(message: types.Message, user: dict, profile: dict):
         # Get user's language for error message
         user = await get_or_create_user(message.from_user.id)
         user_language = user.get('language', 'en')
-        await message.answer(i18n.get_text("error_general", user_language), reply_markup=create_main_menu_keyboard())
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        await message.answer(i18n.get_text("error_general", user_language), reply_markup=keyboard)
 
 def get_daily_recommendations(progress_percent: int, remaining: int, goal: str, meals_count: int, language: str) -> str:
     """Generate personalized recommendations based on progress, fully localized"""
     import random
-    from .i18n import i18n
+    from i18n.i18n import i18n
     recommendations = []
 
     # Progress-based recommendations with variety
@@ -377,7 +401,15 @@ async def handle_daily_callback(callback: types.CallbackQuery):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
-        await callback.answer(i18n.get_text("error_general", user_language))
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        await callback.answer(i18n.get_text("error_general", user_language), reply_markup=keyboard)
 
 async def show_weekly_progress(message: types.Message, telegram_user_id: int):
     """Show weekly progress summary"""
@@ -455,7 +487,15 @@ async def show_weekly_progress(message: types.Message, telegram_user_id: int):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
-        await message.answer(i18n.get_text("error_general", user_language))
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        await message.answer(i18n.get_text("error_general", user_language), reply_markup=keyboard)
 
 async def show_meal_history(message: types.Message, telegram_user_id: int):
     """Show recent meal history"""
@@ -512,4 +552,12 @@ async def show_meal_history(message: types.Message, telegram_user_id: int):
         # Get user's language for error message
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
-        await message.answer(i18n.get_text("error_general", user_language)) 
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        await message.answer(i18n.get_text("error_general", user_language), reply_markup=keyboard) 

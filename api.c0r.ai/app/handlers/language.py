@@ -5,7 +5,7 @@ Handles language switching and language detection
 from aiogram import types
 from loguru import logger
 from common.supabase_client import update_user_language, update_user_country_and_phone
-from .i18n import i18n, Language
+from i18n.i18n import i18n, Language
 
 
 async def language_command(message: types.Message):
@@ -94,11 +94,11 @@ async def handle_language_callback(callback: types.CallbackQuery):
         # Create success message
         success_text = i18n.get_text("language_changed", selected_language, lang_name=language_name)
         
-        # Create main menu keyboard with new language
+        # Create back keyboard with new language
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_main_menu", selected_language),
+                    text=i18n.get_text("btn_back", selected_language),
                     callback_data="action_main_menu"
                 )
             ]

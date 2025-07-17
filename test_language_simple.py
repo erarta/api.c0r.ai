@@ -21,7 +21,7 @@ class MockLogger:
 import sys
 sys.modules['loguru'] = type('MockLoguru', (), {'logger': MockLogger()})
 
-from handlers.i18n import i18n, Language
+from i18n.i18n import i18n, Language
 
 def test_language_detection():
     """Test language detection based on country and phone number"""

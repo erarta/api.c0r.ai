@@ -19,7 +19,7 @@ from handlers.profile import (
 from handlers.daily import daily_command, handle_daily_callback
 from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command
 from handlers.language import language_command, handle_language_callback
-from handlers.i18n import i18n
+from i18n.i18n import i18n
 from loguru import logger
 
 # Must be set in .env file

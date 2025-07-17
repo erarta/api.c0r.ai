@@ -3,7 +3,7 @@ Shared keyboard utilities for c0r.ai Telegram Bot
 This module contains reusable keyboard functions to avoid circular imports
 """
 from aiogram import types
-from .i18n import i18n
+from i18n.i18n import i18n
 
 
 def create_main_menu_keyboard(language: str = "en"):
@@ -20,7 +20,7 @@ def create_main_menu_keyboard(language: str = "en"):
 
 def create_payment_success_keyboard(language: str = "en"):
     """Create keyboard for payment success message with navigation options"""
-    from .i18n import i18n
+    from i18n.i18n import i18n
     return types.InlineKeyboardMarkup(inline_keyboard=[
         [
             types.InlineKeyboardButton(
@@ -53,7 +53,7 @@ def create_payment_success_keyboard(language: str = "en"):
 
 def create_main_menu_text(language: str = "en"):
     """Create main menu message with interactive buttons"""
-    from .i18n import i18n
+    from i18n.i18n import i18n
     return (
         f"{i18n.get_text('main_menu_title', language)}"
     ), types.InlineKeyboardMarkup(inline_keyboard=[

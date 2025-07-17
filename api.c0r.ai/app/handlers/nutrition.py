@@ -12,7 +12,7 @@ from common.nutrition_calculations import (
     calculate_meal_portions, get_nutrition_recommendations
 )
 from .keyboards import create_main_menu_keyboard
-from .i18n import i18n
+from i18n.i18n import i18n
 from datetime import datetime, timedelta
 import re
 
@@ -344,7 +344,6 @@ async def generate_nutrition_insights(profile: dict, user: dict) -> str:
 
 def get_goal_specific_advice(goal: str, profile: dict, language: str) -> str:
     """Get specific advice based on user's goal, fully localized"""
-    from .i18n import i18n
     if goal == 'lose_weight':
         return i18n.get_text("advice_lose_weight", language)
     elif goal == 'gain_weight':
@@ -393,10 +392,19 @@ async def weekly_report_callback(callback: types.CallbackQuery):
             f"{i18n.get_text('weekly_report_tracking', user_language)}"
         )
         
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await callback.message.answer(
             report_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
         
     except Exception as e:
@@ -448,10 +456,19 @@ async def weekly_report_command(message: types.Message):
             f"{i18n.get_text('weekly_report_tracking', user_language)}"
         )
         
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
         await message.answer(
             report_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
         
     except Exception as e:

@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.26] - 2025-01-21
+
+### Added
+- **I18n Folder Structure Refactoring**: Moved all i18n-related files to dedicated `/i18n` folder for better organization
+- **Separate Translation Files**: Split translations into separate `en.py` and `ru.py` files for easier maintenance
+- **Clean Import Structure**: Updated all imports to use absolute paths from the new i18n folder
+
+### Changed
+- **File Organization**: Moved `i18n.py`, `ru.py`, and `en.py` from `api.c0r.ai/app/handlers/` to `/i18n/` folder
+- **Import Paths**: Updated all handler files to use `from i18n.i18n import i18n` instead of relative imports
+- **Translation Management**: Separated English and Russian translations into individual files for better maintainability
+- **Code Structure**: Improved code organization with dedicated i18n module structure
+
+### Fixed
+- **Import Consistency**: Eliminated all relative imports of i18n system across the codebase
+- **Module Path Issues**: Resolved import path conflicts and module resolution issues
+- **Code Organization**: Improved maintainability with better file structure and organization
+
+### Technical
+- **Folder Structure**: Created dedicated `/i18n` folder for all internationalization files
+- **Import Updates**: Updated imports in all handler files (`commands.py`, `language.py`, `nutrition.py`, `profile.py`, `daily.py`, `photo.py`, `keyboards.py`)
+- **System Integration**: Updated imports in `bot.py`, `common/nutrition_calculations.py`, and test files
+- **Translation Separation**: Split monolithic translation dictionary into separate language files
+- **Code Cleanup**: Removed old i18n folder structure and cleaned up import paths
+
+### User Experience
+- **No Functional Changes**: All existing functionality remains exactly the same
+- **Improved Maintainability**: Better code organization for future translation updates
+- **Cleaner Architecture**: More organized codebase structure for internationalization
+
+### Testing
+- **I18n Tests**: All i18n functionality tests pass (language detection, translations, fallbacks)
+- **Language Tests**: All language detection tests pass (25/25 tests passed)
+- **Import Validation**: All import paths work correctly with new folder structure
+- **Functionality Verification**: All bot features work correctly with new i18n structure
+
 ## [0.3.25] - 2025-01-21
 
 ### Added

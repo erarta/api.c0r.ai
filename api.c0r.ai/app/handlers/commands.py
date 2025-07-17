@@ -7,7 +7,7 @@ from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .keyboards import create_main_menu_keyboard, create_main_menu_text
-from .i18n import i18n
+from i18n.i18n import i18n
 from .language import detect_and_set_user_language
 from config import VERSION, PAYMENT_PLANS
 
@@ -144,7 +144,16 @@ async def help_command(message: types.Message):
             f"{i18n.get_text('help_support', user_language)}"
         )
         
-        await message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        await message.answer(help_text, parse_mode="Markdown", reply_markup=keyboard)
         logger.info(f"/help by user {telegram_user_id} with language {user_language}")
         
     except Exception as e:
@@ -192,7 +201,16 @@ async def help_callback(callback: types.CallbackQuery):
             f"{i18n.get_text('help_credits_info', user_language)}\n\n"
             f"{i18n.get_text('help_support', user_language)}"
         )
-        await callback.message.answer(help_text, parse_mode="Markdown", reply_markup=create_main_menu_keyboard())
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text("btn_back", user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        await callback.message.answer(help_text, parse_mode="Markdown", reply_markup=keyboard)
     except Exception as e:
         logger.error(f"Error in help_callback: {e}")
         await callback.message.answer(i18n.get_text("error_general", "en"))
@@ -377,21 +395,27 @@ async def buy_credits_command(message: types.Message):
             f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
             f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
             f"{i18n.get_text('credits_explanation', user_language)}\n\n"
-            f"📦 **{i18n.get_text('basic_plan_title', user_language)}**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
-            f"📦 **{i18n.get_text('pro_plan_title', user_language)}**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
+            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
+            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
             f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text=f"💰 {i18n.get_text('basic_plan_btn', user_language, price=basic_price)}",
+                        text=f"💰 {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р",
                         callback_data="buy_basic"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text=f"💎 {i18n.get_text('pro_plan_btn', user_language, price=pro_price)}", 
+                        text=f"💎 {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р", 
                         callback_data="buy_pro"
+                    )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text("btn_back", user_language),
+                        callback_data="action_main_menu"
                     )
                 ]
             ])
@@ -439,21 +463,27 @@ async def buy_callback(callback: types.CallbackQuery):
             f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
             f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
             f"{i18n.get_text('credits_explanation', user_language)}\n\n"
-            f"📦 **{i18n.get_text('basic_plan_title', user_language)}**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
-            f"📦 **{i18n.get_text('pro_plan_title', user_language)}**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
+            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
+            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
             f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text=f"💰 {i18n.get_text('basic_plan_btn', user_language, price=basic_price)}",
+                        text=f"💰 {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р",
                         callback_data="buy_basic"
                     )
                 ],
                 [
                     types.InlineKeyboardButton(
-                        text=f"💎 {i18n.get_text('pro_plan_btn', user_language, price=pro_price)}", 
+                        text=f"💎 {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р", 
                         callback_data="buy_pro"
+                    )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text=i18n.get_text("btn_back", user_language),
+                        callback_data="action_main_menu"
                     )
                 ]
             ])
