@@ -5,24 +5,37 @@ All notable changes to this project will be documented in this file.
 ## [0.3.31] - 2025-07-17
 
 ### Fixed
-- Resolved all missing translation key and i18n errors in nutrition analysis sections
-- Updated nutrition section generators to use robust, hardcoded text for all outputs
-- Fixed data access and parameter issues in nutrition calculation functions
-- Eliminated all callback and section generation errors in production
-- Fixed integration test import paths for `common` module
+- **Critical Production Errors**: Resolved all missing translation key and i18n errors in nutrition analysis sections
+- **Data Access Issues**: Fixed data access and parameter issues in nutrition calculation functions
+- **Callback Errors**: Eliminated all callback and section generation errors in production logs
+- **Integration Tests**: Fixed integration test import paths for `common` module
+- **Macro Distribution**: Fixed `'protein_g'` key error in macro distribution section generation
+- **Function Signatures**: Corrected all nutrition section generation function signatures
 
 ### Changed
-- Nutrition recommendations now use built-in text instead of i18n for reliability
-- All nutrition section content generation functions updated for stability and maintainability
+- **Nutrition Recommendations**: Now use built-in text instead of i18n for reliability
+- **Section Generators**: All nutrition section content generation functions updated for stability
+- **Error Handling**: Enhanced error handling in nutrition section callbacks
+- **Content Generation**: Replaced problematic i18n calls with hardcoded text for reliability
 
 ### Technical
-- Removed dependency on missing i18n keys in nutrition recommendations
-- Improved sys.path handling in integration tests for cross-platform compatibility
+- **I18n Dependencies**: Removed dependency on missing i18n keys in nutrition recommendations
+- **Import Paths**: Improved sys.path handling in integration tests for cross-platform compatibility
+- **Data Structures**: Fixed access to nutrition calculation result data structures
+- **Function Calls**: Corrected parameter passing to nutrition calculation functions
 
 ### Production Impact
-- No more i18n or translation errors in logs
-- All nutrition section buttons and callbacks work correctly in production
-- Integration tests now run without import errors
+- **Error Elimination**: No more i18n or translation errors in production logs
+- **Button Functionality**: All nutrition section buttons and callbacks work correctly
+- **Test Reliability**: Integration tests now run without import errors
+- **User Experience**: Complete nutrition analysis functionality restored and working
+- **Log Cleanliness**: Eliminated all `'protein_g'`, `'healthy_min'`, `'bmi_min'` errors
+
+### Root Cause
+- **Missing i18n Keys**: Translation keys were missing for nutrition section content
+- **Data Structure Mismatch**: Function return data structures didn't match expected keys
+- **Function Signature Issues**: Nutrition calculation functions had incorrect parameter requirements
+- **Production Deployment**: Old code was still running in production containers
 
 ## [0.3.30] - 2025-01-21
 
