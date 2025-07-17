@@ -11,7 +11,7 @@ from aiogram import types
 
 # Add project paths
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../api.c0r.ai/app'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
 
 from handlers.nutrition import (
     nutrition_insights_command,
@@ -44,14 +44,15 @@ class TestNutritionInsights:
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    
-                    # This should NOT raise an exception
-                    await nutrition_insights_command(message)
+                    with patch('handlers.nutrition.get_or_create_user', return_value={'id': 'user-uuid', 'language': 'en'}):
+                        
+                        # This should NOT raise an exception
+                        await nutrition_insights_command(message)
                     
                     # Verify it shows profile setup message
                     message.answer.assert_called_once()
                     call_args = message.answer.call_args[0][0]
-                    assert "🔍 **Nutrition Insights**" in call_args
+                    assert "**Nutrition Insights**" in call_args
                     assert "Almost ready! Please complete your profile" in call_args
                     assert "Missing:" in call_args
                     assert "age, weight_kg, height_cm, gender, activity_level, goal" in call_args
@@ -73,8 +74,9 @@ class TestNutritionInsights:
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
                 with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    
-                    await nutrition_insights_command(message)
+                    with patch('handlers.nutrition.get_or_create_user', return_value={'id': 'user-uuid', 'language': 'en'}):
+                        
+                        await nutrition_insights_command(message)
                     
                     # Should show missing fields message
                     message.answer.assert_called_once()
@@ -97,7 +99,7 @@ class TestNutritionInsights:
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     await nutrition_insights_command(message)
                     
@@ -125,22 +127,20 @@ class TestNutritionInsights:
         }
         
         user_data = {
-            'user': {'id': 'user-uuid', 'credits_remaining': 10},
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'},
             'profile': complete_profile,
             'has_profile': True
         }
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.nutrition.generate_nutrition_insights', return_value="Mocked insights"):
-                        
-                        await nutrition_insights_command(message)
-                        
-                        # Should generate insights
-                        message.answer.assert_called_once()
-                        call_args = message.answer.call_args[0][0]
-                        assert call_args == "Mocked insights"
+                with patch('handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
+                    
+                    await nutrition_insights_command(message)
+                    
+                    # Should show nutrition insights menu
+                    mock_show_menu.assert_called_once()
+                    message.answer.assert_not_called()  # Menu is shown by show_nutrition_insights_menu
     
     @pytest.mark.asyncio
     async def test_nutrition_insights_exception_handling(self):
@@ -152,7 +152,7 @@ class TestNutritionInsights:
         
         # Mock to raise exception
         with patch('handlers.nutrition.get_user_with_profile', side_effect=Exception("Database error")):
-            with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+            with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                 
                 await nutrition_insights_command(message)
                 
@@ -187,14 +187,12 @@ class TestNutritionInsights:
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.nutrition.generate_nutrition_insights', return_value="Mock insights"):
-                        await nutrition_insights_callback(callback)
-                        
-                        callback.answer.assert_called_once()
-                        callback.message.answer.assert_called_once()
-                        call_args = callback.message.answer.call_args[0][0]
-                        assert "Mock insights" in call_args
+                with patch('handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
+                    await nutrition_insights_callback(callback)
+                    
+                    callback.answer.assert_called_once()
+                    mock_show_menu.assert_called_once()
+                    callback.message.answer.assert_not_called()  # Menu is shown by show_nutrition_insights_menu
 
 
 class TestGenerateNutritionInsights:

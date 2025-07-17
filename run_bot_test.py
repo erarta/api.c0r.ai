@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import bot components
-from bot import main
+from bot import start_bot
 
 if __name__ == "__main__":
     print("🚀 Starting c0r.ai bot for payment testing...")
@@ -33,7 +33,8 @@ if __name__ == "__main__":
     print("\n🔄 Starting bot...")
     
     try:
-        main()
+        import asyncio
+        asyncio.run(start_bot())
     except KeyboardInterrupt:
         print("\n🛑 Bot stopped by user")
     except Exception as e:

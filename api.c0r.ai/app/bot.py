@@ -197,6 +197,10 @@ dp.callback_query.register(process_activity, lambda callback: callback.data.star
 dp.callback_query.register(process_goal, lambda callback: callback.data.startswith("goal_"))
 dp.callback_query.register(handle_daily_callback, lambda callback: callback.data.startswith("daily_"))
 dp.callback_query.register(handle_language_callback, lambda callback: callback.data.startswith("language_"))
+# Nutrition insights section navigation
+from handlers.nutrition import handle_nutrition_section_callback, handle_nutrition_menu_callback
+dp.callback_query.register(handle_nutrition_section_callback, lambda callback: callback.data.startswith("nutrition_section_"))
+dp.callback_query.register(handle_nutrition_menu_callback, lambda callback: callback.data == "nutrition_menu")
 
 # Payment handlers
 dp.pre_checkout_query.register(handle_pre_checkout_query)

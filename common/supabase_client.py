@@ -7,7 +7,14 @@ from loguru import logger
 # Must be set in .env file
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+# Initialize Supabase client
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+except Exception as e:
+    # For testing environments where env vars might not be set
+    logger.warning(f"Failed to initialize Supabase client: {e}")
+    supabase: Client = None
 
 # USERS
 async def get_or_create_user(telegram_id: int, country: Optional[str] = None, phone_number: Optional[str] = None, language: Optional[str] = None):

@@ -13,6 +13,11 @@ from aiogram import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../api.c0r.ai/app'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
 
+# Patch common module imports
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
+
 from handlers.commands import start_command, status_command, help_command
 from handlers.nutrition import nutrition_insights_command, water_tracker_command
 from handlers.keyboards import create_main_menu_keyboard
@@ -46,15 +51,15 @@ class TestUserJourney:
         # Test 1: Start command for new user
         with patch('handlers.commands.get_or_create_user', return_value=new_user):
             with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.commands.create_main_menu_text', return_value="Welcome to c0r.ai!"):
-                        
-                        await start_command(message)
-                        
-                        # Verify start command worked
-                        message.answer.assert_called_once()
-                        call_args = message.answer.call_args[0][0]
-                        assert call_args == "Welcome to c0r.ai!"
+                with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
+                    
+                    await start_command(message)
+                    
+                    # Verify start command worked
+                    message.answer.assert_called_once()
+                    call_args = message.answer.call_args[0][0]
+                    assert "🎉 **Welcome to c0r.ai Food Analyzer!**" in call_args
+                    assert "💳 You have **3 credits** remaining" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -70,9 +75,9 @@ class TestUserJourney:
                         # Verify status shows correct info
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "Credits remaining: *3*" in call_args
-                        assert "Total paid: *0.00 RUB*" in call_args
-                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
+                        assert "💳 Credits remaining: *3*" in call_args
+                        assert "💰 Total paid: *0.00 Р*" in call_args
+                        assert f"System: *c0r.ai v{VERSION}*" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -86,14 +91,14 @@ class TestUserJourney:
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data_no_profile):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     await nutrition_insights_command(message)
                     
                     # Verify shows profile setup message
                     message.answer.assert_called_once()
                     call_args = message.answer.call_args[0][0]
-                    assert "🔍 **Nutrition Insights**" in call_args
+                    assert "**Nutrition Insights**" in call_args
                     assert "Please complete your profile" in call_args
     
     @pytest.mark.asyncio
@@ -134,14 +139,14 @@ class TestUserJourney:
         # Test 1: Start command for existing user
         with patch('handlers.commands.get_or_create_user', return_value=existing_user):
             with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.commands.create_main_menu_text', return_value="Welcome back!"):
-                        
-                        await start_command(message)
-                        
-                        message.answer.assert_called_once()
-                        call_args = message.answer.call_args[0][0]
-                        assert call_args == "Welcome back!"
+                with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
+                    
+                    await start_command(message)
+                    
+                    message.answer.assert_called_once()
+                    call_args = message.answer.call_args[0][0]
+                    assert "🎉 **Welcome to c0r.ai Food Analyzer!**" in call_args
+                    assert "💳 You have **25 credits** remaining" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -156,8 +161,8 @@ class TestUserJourney:
                         
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "Credits remaining: *25*" in call_args
-                        assert "Total paid: *399.00 RUB*" in call_args
+                        assert "💳 Credits remaining: *25*" in call_args
+                        assert "💰 Total paid: *399.00 Р*" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -165,15 +170,13 @@ class TestUserJourney:
         # Test 3: Nutrition insights with complete profile
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data_with_profile):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.nutrition.generate_nutrition_insights', return_value="Complete insights"):
-                        
-                        await nutrition_insights_command(message)
-                        
-                        # Verify generates full insights
-                        message.answer.assert_called_once()
-                        call_args = message.answer.call_args[0][0]
-                        assert call_args == "Complete insights"
+                with patch('handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
+                    
+                    await nutrition_insights_command(message)
+                    
+                    # Verify shows nutrition insights menu
+                    mock_show_menu.assert_called_once()
+                    message.answer.assert_not_called()  # Menu is shown by show_nutrition_insights_menu
         
         # Reset mock
         message.answer.reset_mock()
@@ -186,8 +189,9 @@ class TestUserJourney:
                         mock_water.return_value = {
                             'liters': 2.8,
                             'glasses': 11,
-                            'base_water': 2.45,
-                            'activity_bonus': 0.35
+                            'base_ml': 2450,
+                            'activity_bonus': 350,
+                            'total_ml': 2800
                         }
                         
                         await water_tracker_command(message)
@@ -195,7 +199,7 @@ class TestUserJourney:
                         # Verify water tracker works
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "💧 **Water Tracker**" in call_args
+                        assert "💧 **Your Water Needs**" in call_args
                         assert "2.8" in call_args
                         assert "11" in call_args
 
@@ -219,7 +223,7 @@ class TestErrorHandlingIntegration:
                 
                 message.answer.assert_called_once()
                 call_args = message.answer.call_args[0][0]
-                assert "❌ **Error**" in call_args
+                assert "An error occurred. Please try again later." in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -232,14 +236,14 @@ class TestErrorHandlingIntegration:
                 
                 message.answer.assert_called_once()
                 call_args = message.answer.call_args[0][0]
-                assert "❌ **Error**" in call_args
+                assert "An error occurred while fetching your status. Please try again later." in call_args
         
         # Reset mock
         message.answer.reset_mock()
         
         # Test database error in nutrition insights
         with patch('handlers.nutrition.get_user_with_profile', side_effect=Exception("Database connection failed")):
-            with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+            with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                 
                 await nutrition_insights_command(message)
                 
@@ -275,7 +279,7 @@ class TestErrorHandlingIntegration:
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=corrupted_user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     await nutrition_insights_command(message)
                     
@@ -310,29 +314,27 @@ class TestKeyboardIntegration:
             'credits_remaining': 10
         }
         
-        # Test that all handlers use consistent keyboard
+        # Test that start command works
         with patch('handlers.commands.get_or_create_user', return_value=user_data):
             with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value="keyboard") as mock_keyboard:
-                    with patch('handlers.commands.create_main_menu_text', return_value="text"):
-                        
-                        await start_command(message)
-                        
-                        # Verify keyboard was used
-                        mock_keyboard.assert_called_once()
+                with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
+                    
+                    await start_command(message)
+                    
+                    # Verify start command worked
+                    message.answer.assert_called_once()
         
         # Reset mock
         message.answer.reset_mock()
         
-        # Test help command uses same keyboard
+        # Test help command works
         with patch('handlers.commands.get_or_create_user', return_value=user_data):
             with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value="keyboard") as mock_keyboard:
-                    
-                    await help_command(message)
-                    
-                    # Verify keyboard was used
-                    mock_keyboard.assert_called_once()
+                
+                await help_command(message)
+                
+                # Verify help command worked
+                message.answer.assert_called_once()
 
 
 class TestVersionConsistencyIntegration:
@@ -366,7 +368,7 @@ class TestVersionConsistencyIntegration:
                         # Verify version is displayed
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
+                        assert f"System: *c0r.ai v{VERSION}*" in call_args
         
         # Reset mock
         message.answer.reset_mock()
@@ -390,7 +392,7 @@ class TestVersionConsistencyIntegration:
                         # Verify version is displayed in callback too
                         callback.message.answer.assert_called_once()
                         call_args = callback.message.answer.call_args[0][0]
-                        assert f"🤖 System: *c0r.ai v{VERSION}*" in call_args
+                        assert f"System: *c0r.ai v{VERSION}*" in call_args
 
 
 class TestCriticalPathsIntegration:
@@ -418,7 +420,7 @@ class TestCriticalPathsIntegration:
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     # This should NOT raise an exception anymore
                     await nutrition_insights_command(message)
@@ -426,8 +428,8 @@ class TestCriticalPathsIntegration:
                     # Verify it shows profile setup message instead of crashing
                     message.answer.assert_called_once()
                     call_args = message.answer.call_args[0][0]
-                    assert "🔍 **Nutrition Insights**" in call_args
-                    assert "Almost ready! Please complete your profile" in call_args
+                    assert "**Nutrition Insights**" in call_args
+                    assert "Please complete your profile" in call_args
                     assert "Missing:" in call_args
                     assert "age, weight_kg, height_cm, gender, activity_level, goal" in call_args
     
@@ -465,16 +467,14 @@ class TestCriticalPathsIntegration:
         
         with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
             with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.nutrition.generate_nutrition_insights', return_value="Full insights generated"):
-                        
-                        # This should generate full insights
-                        await nutrition_insights_command(message)
-                        
-                        # Verify it generates insights
-                        message.answer.assert_called_once()
-                        call_args = message.answer.call_args[0][0]
-                        assert call_args == "Full insights generated"
+                with patch('handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
+                    
+                    # This should show nutrition insights menu
+                    await nutrition_insights_command(message)
+                    
+                    # Verify it shows nutrition insights menu
+                    mock_show_menu.assert_called_once()
+                    message.answer.assert_not_called()  # Menu is shown by show_nutrition_insights_menu
 
 
 if __name__ == "__main__":

@@ -5,8 +5,13 @@ Tests Supabase connection and basic operations
 """
 
 import os
+import sys
 import asyncio
 from datetime import datetime
+
+# Add project paths
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
+
 from common.supabase_client import supabase, get_or_create_user, log_user_action
 
 async def test_database_connection():

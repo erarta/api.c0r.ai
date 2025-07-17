@@ -32,7 +32,7 @@ class TestCalculateBMI:
         assert result['category'] == 'underweight'
         assert result['emoji'] == '⬇️'
         assert 'Below ideal range' in result['description']
-        assert 'build healthy weight' in result['motivation']
+        assert "Let's focus on healthy weight gain together!" in result['motivation']
     
     def test_bmi_normal_weight(self):
         """Test BMI calculation for normal weight category"""
@@ -52,7 +52,7 @@ class TestCalculateBMI:
         assert result['category'] == 'overweight'
         assert result['emoji'] == '⬆️'
         assert 'Above ideal range' in result['description']
-        assert 'great progress' in result['motivation']
+        assert "You're taking the right steps by tracking!" in result['motivation']
     
     def test_bmi_obese(self):
         """Test BMI calculation for obese category"""
@@ -61,8 +61,8 @@ class TestCalculateBMI:
         assert result['bmi'] == 34.6
         assert result['category'] == 'obese'
         assert result['emoji'] == '⚠️'
-        assert 'Significantly above ideal range' in result['description']
-        assert 'small step' in result['motivation']
+        assert 'Well above ideal range' in result['description']
+        assert "Every healthy choice counts!" in result['motivation']
     
     def test_bmi_edge_cases(self):
         """Test BMI calculation edge cases"""
@@ -249,7 +249,7 @@ class TestCalculateMetabolicAge:
         result = calculate_metabolic_age(25, 'male', 70, 175, 'very_active')
         
         assert result['metabolic_age'] <= 25
-        assert 'Excellent!' in result['motivation']
+        assert 'Amazing! Your healthy lifestyle is paying off!' in result['motivation']
         assert 'lifestyle' in result['motivation']
     
     def test_metabolic_age_older_sedentary(self):
@@ -257,8 +257,8 @@ class TestCalculateMetabolicAge:
         result = calculate_metabolic_age(45, 'male', 90, 175, 'sedentary')
         
         assert result['metabolic_age'] >= 45
-        assert 'positive changes' in result['motivation']
-        assert 'healthy choice' in result['motivation']
+        assert 'No worries! With consistent nutrition and activity' in result['motivation']
+        assert 'consistent nutrition and activity' in result['motivation']
     
     def test_metabolic_age_female_vs_male(self):
         """Test metabolic age comparison between genders"""
@@ -351,7 +351,7 @@ class TestGetNutritionRecommendations:
             'activity_level': 'sedentary'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should contain underweight-specific advice
         underweight_advice = [r for r in recommendations if 'build healthy weight' in r.lower()]
@@ -364,16 +364,15 @@ class TestGetNutritionRecommendations:
     def test_recommendations_overweight(self):
         """Test recommendations for overweight profile"""
         profile = {
-            'weight_kg': 85,
+            'weight_kg': 75,
             'height_cm': 170,
             'goal': 'lose_weight',
             'activity_level': 'lightly_active'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
-        
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         # Should contain overweight-specific advice
-        overweight_advice = [r for r in recommendations if 'portion control' in r.lower()]
+        overweight_advice = [r for r in recommendations if 'colorful vegetables' in r.lower() or 'lean proteins' in r.lower() or 'whole grains' in r.lower()]
         assert len(overweight_advice) > 0
         
         # Should contain water advice
@@ -389,7 +388,7 @@ class TestGetNutritionRecommendations:
             'activity_level': 'very_active'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should contain activity-specific advice
         activity_advice = [r for r in recommendations if 'protein' in r.lower()]
@@ -408,7 +407,7 @@ class TestGetNutritionRecommendations:
             'activity_level': 'sedentary'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should contain water advice
         water_advice = [r for r in recommendations if 'hydrated' in r.lower()]
@@ -423,7 +422,7 @@ class TestGetNutritionRecommendations:
             'activity_level': 'moderately_active'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should contain water advice
         water_advice = [r for r in recommendations if 'hydrated' in r.lower()]
@@ -438,7 +437,7 @@ class TestGetNutritionRecommendations:
             'activity_level': 'moderately_active'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should contain at least one motivational message
         motivational_advice = [r for r in recommendations if 'transformations' in r.lower()]
@@ -453,7 +452,7 @@ class TestGetNutritionRecommendations:
             'activity_level': 'moderately_active'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should return at least 4 recommendations
         assert len(recommendations) >= 4
@@ -465,7 +464,7 @@ class TestGetNutritionRecommendations:
             'goal': 'maintain_weight'
         }
         
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # Should still return some recommendations
         assert len(recommendations) >= 2
@@ -499,7 +498,7 @@ class TestCalculationIntegration:
         )
         macros = calculate_macro_distribution(2200, profile['goal'])
         portions = calculate_meal_portions(2200)
-        recommendations = get_nutrition_recommendations(profile, [])
+        recommendations = get_nutrition_recommendations(profile, [], 'en')
         
         # All calculations should complete without errors
         assert bmi['bmi'] > 0

@@ -480,3 +480,25 @@ TRANSLATIONS.update({
     "advice_gain_weight": "🌱 **Your Healthy Weight Gain Plan:**\n• 🍽️ Gentle calorie surplus (300-500 calories) - steady progress is best!\n• 🥑 Healthy fats are your friend - nutrient-dense calories that fuel growth\n• ⏰ Frequent, enjoyable meals keep your energy steady all day\n• 💪 Resistance training transforms those calories into strong, healthy muscle",
     "advice_maintain_weight": "⚖️ **Your Maintenance Mastery:**\n• 🎯 You've found your sweet spot! Focus on consistent, joyful eating\n• 📊 Weekly check-ins help you stay in tune with your body\n• 🌈 Variety keeps nutrition exciting and ensures you get all nutrients\n• 🏃‍♀️ Mix cardio and strength training for total body wellness",
 })
+TRANSLATIONS.update({
+    "nutrition_menu_select_section": "Select a section to view details:",
+    "nutrition_menu_bmi": "📊 Body Mass Index (BMI)",
+    "nutrition_menu_ideal_weight": "🎯 Ideal Weight Range",
+    "nutrition_menu_metabolic_age": "🧬 Metabolic Age",
+    "nutrition_menu_water_needs": "💧 Daily Water Needs",
+    "nutrition_menu_macro_distribution": "🥗 Optimal Macro Distribution",
+    "nutrition_menu_meal_distribution": "🍽️ Meal Distribution",
+    "nutrition_menu_recommendations": "💡 Personal Recommendations",
+    "nutrition_menu_goal_advice": "🎯 Goal-Specific Advice",
+    "nutrition_incomplete_data": "Not enough data to display this section. Please complete your profile.",
+    
+    # Missing translation keys for tests
+    "metabolic_age_younger": "Your metabolism is younger than your age!",
+    "metabolic_age_older": "Your metabolism is older than your age",
+    "recommendation_underweight": "🍽️ Let's build healthy weight together! Focus on nutrient-rich foods like nuts, avocados, and wholesome meals",
+    "recommendation_overweight": "🥗 You're on the right path! Prioritize colorful vegetables, lean proteins, and feel-good whole grains",
+    "recommendation_normal": "🍎 You're maintaining great health! Keep enjoying balanced, nutritious meals",
+    "recommendation_water": "💧 Stay hydrated for success! Aim for {liters}L daily ({glasses} glasses)",
+    "recommendation_protein": "🥩 Protein is your friend! Include it in every meal to preserve muscle while losing fat",
+    "recommendation_consistency": "💪 Small consistent steps lead to amazing transformations!",
+})

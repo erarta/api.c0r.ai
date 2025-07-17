@@ -10,3 +10,4 @@ alwaysApply: true
 - Use `.env` for all secrets; never hardcode keys.
 - Add clear logging (INFO, ERROR, DEBUG).
 - Always after update code also update CHANGELOG.md
+- If you see that file you are editing contains more than 500 lines consider refactoring this file into logical chunks but before you do the refactoring get the approve this is required

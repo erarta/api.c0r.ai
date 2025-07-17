@@ -19,7 +19,7 @@ import re
 
 async def nutrition_insights_command(message: types.Message):
     """
-    Show comprehensive nutrition insights for the user
+    Show nutrition insights menu with buttons for different sections
     """
     try:
         telegram_user_id = message.from_user.id
@@ -69,27 +69,8 @@ async def nutrition_insights_command(message: types.Message):
             )
             return
         
-        # Generate comprehensive nutrition insights
-        insights_text = await generate_nutrition_insights(profile, user)
-        
-        # Get user's language
-        user_language = user.get('language', 'en')
-        
-        # Create keyboard with back button
-        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-            [
-                types.InlineKeyboardButton(
-                    text=i18n.get_text('btn_back', user_language),
-                    callback_data="action_main_menu"
-                )
-            ]
-        ])
-        
-        await message.answer(
-            insights_text,
-            parse_mode="Markdown",
-            reply_markup=keyboard
-        )
+        # Show nutrition insights menu
+        await show_nutrition_insights_menu(message, user, profile)
         
     except Exception as e:
         logger.error(f"Error in nutrition_insights_command: {e}")
@@ -168,27 +149,8 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
             )
             return
         
-        # Generate comprehensive nutrition insights
-        insights_text = await generate_nutrition_insights(profile, user)
-        
-        # Get user's language
-        user_language = user.get('language', 'en')
-        
-        # Create keyboard with back button
-        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-            [
-                types.InlineKeyboardButton(
-                    text=i18n.get_text('btn_back', user_language),
-                    callback_data="action_main_menu"
-                )
-            ]
-        ])
-        
-        await callback.message.answer(
-            insights_text,
-            parse_mode="Markdown",
-            reply_markup=keyboard
-        )
+        # Show nutrition insights menu
+        await show_nutrition_insights_menu(callback.message, user, profile)
         
     except Exception as e:
         logger.error(f"Error in nutrition_insights_callback: {e}")
@@ -695,4 +657,144 @@ async def water_tracker_command(message: types.Message):
             i18n.get_text("water_tracker_error", user_language),
             parse_mode="Markdown",
             reply_markup=keyboard
-        ) 
+        )
+
+
+async def show_nutrition_insights_menu(message_or_callback, user: dict, profile: dict):
+    """Show nutrition insights menu with buttons for different sections"""
+    user_language = user.get('language', 'en')
+    
+    menu_text = f"{i18n.get_text('nutrition_analysis_title', user_language)}\n\n{i18n.get_text('nutrition_menu_select_section', user_language)}"
+    
+    # Create keyboard with section buttons
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_bmi', user_language),
+                callback_data="nutrition_section_bmi"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_ideal_weight', user_language),
+                callback_data="nutrition_section_ideal_weight"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_metabolic_age', user_language),
+                callback_data="nutrition_section_metabolic_age"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_water_needs', user_language),
+                callback_data="nutrition_section_water_needs"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_macro_distribution', user_language),
+                callback_data="nutrition_section_macro_distribution"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_meal_distribution', user_language),
+                callback_data="nutrition_section_meal_distribution"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_recommendations', user_language),
+                callback_data="nutrition_section_recommendations"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('nutrition_menu_goal_advice', user_language),
+                callback_data="nutrition_section_goal_advice"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text('btn_back', user_language),
+                callback_data="action_main_menu"
+            )
+        ]
+    ])
+    
+    if hasattr(message_or_callback, 'answer'):
+        # It's a message
+        await message_or_callback.answer(menu_text, parse_mode="Markdown", reply_markup=keyboard)
+    else:
+        # It's a callback
+        await message_or_callback.message.answer(menu_text, parse_mode="Markdown", reply_markup=keyboard)
+
+
+async def handle_nutrition_section_callback(callback: types.CallbackQuery):
+    """Handle nutrition section callbacks"""
+    try:
+        await callback.answer()
+        
+        telegram_user_id = callback.from_user.id
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        profile = user_data['profile']
+        
+        section = callback.data.replace("nutrition_section_", "")
+        user_language = user.get('language', 'en')
+        
+        # Generate section content
+        if section == "bmi":
+            content = await generate_bmi_section(profile, user)
+        elif section == "ideal_weight":
+            content = await generate_ideal_weight_section(profile, user)
+        elif section == "metabolic_age":
+            content = await generate_metabolic_age_section(profile, user)
+        elif section == "water_needs":
+            content = await generate_water_needs_section(profile, user)
+        elif section == "macro_distribution":
+            content = await generate_macro_distribution_section(profile, user)
+        elif section == "meal_distribution":
+            content = await generate_meal_distribution_section(profile, user)
+        elif section == "recommendations":
+            content = await generate_recommendations_section(profile, user)
+        elif section == "goal_advice":
+            content = await generate_goal_advice_section(profile, user)
+        else:
+            await callback.message.answer(i18n.get_text("error_general", user_language))
+            return
+        
+        # Create keyboard with back button
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="nutrition_menu"
+                )
+            ]
+        ])
+        
+        await callback.message.answer(content, parse_mode="Markdown", reply_markup=keyboard)
+        
+    except Exception as e:
+        logger.error(f"Error in nutrition section callback: {e}")
+        await callback.message.answer(i18n.get_text("nutrition_error", "en"))
+
+
+async def handle_nutrition_menu_callback(callback: types.CallbackQuery):
+    """Handle nutrition menu callback (back to menu)"""
+    try:
+        await callback.answer()
+        
+        telegram_user_id = callback.from_user.id
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        profile = user_data['profile']
+        
+        await show_nutrition_insights_menu(callback.message, user, profile)
+        
+    except Exception as e:
+        logger.error(f"Error in nutrition menu callback: {e}")
+        await callback.message.answer(i18n.get_text("nutrition_error", "en")) 
