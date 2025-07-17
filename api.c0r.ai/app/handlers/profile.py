@@ -524,7 +524,8 @@ async def process_gender(callback: types.CallbackQuery, state: FSMContext):
     
     await callback.answer()
     await callback.message.answer(
-        f"✅ {i18n.get_text('profile_setup_gender_success', user_language, gender=gender_label)}",
+        f"✅ {i18n.get_text('profile_setup_gender_success', user_language, gender=gender_label)}\n\n"
+        f"{i18n.get_text('profile_setup_height', user_language)}",
         parse_mode="Markdown"
     )
 
@@ -554,7 +555,8 @@ async def process_height(message: types.Message, state: FSMContext):
         user_language = user.get('language', 'en')
         
         await message.answer(
-            f"✅ {i18n.get_text('profile_setup_height_success', user_language, height=height)}",
+            f"✅ {i18n.get_text('profile_setup_height_success', user_language, height=height)}\n\n"
+            f"{i18n.get_text('profile_setup_weight', user_language)}",
             parse_mode="Markdown"
         )
         
@@ -570,13 +572,13 @@ async def process_height(message: types.Message, state: FSMContext):
 
 async def process_weight(message: types.Message, state: FSMContext):
     """Process weight input"""
+    # Get user's language first
+    user = await get_or_create_user(message.from_user.id)
+    user_language = user.get('language', 'en')
+    
     try:
         weight = float(message.text.strip().replace(',', '.'))
         if weight < 30 or weight > 300:
-            # Get user's language
-            user = await get_or_create_user(message.from_user.id)
-            user_language = user.get('language', 'en')
-            
             await message.answer(
                 i18n.get_text("profile_error_weight", user_language),
                 parse_mode="Markdown"
@@ -597,10 +599,6 @@ async def process_weight(message: types.Message, state: FSMContext):
             [types.InlineKeyboardButton(text=i18n.get_text('activity_extremely_active', user_language), callback_data="activity_extremely_active")]
         ])
         
-        # Get user's language
-        user = await get_or_create_user(message.from_user.id)
-        user_language = user.get('language', 'en')
-        
         await message.answer(
             f"✅ {i18n.get_text('profile_setup_weight_success', user_language, weight=weight)}",
             parse_mode="Markdown",
@@ -608,10 +606,6 @@ async def process_weight(message: types.Message, state: FSMContext):
         )
         
     except ValueError:
-        # Get user's language
-        user = await get_or_create_user(message.from_user.id)
-        user_language = user.get('language', 'en')
-        
         await message.answer(
             i18n.get_text("profile_error_weight_number", user_language),
             parse_mode="Markdown"
@@ -619,6 +613,10 @@ async def process_weight(message: types.Message, state: FSMContext):
 
 async def process_activity(callback: types.CallbackQuery, state: FSMContext):
     """Process activity level selection"""
+    # Get user's language first
+    user = await get_or_create_user(callback.from_user.id)
+    user_language = user.get('language', 'en')
+    
     activity_map = {
         "activity_sedentary": ("sedentary", "😴 Sedentary"),
         "activity_lightly_active": ("lightly_active", "🚶 Lightly Active"),
@@ -641,13 +639,10 @@ async def process_activity(callback: types.CallbackQuery, state: FSMContext):
         [types.InlineKeyboardButton(text=i18n.get_text('goal_gain_weight', user_language), callback_data="goal_gain_weight")]
     ])
     
-    # Get user's language
-    user = await get_or_create_user(callback.from_user.id)
-    user_language = user.get('language', 'en')
-    
     await callback.answer()
     await callback.message.answer(
-        f"✅ {i18n.get_text('profile_setup_activity_success', user_language, activity=activity_label)}",
+        f"✅ {i18n.get_text('profile_setup_activity_success', user_language, activity=activity_label)}\n\n"
+        f"{i18n.get_text('profile_setup_goal', user_language)}",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
