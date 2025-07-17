@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.30] - 2025-01-21
+
+### Fixed
+- **Critical Function Signature Errors**: Fixed all function signature mismatches in nutrition section generation
+- **Metabolic Age Calculation**: Fixed `calculate_metabolic_age()` missing `activity_level` parameter error
+- **Macro Distribution Calculation**: Fixed `calculate_macro_distribution()` argument count mismatch
+- **Meal Portions Calculation**: Fixed `calculate_meal_portions()` argument count and data access issues
+- **Nutrition Recommendations**: Fixed `get_nutrition_recommendations()` missing `recent_logs` parameter
+
+### Changed
+- **Function Call Corrections**: Updated all nutrition section generation functions to use correct function signatures
+- **Parameter Order**: Fixed parameter order in `calculate_metabolic_age(age, gender, weight, height, activity, language)`
+- **Argument Count**: Corrected argument count for `calculate_macro_distribution(calories, goal)`
+- **Data Access**: Fixed data access pattern for `calculate_meal_portions()` results
+
+### Technical
+- **Metabolic Age Function**: Added missing `activity_level` parameter and corrected parameter order
+- **Macro Distribution Function**: Simplified to use only `calories` and `goal` parameters
+- **Meal Portions Function**: Corrected to use `calories`, `meals_per_day`, and `language` parameters
+- **Recommendations Function**: Added empty list for `recent_logs` parameter
+- **Data Structure Access**: Fixed access to meal data through `meal_data['meals']` structure
+
+### Production Impact
+- **Error Elimination**: Resolved all "missing positional argument" errors in production
+- **Function Compatibility**: All nutrition calculation functions now work with correct signatures
+- **Button Functionality**: All nutrition section buttons now generate content without errors
+- **User Experience**: Complete nutrition analysis functionality restored and working
+
+### Root Cause
+- **Signature Mismatch**: Function calls didn't match actual function signatures in `common/nutrition_calculations.py`
+- **Missing Parameters**: Some functions required additional parameters that weren't being passed
+- **Data Structure Changes**: Return data structure changes weren't reflected in calling code
+
 ## [0.3.29] - 2025-01-21
 
 ### Added

@@ -842,14 +842,15 @@ async def generate_metabolic_age_section(profile: dict, user: dict) -> str:
     height = profile.get('height_cm', 170)
     age = profile.get('age', 30)
     gender = profile.get('gender', 'male')
+    activity = profile.get('activity_level', 'moderately_active')
     
-    metabolic_age_data = calculate_metabolic_age(weight, height, age, gender)
+    metabolic_age_data = calculate_metabolic_age(age, gender, weight, height, activity, user_language)
     
     content = (
         f"**{i18n.get_text('nutrition_metabolic_age_title', user_language)}**\n\n"
         f"{i18n.get_text('nutrition_metabolic_age_value', user_language, metabolic_age=metabolic_age_data['metabolic_age'])}\n"
         f"{i18n.get_text('nutrition_metabolic_age_comparison', user_language, actual_age=age)}\n\n"
-        f"{i18n.get_text('nutrition_metabolic_age_interpretation', user_language, interpretation=metabolic_age_data['interpretation'])}"
+        f"{i18n.get_text('nutrition_metabolic_age_interpretation', user_language, interpretation=metabolic_age_data['description'])}"
     )
     
     return sanitize_markdown_text(content)
@@ -881,14 +882,10 @@ async def generate_macro_distribution_section(profile: dict, user: dict) -> str:
     """Generate macro distribution section content"""
     user_language = user.get('language', 'en')
     
-    weight = profile.get('weight_kg', 70)
-    height = profile.get('height_cm', 170)
-    age = profile.get('age', 30)
-    gender = profile.get('gender', 'male')
-    activity = profile.get('activity_level', 'sedentary')
-    goal = profile.get('goal', 'maintain')
+    calories = profile.get('daily_calories_target', 2000)
+    goal = profile.get('goal', 'maintain_weight')
     
-    macro_data = calculate_macro_distribution(weight, height, age, gender, activity, goal)
+    macro_data = calculate_macro_distribution(calories, goal)
     
     content = (
         f"**{i18n.get_text('nutrition_macro_distribution_title', user_language)}**\n\n"
@@ -905,23 +902,18 @@ async def generate_meal_distribution_section(profile: dict, user: dict) -> str:
     """Generate meal distribution section content"""
     user_language = user.get('language', 'en')
     
-    weight = profile.get('weight_kg', 70)
-    height = profile.get('height_cm', 170)
-    age = profile.get('age', 30)
-    gender = profile.get('gender', 'male')
-    activity = profile.get('activity_level', 'sedentary')
-    goal = profile.get('goal', 'maintain')
+    calories = profile.get('daily_calories_target', 2000)
     
-    meal_data = calculate_meal_portions(weight, height, age, gender, activity, goal)
+    meal_data = calculate_meal_portions(calories, 3, user_language)
     
     content = (
         f"**{i18n.get_text('nutrition_meal_distribution_title', user_language)}**\n\n"
-        f"{i18n.get_text('nutrition_meal_breakfast', user_language, calories=meal_data['breakfast_calories'], percent=meal_data['breakfast_percent'])}\n"
-        f"{i18n.get_text('nutrition_meal_lunch', user_language, calories=meal_data['lunch_calories'], percent=meal_data['lunch_percent'])}\n"
-        f"{i18n.get_text('nutrition_meal_dinner', user_language, calories=meal_data['dinner_calories'], percent=meal_data['dinner_percent'])}\n"
-        f"{i18n.get_text('nutrition_meal_snacks', user_language, calories=meal_data['snacks_calories'], percent=meal_data['snacks_percent'])}\n\n"
-        f"{i18n.get_text('nutrition_meal_tips', user_language)}"
     )
+    
+    for meal in meal_data['meals']:
+        content += f"**{meal['name']}:** {meal['calories']} ккал ({meal['percentage']}%)\n"
+    
+    content += f"\n{i18n.get_text('nutrition_meal_tips', user_language)}"
     
     return sanitize_markdown_text(content)
 
@@ -930,12 +922,15 @@ async def generate_recommendations_section(profile: dict, user: dict) -> str:
     """Generate recommendations section content"""
     user_language = user.get('language', 'en')
     
-    recommendations = get_nutrition_recommendations(profile, user_language)
+    # Pass empty list for recent_logs since we don't have them in this context
+    recommendations = get_nutrition_recommendations(profile, [], user_language)
     
     content = (
         f"**{i18n.get_text('nutrition_recommendations_title', user_language)}**\n\n"
-        f"{recommendations}"
     )
+    
+    for recommendation in recommendations:
+        content += f"• {recommendation}\n"
     
     return sanitize_markdown_text(content)
 
