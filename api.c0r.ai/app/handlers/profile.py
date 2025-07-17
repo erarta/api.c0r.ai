@@ -700,27 +700,29 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
         user = await get_or_create_user(callback.from_user.id)
         user_language = user.get('language', 'en')
         
+        action_text = i18n.get_text('profile_created', user_language) if was_created else i18n.get_text('profile_updated', user_language)
+        
         success_text = (
-            f"🎉 **Profile {'Created' if was_created else 'Updated'} Successfully!**\n\n"
-            f"📊 **Your Profile Summary:**\n"
-            f"📅 Age: {data['age']} years\n"
-            f"👤 Gender: {gender_label}\n"
-            f"📏 Height: {data['height_cm']} cm\n"
-            f"⚖️ Weight: {data['weight_kg']} kg\n"
-            f"🏃 Activity: {activity_label}\n"
-            f"🎯 Goal: {goal_label}\n\n"
-            f"🔥 **Daily Calorie Target: {profile.get('daily_calories_target', 'Calculating...')} calories**\n\n"
-            f"✨ Now you'll see personalized progress when analyzing food photos!"
+            f"{i18n.get_text('profile_updated_successfully', user_language, action=action_text)}\n\n"
+            f"{i18n.get_text('profile_summary_title', user_language)}\n"
+            f"{i18n.get_text('profile_summary_age', user_language, age=data['age'])}\n"
+            f"{i18n.get_text('profile_summary_gender', user_language, gender=gender_label)}\n"
+            f"{i18n.get_text('profile_summary_height', user_language, height=data['height_cm'])}\n"
+            f"{i18n.get_text('profile_summary_weight', user_language, weight=data['weight_kg'])}\n"
+            f"{i18n.get_text('profile_summary_activity', user_language, activity=activity_label)}\n"
+            f"{i18n.get_text('profile_summary_goal', user_language, goal=goal_label)}\n\n"
+            f"{i18n.get_text('profile_daily_calorie_target', user_language, calories=profile.get('daily_calories_target', i18n.get_text('calculating', user_language)))}\n\n"
+            f"{i18n.get_text('profile_personalized_progress', user_language)}"
         )
         
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text="📊 View Daily Plan",
+                    text=i18n.get_text("btn_view_daily_plan", user_language),
                     callback_data="action_daily"
                 ),
                 types.InlineKeyboardButton(
-                    text="📸 Analyze Food",
+                    text=i18n.get_text("btn_analyze_food", user_language),
                     callback_data="action_analyze_info"
                 )
             ],

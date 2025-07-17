@@ -434,7 +434,7 @@ class TestActionCallback:
         
         with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
             with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+                with patch('handlers.commands.create_main_menu_text', return_value=("🚀 **Choose an option:**", None)):
                     await handle_action_callback(callback)
                     
                     # Should call message.answer for main_menu action

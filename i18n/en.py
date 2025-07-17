@@ -150,6 +150,23 @@ TRANSLATIONS.update({
     "profile_setup_weight_success": "Weight: {weight} kg",
     "profile_setup_activity_success": "Activity Level: {activity}",
     
+    # Profile success messages
+    "profile_updated_successfully": "🎉 **Profile {action} Successfully!**",
+    "profile_created": "Created",
+    "profile_updated": "Updated",
+    "profile_summary_title": "📊 **Your Profile Summary:**",
+    "profile_summary_age": "📅 Age: {age} years",
+    "profile_summary_gender": "👤 Gender: {gender}",
+    "profile_summary_height": "📏 Height: {height} cm",
+    "profile_summary_weight": "⚖️ Weight: {weight} kg",
+    "profile_summary_activity": "🏃 Activity: {activity}",
+    "profile_summary_goal": "🎯 Goal: {goal}",
+    "profile_daily_calorie_target": "🔥 **Daily Calorie Target: {calories} calories**",
+    "profile_personalized_progress": "✨ Now you'll see personalized progress when analyzing food photos!",
+    "btn_view_daily_plan": "📊 View Daily Plan",
+    "btn_analyze_food": "📸 Analyze Food",
+    "calculating": "Calculating...",
+    
     # Profile setup info
     "profile_setup_title": "Profile Setup",
     "profile_setup_info_1": "To provide you with personalized nutrition recommendations and daily calorie targets, I need some information about you.",
@@ -298,7 +315,7 @@ TRANSLATIONS.update({
     # Nutrition recommendations
     "rec_underweight": "🍽️ Let's build healthy weight together! Focus on nutrient-rich foods like nuts, avocados, and wholesome meals",
     "rec_overweight": "🥗 You're on the right path! Prioritize colorful vegetables, lean proteins, and feel-good whole grains",
-    "rec_normal_weight": "�� You're maintaining great health! Keep enjoying balanced, nutritious meals",
+    "rec_normal_weight": "🍎 You're maintaining great health! Keep enjoying balanced, nutritious meals",
     "rec_very_active_protein": "💪 Amazing dedication to fitness! Boost your protein to 1.6-2.2g per kg for optimal recovery",
     "rec_very_active_carbs": "🍌 Fuel your workouts! Try post-exercise carbs within 30 minutes for best results",
     "rec_sedentary": "🚶‍♀️ Every step counts! Even light daily walks can boost your metabolism and mood",

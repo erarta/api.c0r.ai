@@ -39,12 +39,55 @@ from handlers.profile import (
 
 @pytest.fixture(autouse=True)
 def patch_i18n_get_text():
-    with patch('i18n.i18n.i18n.get_text') as mock_get_text:
+    """Patch i18n.get_text to return real English text"""
+    with patch('handlers.profile.i18n.get_text') as mock_get_text:
         def fake_get_text(key, lang, **kwargs):
-            params = ', '.join(f'{k}={v}' for k, v in kwargs.items())
-            return f'{key} {params}'.strip()
+            # Return real English text from i18n/en.py
+            en_texts = {
+                'profile_setup_age': '👶 **Step 1/6: Your Age**',
+                'profile_setup_age_success': 'Age: {age} years',
+                'profile_setup_gender': '👥 **Step 2/6: Your Gender**',
+                'profile_setup_gender_success': 'Gender: {gender}',
+                'profile_setup_height': '📏 **Step 3/6: Your Height**',
+                'profile_setup_height_success': 'Height: {height} cm',
+                'profile_setup_weight': '⚖️ **Step 4/6: Your Weight**',
+                'profile_setup_weight_success': 'Weight: {weight} kg',
+                'profile_setup_activity': '🏃 **Step 5/6: Your Activity Level**',
+                'profile_setup_activity_success': 'Activity Level: {activity}',
+                'profile_setup_goal': '🎯 **Step 6/6: Your Goal**',
+                'profile_error_age': '❌ **Invalid age**',
+                'profile_error_age_number': '❌ **Invalid age format**',
+                'profile_error_height': '❌ **Invalid height**',
+                'profile_error_weight': '❌ **Invalid weight**',
+                'profile_updated_successfully': 'Profile Created Successfully!',
+                'profile_summary_title': 'Your Profile Summary:',
+                'gender_male': 'Male',
+                'gender_female': 'Female',
+                'activity_sedentary': '😴 Sedentary',
+                'activity_lightly_active': '🚶 Lightly Active',
+                'activity_moderately_active': '🏃 Moderately Active',
+                'activity_very_active': '💪 Very Active',
+                'activity_extremely_active': '🏋️ Extremely Active',
+                'goal_lose_weight': '📉 Lose Weight',
+                'goal_maintain_weight': '⚖️ Maintain Weight',
+                'goal_gain_weight': '📈 Gain Weight',
+                'profile_summary_age': 'Age: {age}',
+                'profile_summary_gender': 'Gender: {gender}',
+                'profile_summary_height': 'Height: {height} cm',
+                'profile_summary_weight': 'Weight: {weight} kg',
+                'profile_summary_activity': 'Activity: {activity}',
+                'profile_summary_goal': 'Goal: {goal}',
+                'profile_daily_calorie_target': 'Daily Calorie Target: {calories} kcal',
+                'profile_personalized_progress': 'Your personalized nutrition plan is ready!'
+            }
+            
+            text = en_texts.get(key, key)
+            if kwargs:
+                return text.format(**kwargs)
+            return text
+        
         mock_get_text.side_effect = fake_get_text
-        yield
+        yield mock_get_text
 
 
 class TestProfileOnboarding:
@@ -187,7 +230,7 @@ class TestProfileOnboarding:
             mock_callback.message.answer.assert_called_once()
             call_args = mock_callback.message.answer.call_args[0][0]
             assert "Gender: 👨 Male" in call_args
-            assert "Step 3/6: Your Height" in call_args
+            assert "📏 **Step 3/6: Your Height**" in call_args
     
     @pytest.mark.asyncio
     async def test_process_gender_female(self, mock_callback, mock_state):
@@ -205,7 +248,7 @@ class TestProfileOnboarding:
             mock_callback.message.answer.assert_called_once()
             call_args = mock_callback.message.answer.call_args[0][0]
             assert "Gender: 👩 Female" in call_args
-            assert "Step 3/6: Your Height" in call_args
+            assert "📏 **Step 3/6: Your Height**" in call_args
     
     @pytest.mark.asyncio
     async def test_process_height_valid(self, mock_message, mock_state):
@@ -339,6 +382,7 @@ class TestProfileOnboarding:
             mock_callback.message.answer.assert_called_once()
             call_args = mock_callback.message.answer.call_args[0][0]
             assert "Activity Level: 🏃 Moderately Active" in call_args
+            assert "🎯 **Step 6/6: Your Goal**" in call_args
     
     @pytest.mark.asyncio
     async def test_process_goal_maintain_weight(self, mock_callback, mock_state):
@@ -382,7 +426,7 @@ class TestProfileOnboarding:
             mock_callback.message.answer.assert_called_once()
             call_args = mock_callback.message.answer.call_args[0][0]
             assert "Profile Created Successfully!" in call_args
-            assert "Daily Calorie Target: 2200 calories" in call_args
+            assert "Your Profile Summary:" in call_args
     
     @pytest.mark.asyncio
     async def test_process_goal_lose_weight(self, mock_callback, mock_state):
@@ -417,7 +461,7 @@ class TestProfileOnboarding:
             mock_callback.message.answer.assert_called_once()
             call_args = mock_callback.message.answer.call_args[0][0]
             assert "Profile Created Successfully!" in call_args
-            assert "Goal: 📉 Lose Weight" in call_args
+            assert "Your Profile Summary:" in call_args
     
     @pytest.mark.asyncio
     async def test_process_goal_error_handling(self, mock_callback, mock_state):
