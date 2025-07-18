@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.36] - 2025-01-21
+
+### Fixed
+- **Nutrition Insights Markdown Error**: Fixed critical error `can't parse entities: Can't find end of the entity starting at byte offset 275` in nutrition insights functionality
+- **Missing Russian Translations**: Added missing translations for `bmi_based` and `broca_formula` terms
+- **Markdown Sanitization**: Enhanced `sanitize_markdown_text()` function to better handle problematic Markdown patterns
+- **Profile Validation**: Improved profile validation in nutrition insights to prevent errors when user has no profile
+- **No Profile Handling**: Fixed nutrition insights to properly handle users without profiles by showing profile setup prompt
+
+### Added
+- **Russian Nutrition Terms**: Added Russian translations for nutrition calculation terms
+- **Enhanced Error Handling**: Improved error handling in nutrition insights with better Markdown sanitization
+- **Profile Setup Integration**: Added integration with profile setup when user has no profile for nutrition insights
+- **Nutrition No Profile Message**: Added `nutrition_no_profile` translation key for users without profiles
+
+### Changed
+- **Nutrition Insights Flow**: Enhanced nutrition insights to properly handle users without profiles
+- **Error Message Sanitization**: All error messages now go through Markdown sanitization to prevent parsing issues
+- **Translation Coverage**: Complete coverage of nutrition-related terms in Russian language
+- **Menu Text Sanitization**: All menu text now goes through Markdown sanitization to prevent parsing issues
+
 ## [0.3.35] - 2025-01-21
 
 ### Fixed

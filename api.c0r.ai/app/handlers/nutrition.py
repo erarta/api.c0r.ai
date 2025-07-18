@@ -168,8 +168,12 @@ async def nutrition_insights_callback(callback: types.CallbackQuery):
             ]
         ])
         
+        error_text = i18n.get_text("nutrition_error", user_language)
+        # Sanitize error text to prevent Markdown parsing issues
+        error_text = sanitize_markdown_text(error_text)
+        
         await callback.message.answer(
-            i18n.get_text("nutrition_error", user_language),
+            error_text,
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -676,7 +680,37 @@ async def show_nutrition_insights_menu(message_or_callback, user: dict, profile:
     """Show nutrition insights menu with buttons for different sections"""
     user_language = user.get('language', 'en')
     
+    # Check if profile exists and has required data
+    if profile is None:
+        # Show profile setup message instead
+        profile_setup_text = i18n.get_text('nutrition_no_profile', user_language)
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('profile_setup_set_up_profile_btn', user_language),
+                    callback_data="profile_setup"
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_back', user_language),
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
+        
+        if hasattr(message_or_callback, 'answer'):
+            # It's a message
+            await message_or_callback.answer(profile_setup_text, parse_mode="Markdown", reply_markup=keyboard)
+        else:
+            # It's a callback
+            await message_or_callback.message.answer(profile_setup_text, parse_mode="Markdown", reply_markup=keyboard)
+        return
+    
     menu_text = f"{i18n.get_text('nutrition_analysis_title', user_language)}\n\n{i18n.get_text('nutrition_menu_select_section', user_language)}"
+    
+    # Sanitize the menu text to prevent Markdown parsing issues
+    menu_text = sanitize_markdown_text(menu_text)
     
     # Create keyboard with section buttons in two columns
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
@@ -784,7 +818,9 @@ async def handle_nutrition_section_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in nutrition section callback: {e}")
-        await callback.message.answer(i18n.get_text("nutrition_error", "en"))
+        error_text = i18n.get_text("nutrition_error", "en")
+        error_text = sanitize_markdown_text(error_text)
+        await callback.message.answer(error_text)
 
 
 async def handle_nutrition_menu_callback(callback: types.CallbackQuery):
@@ -801,7 +837,9 @@ async def handle_nutrition_menu_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in nutrition menu callback: {e}")
-        await callback.message.answer(i18n.get_text("nutrition_error", "en"))
+        error_text = i18n.get_text("nutrition_error", "en")
+        error_text = sanitize_markdown_text(error_text)
+        await callback.message.answer(error_text)
 
 
 # Section generation functions

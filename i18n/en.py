@@ -277,6 +277,7 @@ TRANSLATIONS.update({
     # Nutrition insights headers and sections
     "nutrition_analysis_title": "🔬 **Your Nutrition Analysis**",
     "nutrition_bmi_title": "📊 **Body Mass Index (BMI):**",
+    "nutrition_no_profile": "📊 **Nutrition Analysis**\n\n🎯 To show your personalized nutrition analysis, I need your profile information.\n\n💡 **Create a profile to get:**\n• Personalized BMI analysis\n• Ideal weight recommendations\n• Metabolic age\n• Water needs\n• Macronutrient distribution\n• Personalized recommendations",
     "nutrition_ideal_weight_title": "🎯 **Ideal Weight Range:**",
     "nutrition_metabolic_age_title": "🧬 **Metabolic Age:**",
     "nutrition_water_needs_title": "💧 **Daily Water Needs:**",
