@@ -51,12 +51,12 @@ def create_payment_success_keyboard(language: str = "en"):
     ])
 
 
-def create_main_menu_text(language: str = "en"):
+def create_main_menu_text(language: str = "en", has_profile: bool = False):
     """Create main menu message with interactive buttons"""
     from i18n.i18n import i18n
-    return (
-        f"{i18n.get_text('main_menu_title', language)}"
-    ), types.InlineKeyboardMarkup(inline_keyboard=[
+    
+    # Base buttons that are always shown
+    keyboard = [
         [
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_analyze_food", language),
@@ -67,12 +67,21 @@ def create_main_menu_text(language: str = "en"):
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_check_status", language),
                 callback_data="action_status"
-            ),
+            )
+        ]
+    ]
+    
+    # Add nutrition insights button only if user has profile
+    if has_profile:
+        keyboard[1].append(
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_nutrition_insights", language),
                 callback_data="action_nutrition_insights"
             )
-        ],
+        )
+    
+    # Add profile and daily plan buttons
+    keyboard.extend([
         [
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_my_profile", language),
@@ -109,4 +118,8 @@ def create_main_menu_text(language: str = "en"):
                 callback_data="action_language"
             )
         ]
-    ]) 
+    ])
+    
+    return (
+        f"{i18n.get_text('main_menu_title', language)}"
+    ), types.InlineKeyboardMarkup(inline_keyboard=keyboard) 

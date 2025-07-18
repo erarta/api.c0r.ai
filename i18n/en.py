@@ -80,7 +80,7 @@ TRANSLATIONS.update({
     "credits": "credits",
     "rubles": "Р",
     "for": "for",
-    "choose_plan_to_continue": "Choose a plan to continue:",
+    "choose_plan_to_continue": "Choose a plan to continue",
     "credits_explanation": "�� **What are credits?**\n• 1 credit = 1 photo analysis\n• Each food photo you send costs 1 credit\n• Credits never expire",
     "basic_plan_btn": "Basic Plan ({price} Р)",
     "pro_plan_btn": "Pro Plan ({price} Р)",

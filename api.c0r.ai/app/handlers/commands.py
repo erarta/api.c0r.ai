@@ -41,6 +41,10 @@ async def start_command(message: types.Message):
         # Get user's preferred language (from database or detected)
         user_language = user.get('language', detected_language)
         
+        # Get user profile status
+        user_data = await get_user_with_profile(telegram_user_id)
+        has_profile = user_data['has_profile']
+        
         # Create interactive welcome message using i18n
         welcome_text = (
             f"{i18n.get_text('welcome_title', user_language)}\n\n"
@@ -54,40 +58,7 @@ async def start_command(message: types.Message):
         )
         
         # Create interactive keyboard with translated buttons
-        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-            [
-                types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_analyze_food", user_language),
-                    callback_data="action_analyze_info"
-                )
-            ],
-            [
-                types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_check_status", user_language),
-                    callback_data="action_status"
-                ),
-                types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_help_guide", user_language),
-                    callback_data="action_help"
-                )
-            ],
-            [
-                types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_buy_credits", user_language),
-                    callback_data="action_buy"
-                ),
-                types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_my_profile", user_language),
-                    callback_data="action_profile"
-                )
-            ],
-            [
-                types.InlineKeyboardButton(
-                    text=i18n.get_text("btn_language", user_language),
-                    callback_data="action_language"
-                )
-            ]
-        ])
+        menu_text, keyboard = create_main_menu_text(user_language, has_profile)
         
         await message.answer(welcome_text, parse_mode="Markdown", reply_markup=keyboard)
         logger.info(f"/start by user {telegram_user_id} (@{username}) with language {user_language}")
@@ -395,9 +366,9 @@ async def buy_credits_command(message: types.Message):
             f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
             f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
             f"{i18n.get_text('credits_explanation', user_language)}\n\n"
-            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
-            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
-            f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
+            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**\n"
+            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**\n\n"
+            f"{i18n.get_text('choose_plan_to_continue', user_language)}",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
@@ -463,9 +434,9 @@ async def buy_callback(callback: types.CallbackQuery):
             f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
             f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
             f"{i18n.get_text('credits_explanation', user_language)}\n\n"
-            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**: {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price} {i18n.get_text('rubles', user_language)}\n"
-            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**: {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price} {i18n.get_text('rubles', user_language)}\n\n"
-            f"{i18n.get_text('choose_plan_to_continue', user_language)}:",
+            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**\n"
+            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**\n\n"
+            f"{i18n.get_text('choose_plan_to_continue', user_language)}",
             parse_mode="Markdown",
             reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
                 [
@@ -686,9 +657,11 @@ async def handle_action_callback(callback: types.CallbackQuery):
             await water_tracker_callback(callback)
         elif action == "main_menu":
             # Show main menu
-            user = await get_or_create_user(telegram_user_id)
+            user_data = await get_user_with_profile(telegram_user_id)
+            user = user_data['user']
+            has_profile = user_data['has_profile']
             user_language = user.get('language', 'en')
-            menu_text, menu_keyboard = create_main_menu_text(user_language)
+            menu_text, menu_keyboard = create_main_menu_text(user_language, has_profile)
             await callback.message.answer(menu_text, parse_mode="Markdown", reply_markup=menu_keyboard)
         elif action == "language":
             # Handle language selection

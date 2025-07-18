@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.39] - 2025-07-18
+
+### Fixed
+- **Help Guide Translation**: Added missing Russian translation for `help_title` 
+- **Duplicate Translation Keys**: Removed duplicate `btn_help_guide` key in Russian translations
+- **Nutrition Insights Button**: Hide "Анализ питания" button when user doesn't have a profile
+- **Main Menu Logic**: Updated `create_main_menu_text` function to conditionally show nutrition insights button
+- **Profile Status Integration**: Modified `/start` command and main menu callback to check profile status
+
+### Technical Notes
+- **Help Guide**: Added `help_title` translation in Russian: "🤖 **c0r.ai Анализатор Еды - Руководство**"
+- **Button Logic**: Nutrition insights button now only appears for users with complete profiles
+- **Menu Updates**: Both `/start` command and main menu callback now use `get_user_with_profile` to check profile status
+- **Translation Cleanup**: Removed duplicate `btn_help_guide` entry in Russian translations file
+
 ## [0.3.38] - 2025-07-18
 
 ### Fixed
@@ -107,19 +122,24 @@ All notable changes to this project will be documented in this file.
   - Replaced "Оставайтесь гидратированным" with "Пейте достаточно воды" for clarity
   - Fixed duplicated buy credits plans (now only one of each)
   - All weekly report placeholders now use i18n keys, not hardcoded English
+  - **Fixed duplicate text in credit plans**: Removed redundant text in buy credits display
+  - **Fixed double colons**: Removed extra colon in "Выбери план для продолжения::"
 - **UI Polish**:
   - Shortened help button label to fit UI
   - All gender and nutrition menu buttons now fully localized
+  - Cleaner credit plan display without duplication
 
 ### Changed
 - **i18n System**: Updated `i18n/ru.py` and `i18n/en.py` with all missing keys for weekly report, buy credits, gender, nutrition menu, and help
 - **Handlers**: Updated nutrition handler to use i18n keys for all weekly report placeholders
 - **Hydration Advice**: Improved water recommendation text for Russian users
+- **Buy Credits Display**: Simplified credit plan display to show only essential information
 
 ### Technical
 - **No more hardcoded English**: All user-facing text now uses i18n keys
 - **No duplicate buy credits plans**: Only one entry for each plan in UI
 - **Consistent button labels**: All buttons now fit and are localized
+- **Clean text formatting**: Removed redundant text and double punctuation
 
 ### Verified
 - All unit tests pass
