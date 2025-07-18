@@ -136,6 +136,7 @@ TRANSLATIONS.update({
     "profile_error_height_number": "❌ **Invalid height format**\n\nPlease enter your height as a number in centimeters (e.g., 175):",
     "profile_error_weight": "❌ **Invalid weight**\n\nPlease enter weight between 30 and 300 kg:",
     "profile_error_weight_number": "❌ **Invalid weight format**\n\nPlease enter your weight as a number (e.g., 70 or 70.5):",
+    "profile_incomplete": "Profile incomplete. Please complete all required fields (age, gender, height, weight, activity, goal).",
     
     # Profile skip messages
     "profile_skip_title": "⏭️ **Profile setup skipped**",

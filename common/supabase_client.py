@@ -214,6 +214,26 @@ async def update_user_profile(user_id: str, profile_data: dict):
     logger.info(f"Profile updated for user {user_id}: {updated}")
     return updated
 
+async def validate_profile_completeness(profile_data: dict) -> tuple[bool, list[str]]:
+    """
+    Validate that a profile has all required fields
+    
+    Args:
+        profile_data: Dictionary with profile fields
+        
+    Returns:
+        Tuple of (is_complete, missing_fields)
+    """
+    required_fields = ['age', 'gender', 'height_cm', 'weight_kg', 'activity_level', 'goal']
+    missing_fields = []
+    
+    for field in required_fields:
+        if field not in profile_data or profile_data[field] is None:
+            missing_fields.append(field)
+    
+    is_complete = len(missing_fields) == 0
+    return is_complete, missing_fields
+
 def calculate_daily_calories(profile_data: dict) -> int:
     """
     Calculate daily calorie target using Mifflin-St Jeor Equation.
@@ -225,8 +245,14 @@ def calculate_daily_calories(profile_data: dict) -> int:
         Daily calorie target as integer
         
     Raises:
-        ValueError: If any input parameter is invalid
+        ValueError: If any input parameter is invalid or missing
     """
+    # Validate all required fields are present and not None
+    required_fields = ['age', 'gender', 'height_cm', 'weight_kg', 'activity_level', 'goal']
+    for field in required_fields:
+        if field not in profile_data or profile_data[field] is None:
+            raise ValueError(f"Missing or invalid {field} in profile data")
+    
     age = profile_data['age']
     gender = profile_data['gender'].lower()
     height = profile_data['height_cm']
@@ -289,8 +315,19 @@ async def create_or_update_profile(user_id: str, profile_data: dict):
     existing_profile = await get_user_profile(user_id)
     
     if existing_profile:
-        # Update existing profile
-        updated_profile = await update_user_profile(user_id, profile_data)
+        # Merge new data with existing profile data
+        merged_data = existing_profile.copy()
+        merged_data.update(profile_data)
+        # Remove internal fields that shouldn't be updated
+        merged_data.pop('id', None)
+        merged_data.pop('user_id', None)
+        merged_data.pop('created_at', None)
+        merged_data.pop('updated_at', None)
+        
+        logger.info(f"Merging profile data for user {user_id}: existing={existing_profile}, new={profile_data}, merged={merged_data}")
+        
+        # Update existing profile with merged data
+        updated_profile = await update_user_profile(user_id, merged_data)
         logger.info(f"Profile updated for user {user_id}")
         return updated_profile, False
     else:

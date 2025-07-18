@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.34] - 2025-07-18
+
+### Fixed
+- **Critical Profile Setup Error**: Fixed 'gender' error in profile setup process when user has incomplete profile data
+- **Profile Data Merging**: Resolved issue where profile updates only used new data instead of merging with existing data
+- **Incomplete Profile Validation**: Added comprehensive validation to prevent incomplete profiles from being created
+- **Database Constraint Issues**: Fixed profile creation with missing required fields causing calculation errors
+
+### Added
+- **Profile Completeness Validation**: Added validation in `process_goal` function to ensure all required fields are present
+- **Profile Data Merging Logic**: Enhanced `create_or_update_profile` to properly merge new data with existing profile data
+- **Step-by-Step Progress Indicators**: Added step indicators (Step 1/6, Step 2/6, etc.) to profile setup process
+- **Database Constraints**: Created SQL script for database-level constraints to prevent incomplete profiles
+- **Profile Validation Function**: Added `validate_profile_completeness()` function for reusable profile validation
+- **Incomplete Profile Cleanup**: Created script to identify and fix existing incomplete profiles in database
+
+### Changed
+- **Profile Update Logic**: Modified profile update to merge new data with existing data instead of replacing
+- **Error Handling**: Enhanced error handling in profile setup with specific validation error messages
+- **User Experience**: Improved profile setup flow with better guidance and step indicators
+- **Database Triggers**: Added automatic calorie calculation trigger in database for complete profiles
+
+### Technical
+- **Data Merging**: Implemented proper data merging in `create_or_update_profile` function
+- **Field Validation**: Added comprehensive field validation in `calculate_daily_calories` function
+- **Translation Keys**: Added missing `profile_incomplete` translation keys for English and Russian
+- **Error Prevention**: Added multiple layers of validation to prevent incomplete profile creation
+
+### Production Impact
+- **Error Resolution**: Eliminated 'gender' error in profile setup process
+- **Data Integrity**: Ensured all profiles have complete data for accurate calorie calculations
+- **User Experience**: Improved profile setup flow with better guidance and validation
+- **System Reliability**: Added database-level constraints to prevent future incomplete profiles
+
+### Root Cause
+- **Incomplete Profile Data**: User had profile with `age: None` but other fields set, causing calculation errors
+- **Data Merging Issue**: Profile updates only used new data instead of merging with existing data
+- **Missing Validation**: No validation to ensure all required fields are present before profile completion
+- **Database Constraints**: No database-level constraints to prevent incomplete profile creation
+
 ## [0.3.33] - 2025-01-21
 
 ### Fixed
@@ -866,6 +906,43 @@ Will be reverted to normal pricing (99 RUB / 399 RUB) after testing completion.
 - Enhanced profile validation in nutrition insights
 - Added motivational message randomization system
 - Improved error handling for profile-related operations
+
+## [v0.4.3] - 2025-01-21
+
+### 🔧 Fixed
+- **Profile Setup Error**: Fixed critical error in profile setup when user had incomplete profile data (age: None)
+- **Calorie Calculation**: Enhanced `calculate_daily_calories` function to validate all required fields before calculation
+- **Data Integrity**: Modified `create_or_update_profile` to merge new data with existing data instead of replacing
+- **Error Handling**: Improved error messages and step-by-step progress indicators in profile setup flow
+- **Translation Keys**: Added missing translation keys for profile setup messages
+
+### ✨ Added
+- **Profile Validation**: Added `is_profile_complete` function to validate profile completeness
+- **Step Indicators**: Enhanced profile setup with clear step indicators (Step 1/6, Step 2/6, etc.)
+- **Database Constraints**: Created production-ready SQL script with NOT NULL constraints and validation checks
+- **Automatic Calorie Calculation**: Added database trigger for automatic calorie calculation
+- **Profile Cleanup**: Created script to fix existing incomplete profiles in database
+- **Type Safety**: Added column type verification for all profile fields (TEXT, INTEGER)
+
+### 🧪 Testing
+- **Comprehensive Tests**: Added extensive unit tests for profile onboarding process
+- **Profile Completeness**: Tests for profile validation and calorie calculation
+- **Data Merging**: Tests for profile data merging functionality
+- **Real User Scenarios**: Tests with actual user profile data from database
+- **Integration Tests**: End-to-end profile setup flow testing
+
+### 📚 Documentation
+- **Database Constraints**: Added production-ready SQL script with comprehensive constraints and validation
+- **Profile Setup Guide**: Enhanced user instructions and error messages
+- **Technical Documentation**: Added comments and documentation for all new functions
+- **Migration Guide**: Complete instructions for running database constraints migration
+
+### 🔒 Security & Reliability
+- **Schema Specification**: Added explicit schema references for better security
+- **Case Insensitive**: Added case-insensitive table name handling
+- **Type Verification**: Added verification of TEXT column types for string fields
+- **Idempotent Migration**: All constraints are safe to run multiple times
+- **PostgreSQL Compatibility**: Optimized for all PostgreSQL versions ≥ 10
 
 ## [0.3.8] - 2024-12-17
 

@@ -211,8 +211,16 @@ async def start_profile_setup(message: types.Message, state: FSMContext, telegra
     user = await get_or_create_user(telegram_user_id)
     user_language = user.get('language', 'en')
     
+    # Show setup instructions with better guidance
+    setup_text = (
+        f"{i18n.get_text('profile_setup_age', user_language)}\n\n"
+        f"💡 **Important:** Please complete all steps to get accurate calorie calculations.\n"
+        f"📝 You can restart at any time by sending /profile\n"
+        f"🔄 Step 1 of 6"
+    )
+    
     await message.answer(
-        i18n.get_text("profile_setup_age", user_language),
+        setup_text,
         parse_mode="Markdown"
     )
 
@@ -492,7 +500,8 @@ async def process_age(message: types.Message, state: FSMContext):
         
         await message.answer(
             f"✅ {i18n.get_text('profile_setup_age_success', user_language, age=age)}\n\n"
-            f"{i18n.get_text('profile_setup_gender', user_language)}",
+            f"{i18n.get_text('profile_setup_gender', user_language)}\n\n"
+            f"🔄 Step 2 of 6",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -525,7 +534,8 @@ async def process_gender(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.answer(
         f"✅ {i18n.get_text('profile_setup_gender_success', user_language, gender=gender_label)}\n\n"
-        f"{i18n.get_text('profile_setup_height', user_language)}",
+        f"{i18n.get_text('profile_setup_height', user_language)}\n\n"
+        f"🔄 Step 3 of 6",
         parse_mode="Markdown"
     )
 
@@ -556,7 +566,8 @@ async def process_height(message: types.Message, state: FSMContext):
         
         await message.answer(
             f"✅ {i18n.get_text('profile_setup_height_success', user_language, height=height)}\n\n"
-            f"{i18n.get_text('profile_setup_weight', user_language)}",
+            f"{i18n.get_text('profile_setup_weight', user_language)}\n\n"
+            f"🔄 Step 4 of 6",
             parse_mode="Markdown"
         )
         
@@ -600,7 +611,8 @@ async def process_weight(message: types.Message, state: FSMContext):
         ])
         
         await message.answer(
-            f"✅ {i18n.get_text('profile_setup_weight_success', user_language, weight=weight)}",
+            f"✅ {i18n.get_text('profile_setup_weight_success', user_language, weight=weight)}\n\n"
+            f"🔄 Step 5 of 6",
             parse_mode="Markdown",
             reply_markup=keyboard
         )
@@ -642,7 +654,8 @@ async def process_activity(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.answer(
         f"✅ {i18n.get_text('profile_setup_activity_success', user_language, activity=activity_label)}\n\n"
-        f"{i18n.get_text('profile_setup_goal', user_language)}",
+        f"{i18n.get_text('profile_setup_goal', user_language)}\n\n"
+        f"🔄 Step 6 of 6 (Final Step)",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
@@ -662,6 +675,35 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
     
     # Get all collected data
     data = await state.get_data()
+    
+    # Validate that all required fields are present and valid
+    required_fields = {
+        'age': 'age',
+        'gender': 'gender', 
+        'height_cm': 'height',
+        'weight_kg': 'weight',
+        'activity_level': 'activity level',
+        'goal': 'goal'
+    }
+    
+    missing_fields = []
+    for field, field_name in required_fields.items():
+        if field not in data or data[field] is None:
+            missing_fields.append(field_name)
+    
+    if missing_fields:
+        # Get user's language for error message
+        user = await get_or_create_user(callback.from_user.id)
+        user_language = user.get('language', 'en')
+        
+        missing_text = ", ".join(missing_fields)
+        error_message = f"❌ **Profile incomplete**\n\nMissing required fields: {missing_text}\n\nPlease complete your profile setup from the beginning."
+        
+        await callback.answer(error_message)
+        
+        # Restart profile setup
+        await start_profile_setup(callback.message, state, callback.from_user.id)
+        return
     
     try:
         # Get user
@@ -739,6 +781,18 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
         
         logger.info(f"Profile {'created' if was_created else 'updated'} for user {telegram_user_id}")
         
+    except ValueError as e:
+        logger.error(f"Validation error saving profile for user {telegram_user_id}: {e}")
+        # Get user's language for error message
+        user = await get_or_create_user(callback.from_user.id)
+        user_language = user.get('language', 'en')
+        
+        # Provide more specific error message for missing data
+        if "Missing or invalid" in str(e):
+            await callback.answer(f"❌ {i18n.get_text('profile_incomplete', user_language)}")
+        else:
+            await callback.answer(i18n.get_text("error_general", user_language))
+        await state.clear()
     except Exception as e:
         logger.error(f"Error saving profile for user {telegram_user_id}: {e}")
         # Get user's language for error message
