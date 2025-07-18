@@ -197,6 +197,18 @@ def sanitize_markdown_text(text: str) -> str:
     # Fix empty bold patterns
     text = text.replace('**  **', '** **')
     
+    # Fix missing translation patterns that could break markdown
+    text = text.replace('[Missing translation:', '')
+    text = text.replace(']', '')
+    
+    # Ensure balanced bold markers
+    bold_count = text.count('**')
+    if bold_count % 2 != 0:
+        # Remove the last unmatched **
+        last_bold_pos = text.rfind('**')
+        if last_bold_pos != -1:
+            text = text[:last_bold_pos] + text[last_bold_pos+2:]
+    
     return text
 
 

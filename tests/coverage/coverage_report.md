@@ -1,7 +1,7 @@
 # Code Coverage Report
 
-**Generated**: 2025-07-13 18:10:33
-**Total Coverage**: 24.5%
+**Generated**: 2025-07-18 18:06:08
+**Total Coverage**: 29.3%
 
 ❌ **FAILED** - Coverage below minimum requirement (85%)
 

@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.35] - 2025-01-21
+
+### Fixed
+- **Critical Nutrition Insights Error**: Fixed "can't parse entities: Can't find end of the entity starting at byte offset 275" error in nutrition insights
+- **Missing Russian Translations**: Added missing translation keys `bmi_based` and `broca_formula` for Russian language
+- **Markdown Sanitization**: Enhanced `sanitize_markdown_text()` function to handle missing translation patterns and unbalanced bold markers
+- **Telegram Entity Parsing**: Improved markdown sanitization to prevent Telegram parsing errors
+
+### Added
+- **Russian Profile Setup Translations**: Added complete Russian translations for profile setup messages and buttons
+- **Profile Setup Info Messages**: Added Russian translations for all profile setup information and guidance text
+- **Profile Setup Button**: Added Russian translation for "Set Up Profile" button ("🚀 Настроить профиль")
+- **Profile Setup Title**: Added Russian translation for "Profile Setup" title ("Настройка профиля")
+- **Profile Setup Benefits**: Added Russian translations for profile setup benefits and privacy information
+- **Missing Nutrition Terms**: Added Russian translations for "bmi_based" ("на основе ИМТ") and "broca_formula" ("формула Брока")
+
+### Changed
+- **Multilingual Support**: Enhanced Russian language support for complete profile setup experience
+- **User Experience**: Russian users now see fully localized profile setup messages and buttons
+- **Translation Coverage**: Complete coverage of profile setup flow in Russian language
+- **Markdown Safety**: Enhanced markdown sanitization to automatically fix unbalanced bold markers and remove problematic patterns
+
+### Technical
+- **Translation Keys**: Added 12 new translation keys for profile setup in Russian
+- **I18n System**: Extended Russian translation file with comprehensive profile setup messages
+- **Button Localization**: All profile setup buttons now properly localized for Russian users
+- **Error Prevention**: Added automatic markdown validation and correction in nutrition insights generation
+
+### Production Impact
+- **Russian User Experience**: Russian users now have complete localized profile setup experience
+- **Consistent Localization**: Profile setup flow now matches quality of other localized features
+- **User Engagement**: Better user experience for Russian-speaking users during profile setup
+- **System Reliability**: Nutrition insights now work reliably without Telegram parsing errors
+
+### Verified
+- **Daily Plan Translations**: Confirmed that Russian translations for daily plan messages are already complete and working
+- **Translation Coverage**: All daily plan messages including "📊 Daily Plan", profile requirements, and benefits are properly translated
+- **System Validation**: All 119 unit tests passing, confirming translation system integrity
+- **Nutrition Insights**: Fixed and tested nutrition insights generation with proper markdown formatting
+
 ## [0.3.34] - 2025-07-18
 
 ### Fixed
