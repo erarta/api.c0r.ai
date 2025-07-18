@@ -181,6 +181,42 @@ TRANSLATIONS.update({
     "profile_recalculate_btn": "🔄 Recalculate Calories",
     "profile_progress_btn": "📈 Progress",
     "btn_meal_history": "🍽️ Meal History",
+    
+    # Weekly report translations
+    "weekly_report_title": "📊 **Weekly Report**",
+    "weekly_report_avg_calories": "📈 Average Calories: {calories}",
+    "weekly_report_goal_progress": "🎯 Goal Progress: {progress}",
+    "weekly_report_not_enough_data": "Not enough data",
+    "weekly_report_setup_profile": "Set up profile to track",
+    
+    # Buy credits translations
+    "buy_credits_title": "💳 Buy Credits",
+    "buy_credits_current": "Current Credits: {credits}",
+    "buy_credits_what_are": "💡 What are credits?",
+    "buy_credits_explanation_1": "• 1 credit = 1 photo analysis",
+    "buy_credits_explanation_2": "• Each food photo costs 1 credit",
+    "buy_credits_explanation_3": "• Credits never expire",
+    "buy_credits_plan_20": "📦 20 credits for 99р",
+    "buy_credits_plan_100": "📦 100 credits for 349р",
+    
+    # Help button
+    "btn_help_guide": "ℹ️ Help",
+    
+    # Gender selection
+    "profile_setup_gender_prompt": "Please select your gender",
+    "gender_male": "👨 Male",
+    "gender_female": "👩 Female",
+    
+    # Nutrition insights menu
+    "nutrition_menu_select_section": "Select a section to view details:",
+    "nutrition_menu_bmi": "📊 Body Mass Index (BMI)",
+    "nutrition_menu_ideal_weight": "🎯 Ideal Weight Range",
+    "nutrition_menu_metabolic_age": "🧬 Metabolic Age",
+    "nutrition_menu_water_needs": "💧 Daily Water Needs",
+    "nutrition_menu_macro_distribution": "🥗 Optimal Macro Distribution",
+    "nutrition_menu_meal_distribution": "🍽️ Meal Distribution",
+    "nutrition_menu_recommendations": "💡 Personal Recommendations",
+    "nutrition_menu_goal_advice": "🎯 Goal-Specific Advice",
 })
 TRANSLATIONS.update({
     # Photo analysis messages
@@ -287,6 +323,21 @@ TRANSLATIONS.update({
     "nutrition_goal_advice_title": "🎯 **Goal-Specific Advice:**",
     "nutrition_analysis_date": "📅 **Analysis Date:** {date}",
     "nutrition_credits_remaining": "🔄 **Credits Remaining:** {credits}",
+    
+    # Nutrition menu options
+    "nutrition_menu_select_section": "Select a section to view details:",
+    "nutrition_menu_bmi": "📊 Body Mass Index (BMI)",
+    "nutrition_menu_ideal_weight": "🎯 Ideal Weight Range",
+    "nutrition_menu_metabolic_age": "🧬 Metabolic Age",
+    "nutrition_menu_water_needs": "💧 Daily Water Needs",
+    "nutrition_menu_macro_distribution": "🥗 Optimal Macro Distribution",
+    "nutrition_menu_meal_distribution": "🍽️ Meal Distribution",
+    "nutrition_menu_recommendations": "💡 Personal Recommendations",
+    "nutrition_menu_goal_advice": "🎯 Goal-Specific Advice",
+    
+    # Additional nutrition terms
+    "bmi_based": "BMI-based",
+    "broca_formula": "Broca formula",
     
     # BMI categories and motivations
     "bmi_underweight": "Below ideal range",

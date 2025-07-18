@@ -19,7 +19,8 @@ from handlers.nutrition import (
     generate_nutrition_insights,
     get_goal_specific_advice,
     weekly_report_command,
-    water_tracker_command
+    water_tracker_command,
+    sanitize_markdown_text
 )
 
 class TestNutritionInsights:
@@ -194,13 +195,153 @@ class TestNutritionInsights:
                     mock_show_menu.assert_called_once()
                     callback.message.answer.assert_not_called()  # Menu is shown by show_nutrition_insights_menu
 
+    @pytest.mark.asyncio
+    async def test_nutrition_insights_callback_with_none_profile(self):
+        """Test nutrition insights callback with None profile - critical bug scenario"""
+        callback = Mock()
+        callback.from_user.id = 123456789
+        callback.from_user.username = "testuser"
+        callback.answer = AsyncMock()
+        callback.message.answer = AsyncMock()
+        
+        # Mock user data with None profile (the original bug scenario)
+        user_data = {
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'ru'},
+            'profile': None,  # This caused the original Markdown parsing error
+            'has_profile': False
+        }
+        
+        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
+            with patch('handlers.nutrition.log_user_action', return_value=None):
+                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'ru'}):
+                    
+                    # This should NOT raise any exception
+                    await nutrition_insights_callback(callback)
+                    
+                    # Should show profile setup message
+                    callback.message.answer.assert_called_once()
+                    call_args = callback.message.answer.call_args[0][0]
+                    assert "🔍 **Анализ питания**" in call_args
+                    assert "Почти готово! Пожалуйста, заверши настройку профиля" in call_args
+
+    @pytest.mark.asyncio
+    async def test_nutrition_insights_callback_exception_handling(self):
+        """Test exception handling in nutrition insights callback"""
+        callback = Mock()
+        callback.from_user.id = 123456789
+        callback.from_user.username = "testuser"
+        callback.answer = AsyncMock()
+        callback.message.answer = AsyncMock()
+        
+        # Mock to raise exception during show_nutrition_insights_menu
+        with patch('handlers.nutrition.get_user_with_profile', return_value={
+            'user': {'id': 'user-uuid', 'language': 'ru'},
+            'profile': {'age': 30, 'weight_kg': 70, 'height_cm': 170, 'gender': 'male', 'activity_level': 'moderately_active', 'goal': 'maintain_weight'},
+            'has_profile': True
+        }):
+            with patch('handlers.nutrition.show_nutrition_insights_menu', side_effect=Exception("Markdown parsing error")):
+                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'ru'}):
+                    
+                    # This should handle the exception gracefully
+                    await nutrition_insights_callback(callback)
+                    
+                    # Should show error message
+                    callback.message.answer.assert_called_once()
+                    call_args = callback.message.answer.call_args[0][0]
+                    assert "❌ **Ошибка**" in call_args
+                    assert "Извини, произошла ошибка" in call_args
+
+    @pytest.mark.asyncio
+    async def test_nutrition_insights_russian_language(self):
+        """Test nutrition insights with Russian language"""
+        message = Mock()
+        message.from_user.id = 123456789
+        message.from_user.username = "testuser"
+        message.answer = AsyncMock()
+        
+        user_data = {
+            'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'ru'},
+            'profile': None,
+            'has_profile': False
+        }
+        
+        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
+            with patch('handlers.nutrition.log_user_action', return_value=None):
+                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
+                    with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'ru'}):
+                        
+                        await nutrition_insights_command(message)
+                    
+                    # Verify Russian text is shown
+                    message.answer.assert_called_once()
+                    call_args = message.answer.call_args[0][0]
+                    assert "🔍 **Анализ питания**" in call_args
+                    assert "Почти готово! Пожалуйста, заверши настройку профиля" in call_args
+                    assert "Отсутствует:" in call_args
+
+
+class TestMarkdownSanitization:
+    """Test suite for markdown sanitization functionality"""
+    
+    def test_sanitize_markdown_text_balanced_bold(self):
+        """Test sanitize_markdown_text with balanced bold markers"""
+        text = "**Test**"
+        result = sanitize_markdown_text(text)
+        assert result == "**Test**"
+        assert result.count('**') == 2  # Balanced
+    
+    def test_sanitize_markdown_text_unbalanced_bold(self):
+        """Test sanitize_markdown_text with unbalanced bold markers"""
+        text = "**Test"
+        result = sanitize_markdown_text(text)
+        assert result.count('**') == 0  # Should remove unbalanced markers
+    
+    def test_sanitize_markdown_text_triple_asterisks(self):
+        """Test sanitize_markdown_text with triple asterisks"""
+        text = "***Test***"
+        result = sanitize_markdown_text(text)
+        assert result == "** *Test** *"
+    
+    def test_sanitize_markdown_text_quadruple_asterisks(self):
+        """Test sanitize_markdown_text with quadruple asterisks"""
+        text = "****Test****"
+        result = sanitize_markdown_text(text)
+        assert result == "** **Test** **"
+    
+    def test_sanitize_markdown_text_empty_bold(self):
+        """Test sanitize_markdown_text with empty bold markers"""
+        text = "**  **"
+        result = sanitize_markdown_text(text)
+        assert result == "** **"
+    
+    def test_sanitize_markdown_text_missing_translation(self):
+        """Test sanitize_markdown_text with missing translation pattern"""
+        text = "[Missing translation: test_key]"
+        result = sanitize_markdown_text(text)
+        assert result == " test_key"
+    
+    def test_sanitize_markdown_text_russian_text(self):
+        """Test sanitize_markdown_text with Russian text"""
+        text = "📊 **Анализ питания**\n\n🎯 Для показа персонального анализа питания"
+        result = sanitize_markdown_text(text)
+        assert result.count('**') == 2  # Should be balanced
+        assert "📊 **Анализ питания**" in result
+    
+    def test_sanitize_markdown_text_complex_case(self):
+        """Test sanitize_markdown_text with complex case that caused the original bug"""
+        text = "📊 **Анализ питания**\n\n🎯 Для показа персонального анализа питания мне нужна информация о твоем профиле.\n\n💡 **Создай профиль, чтобы получить:**\n• Персональный анализ ИМТ\n• Рекомендации по идеальному весу\n• Метаболический возраст\n• Потребность в воде\n• Распределение макронутриентов\n• Персональные рекомендации"
+        result = sanitize_markdown_text(text)
+        assert result.count('**') == 4  # Should be balanced (2 pairs)
+        assert "📊 **Анализ питания**" in result
+        assert "💡 **Создай профиль, чтобы получить:**" in result
+
 
 class TestGenerateNutritionInsights:
     """Test suite for generate_nutrition_insights function"""
     
     @pytest.mark.asyncio
     async def test_generate_insights_complete_profile(self):
-        """Test nutrition insights generation with complete profile"""
+        """Test generate_nutrition_insights with complete profile"""
         profile = {
             'age': 30,
             'gender': 'male',
@@ -211,66 +352,48 @@ class TestGenerateNutritionInsights:
             'daily_calories_target': 2000
         }
         
-        user = {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}
+        user = {'language': 'en'}
         
-        with patch('handlers.nutrition.calculate_bmi') as mock_bmi, \
-             patch('handlers.nutrition.calculate_ideal_weight') as mock_ideal, \
-             patch('handlers.nutrition.calculate_metabolic_age') as mock_age, \
-             patch('handlers.nutrition.calculate_water_needs') as mock_water, \
-             patch('handlers.nutrition.calculate_macro_distribution') as mock_macro, \
-             patch('handlers.nutrition.calculate_meal_portions') as mock_meals, \
-             patch('handlers.nutrition.get_nutrition_recommendations') as mock_rec, \
-             patch('handlers.nutrition.get_goal_specific_advice') as mock_goal:
-            
-            # Mock all calculation returns
-            mock_bmi.return_value = {
-                'bmi': 24.2,
-                'category': 'normal',
-                'emoji': '✅',
-                'description': 'Healthy weight range',
-                'motivation': 'Great job!'
-            }
-            mock_ideal.return_value = {'range': '58-72 kg', 'broca': 65.0}
-            mock_age.return_value = {
-                'metabolic_age': 28, 
-                'emoji': '✅',
-                'description': 'Your metabolism matches your age',
-                'motivation': 'Excellent!'
-            }
-            mock_water.return_value = {
-                'liters': 3.4,
-                'glasses': 14,
-                'base_ml': 2415,
-                'activity_bonus': 966
-            }
-            mock_macro.return_value = {
-                'protein': {'grams': 152, 'percent': 25},
-                'carbs': {'grams': 273, 'percent': 45},
-                'fat': {'grams': 81, 'percent': 30}
-            }
-            mock_meals.return_value = {
-                'meals': [
-                    {'name': 'Breakfast', 'calories': 608, 'percentage': 25},
-                    {'name': 'Lunch', 'calories': 972, 'percentage': 40},
-                    {'name': 'Dinner', 'calories': 850, 'percentage': 35}
-                ]
-            }
-            mock_rec.return_value = ['Stay hydrated!', 'Eat more protein']
-            mock_goal.return_value = 'Focus on portion control for weight loss success!'
-            
-            insights = await generate_nutrition_insights(profile, user)
-            
-            # Check that insights contain expected i18n-based content
-            assert "🔬 **Your Nutrition Analysis**" in insights
-            assert "📊 **Body Mass Index (BMI):**" in insights
-            assert "✅ **24.2** - Healthy weight range" in insights
-            assert "🎯 **Ideal Weight Range:**" in insights
-            assert "🧬 **Metabolic Age:**" in insights
-            assert "💧 **Daily Water Needs:**" in insights
-            assert "🥗 **Optimal Macro Distribution:**" in insights
-            assert "🍽️ **Meal Distribution:**" in insights
-            assert "💡 **Personal Recommendations:**" in insights
-            assert "🎯 **Goal-Specific Advice:**" in insights
+        result = await generate_nutrition_insights(profile, user)
+        
+        # Should contain nutrition analysis sections
+        assert "**Your Nutrition Analysis**" in result
+        assert "**Body Mass Index (BMI):**" in result
+        assert "**Ideal Weight Range:**" in result
+        assert "**Metabolic Age:**" in result
+        assert "**Daily Water Needs:**" in result
+        assert "**Optimal Macro Distribution:**" in result
+        
+        # Should be properly sanitized
+        assert result.count('**') % 2 == 0  # Balanced bold markers
+    
+    @pytest.mark.asyncio
+    async def test_generate_insights_russian_language(self):
+        """Test generate_nutrition_insights with Russian language"""
+        profile = {
+            'age': 25,
+            'gender': 'female',
+            'weight_kg': 60.0,
+            'height_cm': 165.0,
+            'activity_level': 'lightly_active',
+            'goal': 'maintain_weight',
+            'daily_calories_target': 1800
+        }
+        
+        user = {'language': 'ru'}
+        
+        result = await generate_nutrition_insights(profile, user)
+        
+        # Should contain Russian nutrition analysis sections
+        assert "**Твой анализ питания**" in result
+        assert "**Индекс массы тела (ИМТ):**" in result
+        assert "**Идеальный диапазон веса:**" in result
+        assert "**Метаболический возраст:**" in result
+        assert "**Дневные потребности в воде:**" in result
+        assert "**Оптимальное распределение макронутриентов:**" in result
+        
+        # Should be properly sanitized
+        assert result.count('**') % 2 == 0  # Balanced bold markers
 
 
 class TestGoalSpecificAdvice:

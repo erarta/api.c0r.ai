@@ -252,6 +252,17 @@ TRANSLATIONS.update({
     "bmi_based": "на основе ИМТ",
     "broca_formula": "формула Брока",
     
+    # Nutrition menu options
+    "nutrition_menu_select_section": "Выбери раздел для просмотра деталей:",
+    "nutrition_menu_bmi": "📊 Индекс массы тела (ИМТ)",
+    "nutrition_menu_ideal_weight": "🎯 Идеальный диапазон веса",
+    "nutrition_menu_metabolic_age": "🧬 Метаболический возраст",
+    "nutrition_menu_water_needs": "💧 Дневные потребности в воде",
+    "nutrition_menu_macro_distribution": "🥗 Распределение макронутриентов",
+    "nutrition_menu_meal_distribution": "🍽️ Распределение приемов пищи",
+    "nutrition_menu_recommendations": "💡 Персональные рекомендации",
+    "nutrition_menu_goal_advice": "🎯 Советы по целям",
+    
     # BMI categories and motivations
     "bmi_underweight": "Ниже идеального диапазона",
     "bmi_normal": "Здоровый диапазон веса", 
@@ -487,4 +498,40 @@ TRANSLATIONS.update({
     "profile_recalculate_btn": "🔄 Пересчитать калории",
     "profile_progress_btn": "📈 Прогресс",
     "btn_meal_history": "🍽️ История приемов пищи",
+    
+    # Weekly report translations
+    "weekly_report_title": "📊 **Еженедельный отчет**",
+    "weekly_report_avg_calories": "📈 Средние калории: {calories}",
+    "weekly_report_goal_progress": "🎯 Прогресс цели: {progress}",
+    "weekly_report_not_enough_data": "Недостаточно данных",
+    "weekly_report_setup_profile": "Настройте профиль для отслеживания",
+    
+    # Buy credits translations
+    "buy_credits_title": "💳 Купить кредиты",
+    "buy_credits_current": "Текущие кредиты: {credits}",
+    "buy_credits_what_are": "💡 Что такое кредиты?",
+    "buy_credits_explanation_1": "• 1 кредит = 1 анализ фото",
+    "buy_credits_explanation_2": "• Каждое фото еды стоит 1 кредит",
+    "buy_credits_explanation_3": "• Кредиты не имеют срока действия",
+    "buy_credits_plan_20": "📦 20 кредитов за 99р",
+    "buy_credits_plan_100": "📦 100 кредитов за 349р",
+    
+    # Help button
+    "btn_help_guide": "ℹ️ Помощь",
+    
+    # Gender selection
+    "profile_setup_gender_prompt": "Пожалуйста выберите свой пол",
+    "gender_male": "👨 Мужской",
+    "gender_female": "👩 Женский",
+    
+    # Nutrition insights menu
+    "nutrition_menu_select_section": "Выбери раздел для просмотра деталей:",
+    "nutrition_menu_bmi": "📊 Индекс массы тела (ИМТ)",
+    "nutrition_menu_ideal_weight": "🎯 Идеальный диапазон веса",
+    "nutrition_menu_metabolic_age": "🧬 Метаболический возраст",
+    "nutrition_menu_water_needs": "💧 Дневные потребности в воде",
+    "nutrition_menu_macro_distribution": "🥗 Распределение макронутриентов",
+    "nutrition_menu_meal_distribution": "🍽️ Распределение приемов пищи",
+    "nutrition_menu_recommendations": "💡 Персональные рекомендации",
+    "nutrition_menu_goal_advice": "🎯 Советы по целям",
 })
