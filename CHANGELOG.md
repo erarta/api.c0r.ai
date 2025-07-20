@@ -2,6 +2,189 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.49] - 2025-07-20
+
+### Fixed
+- **CRITICAL Telegram Markdown Parsing Error**: Fixed critical "can't parse entities" error in recipe creation functionality that was preventing users from using the recipe generation feature
+- **Markdown Sanitization**: Replaced simple `escape_markdown` function with robust `sanitize_markdown_text` function from nutrition handler to properly handle complex Markdown patterns
+- **Problematic Markdown Patterns**: Fixed handling of unbalanced bold markers, triple/quadruple asterisks, and cross-line patterns that were causing Telegram parsing failures
+- **Recipe Text Formatting**: Applied proper Markdown sanitization to all recipe text including error messages, instruction text, and recipe content
+- **Error Message Sanitization**: Fixed error messages like "Для генерации рецептов по фото нужны кредиты\." that were causing parsing errors due to double-escaped dots
+
+### Added
+- **Robust Markdown Sanitization**: Imported and applied `sanitize_markdown_text` function from nutrition handler to recipe handler for consistent Markdown handling
+- **Comprehensive Text Sanitization**: Applied sanitization to all text sent to Telegram including error messages, processing messages, and recipe content
+- **Cross-Module Function Reuse**: Successfully reused existing `sanitize_markdown_text` function from nutrition handler to fix recipe handler issues
+
+### Technical
+- **Function Import**: Added `from .nutrition import sanitize_markdown_text` to recipe handler imports
+- **Text Sanitization Application**: Applied `sanitize_markdown_text` to all Markdown text in recipe handler including:
+  - Error messages for insufficient credits
+  - Instruction text for recipe creation
+  - Processing messages during photo upload
+  - Recipe content formatting (name, description, ingredients, instructions, nutrition data)
+  - Upload and generation error messages
+- **Import Cleanup**: Removed duplicate imports and organized import statements properly
+- **Function Replacement**: Replaced all instances of `escape_markdown` with `sanitize_markdown_text` in recipe handler
+
+### User Experience
+- **Recipe Creation Restoration**: Users can now successfully use the recipe creation functionality without encountering Telegram parsing errors
+- **Reliable Error Messages**: Error messages now display properly without causing bot crashes
+- **Consistent Markdown Handling**: All text in recipe generation now uses the same robust Markdown sanitization as nutrition analysis
+- **Improved Reliability**: Recipe generation is now more reliable and handles edge cases in text formatting
+
+### Root Cause
+- **Simple Markdown Escaping**: The recipe handler was using a simple `escape_markdown` function that didn't handle complex Markdown patterns properly
+- **Double Escaping**: Error messages contained already-escaped dots (`\\.`) that were being escaped again, causing parsing failures
+- **Unbalanced Markdown**: Some text contained unbalanced bold markers and other problematic patterns that Telegram couldn't parse
+- **Inconsistent Sanitization**: Recipe handler used different Markdown handling than nutrition handler, leading to inconsistent behavior
+
+### Testing
+- **Function Verification**: Created comprehensive test to verify `sanitize_markdown_text` function handles all problematic patterns correctly
+- **Nutrition Tests**: Confirmed all existing nutrition tests still pass, ensuring no regression in Markdown sanitization functionality
+- **Pattern Testing**: Tested specific patterns that were causing the original error including unbalanced bold markers and cross-line patterns
+
+## [0.3.48] - 2025-07-20
+
+### Fixed
+- **CRITICAL Main Menu FSM State Issue**: Fixed critical FSM state management bug where clicking "Главное меню" (Main Menu) and then uploading a photo caused automatic food analysis instead of offering choice between analysis and recipe creation
+- **Photo Handler FSM State Checking**: Added proper FSM state detection logic to photo handler to ensure it only processes photos when no FSM state is set
+- **Default Photo Choice Behavior**: Implemented proper default photo behavior where users are offered choice between recipe creation and food analysis when no specific FSM state is active
+- **FSMContext Parameter Integration**: Added `FSMContext` parameter to photo handler function signature to enable proper state checking
+- **Code Structure Cleanup**: Removed unreachable code after return statements and improved code organization in photo handler
+
+### Added
+- **FSM State Validation**: Added comprehensive FSM state checking at the beginning of photo handler to skip processing if any state is active
+- **Enhanced Photo Handler Logic**: Implemented proper state-aware photo processing that respects FSM state management
+- **Improved Handler Registration**: Confirmed proper handler registration order in bot.py with FSM-specific handlers taking precedence
+- **State-Aware Processing**: Photo handler now properly detects cleared FSM states and offers appropriate choice interface
+
+### Technical
+- **FSMContext Integration**: Updated photo handler function signature to include `FSMContext` parameter: `async def photo_handler(message: types.Message, state: FSMContext)`
+- **State Detection Logic**: Added state checking logic: `current_state = await state.get_state()` with proper skip logic when state is not None
+- **Import Updates**: Added proper import for `FSMContext` from `aiogram.fsm.context`
+- **Handler Flow Control**: Implemented proper flow control where FSM handlers take precedence over general photo handler
+- **Code Organization**: Cleaned up unreachable code and improved overall code structure
+
+### User Experience
+- **Fixed Main Menu Navigation**: Users clicking main menu and uploading photos now properly see choice interface instead of automatic analysis
+- **Proper State Transitions**: Main menu button correctly clears FSM state and triggers default photo behavior
+- **Choice Interface Restoration**: Default photo behavior now works correctly offering users choice between "🍕 Анализ еды" and "🍽️ Создать рецепт"
+- **Seamless Navigation**: Users experience proper state management with clear transitions between different bot modes
+- **Consistent Behavior**: All navigation flows now work consistently with proper FSM state management
+
+### Root Cause
+- **Missing FSM State Checking**: Photo handler was not checking for FSM state and was processing all photos directly
+- **Function Signature Issue**: Photo handler lacked `FSMContext` parameter needed for state detection
+- **State Detection Gap**: No logic existed to detect when FSM state was cleared and offer default choice behavior
+- **Handler Flow Issue**: General photo handler was processing photos even when FSM state management should have taken precedence
+
+## [0.3.47] - 2025-07-20
+
+### Fixed
+- **CRITICAL FSM State Management Issue**: Fixed critical FSM state management bug where clicking "Анализ еды" (Food Analysis) button after recipe generation caused the bot to create recipes instead of analyzing food
+- **State-Based Photo Routing**: Implemented proper state-based photo routing where recipe generation uses `RecipeStates.waiting_for_photo` and food analysis uses `NutritionStates.waiting_for_photo`
+- **Navigation Button State Management**: Fixed "Анализ еды" button to properly set `NutritionStates.waiting_for_photo` state instead of leaving user in recipe generation state
+- **Default Photo Behavior**: Implemented default photo behavior where users without specific FSM state are offered choice between recipe creation and food analysis
+- **Handler Registration Order**: Fixed handler registration order in bot.py to ensure nutrition photo handler is registered before general photo handler for proper state routing
+
+### Added
+- **NutritionStates Class**: Created `NutritionStates` class with `waiting_for_photo` state in nutrition.py for proper food analysis state management
+- **Nutrition Photo Handler**: Added `process_nutrition_photo()` function to handle nutrition photo analysis with proper state management and clearing
+- **State-Specific Routing**: Implemented comprehensive state-specific routing system where each analysis type has its own FSM state and handler
+- **User Choice Interface**: Added default photo behavior offering users choice between recipe generation and food analysis when no specific state is set
+- **Comprehensive State Clearing**: Ensured all navigation buttons (main menu, cancel, back) properly clear FSM states using `await state.clear()`
+
+### Technical
+- **FSM State Architecture**: Implemented proper FSM state architecture with separate states for recipe generation (`RecipeStates.waiting_for_photo`) and food analysis (`NutritionStates.waiting_for_photo`)
+- **Handler Registration**: Updated bot.py to register nutrition photo handler before general photo handler to ensure proper state-based routing
+- **State Transitions**: Implemented proper state transitions where navigation buttons clear states and analysis buttons set appropriate states
+- **Callback State Management**: Updated `action_analyze_info` callback in commands.py to set `NutritionStates.waiting_for_photo` state
+- **Default State Handling**: Added default state behavior in photo.py where bot offers choice between analysis types when no FSM state is set
+
+### User Experience
+- **Fixed Critical Bug**: Users can now properly switch between recipe generation and food analysis modes without state conflicts
+- **Seamless Navigation**: Clicking "Анализ еды" after recipe generation now correctly processes subsequent photos for food analysis
+- **Clear State Management**: Users experience proper state transitions with clear feedback and appropriate analysis routing
+- **Choice Interface**: Users uploading photos without specific context are offered clear choice between recipe creation and food analysis
+- **Consistent Behavior**: All navigation and analysis buttons now work consistently with proper state management
+
+### Root Cause
+- **Missing State Setting**: The `action_analyze_info` callback didn't set any FSM state, leaving users in previous `RecipeStates.waiting_for_photo` state
+- **Handler Registration Order**: General photo handler was registered before nutrition-specific handler, causing incorrect routing
+- **State Persistence**: Recipe generation state persisted after user clicked "Анализ еды", causing subsequent photos to be processed as recipes
+- **Missing Nutrition Handler**: No dedicated nutrition photo handler existed to process food analysis with proper state management
+
+## [0.3.46] - 2025-07-20
+
+### Fixed
+- **Critical FSM State Management**: Fixed FSM state clearing after recipe generation that caused subsequent photos to be processed as food analysis instead of continuing recipe generation
+- **Recipe Generation Workflow**: Removed `await state.clear()` from `process_recipe_photo()` to maintain recipe generation state for multiple photos
+- **Main Menu State Clearing**: Added proper `await state.clear()` to `handle_action_callback` when `action == "main_menu"` to properly exit recipe generation mode
+- **Food Analysis Detail Loss**: Significantly improved food analysis results to show detailed individual food items with weights and calories instead of basic totals
+- **OpenAI Prompt Enhancement**: Enhanced both Russian and English food analysis prompts for more specific JSON-only responses and better Russian food names
+- **JSON Parsing Robustness**: Improved JSON parsing with regex extraction to handle mixed content and code blocks from OpenAI responses
+- **Fallback Text Parsing**: Added comprehensive fallback text parsing using regex patterns to extract food items even when JSON parsing fails
+- **Recipe Generation Russian Localization**: Fixed fallback recipe generation to return Russian content when OpenAI JSON parsing fails for Russian users
+- **Food Analysis Headers Translation**: Added missing Russian translation keys for "🥘 Food Items Detected:" and "🍽️ Total Nutrition:" headers
+- **Weekly Report Meal Count Fix**: Fixed weekly report to show actual analyzed meals count instead of hardcoded 0 by implementing database query to count photo analyses from the past 7 days
+
+### Added
+- **Enhanced Food Analysis Prompts**: Improved OpenAI prompts with specific instructions for JSON-only responses and Russian food examples
+- **Regex-Based JSON Extraction**: Added robust JSON extraction using regex patterns to handle various OpenAI response formats
+- **Comprehensive Fallback Parsing**: Implemented text parsing fallback to extract food items from natural language when JSON fails
+- **Russian Food Localization**: Enhanced prompts with specific Russian food examples and proper localization
+- **Improved Error Logging**: Added detailed logging to track OpenAI response parsing failures and success rates
+- **FSM State Management**: Added proper state management for recipe generation workflow with cancel button functionality
+
+### Technical
+- **FSM State Persistence**: Modified recipe generation to maintain `RecipeStates.waiting_for_photo` state after successful recipe generation
+- **State Clearing Logic**: Added `await state.clear()` only when users explicitly click "❌ Отмена" button to return to main menu
+- **JSON Parsing Enhancement**: Enhanced JSON parsing with code block removal and regex-based extraction for mixed content
+- **Prompt Engineering**: Improved OpenAI prompts for both languages with specific formatting requirements and examples
+- **Error Handling**: Added comprehensive error handling and logging for food analysis parsing failures
+- **Test Coverage**: Added comprehensive test suite covering JSON parsing improvements and fallback mechanisms
+
+### User Experience
+- **Continuous Recipe Generation**: Users can now send multiple photos for recipe generation without clicking "Создать рецепт" button again
+- **Detailed Food Analysis**: Food analysis now shows individual food items with weights and calories instead of basic totals
+- **Proper State Management**: Recipe generation continues until user explicitly cancels via "❌ Отмена" button
+- **Better Russian Support**: Improved Russian food name recognition and localization in analysis results
+- **More Reliable Parsing**: Food analysis works even when OpenAI returns mixed content or non-JSON responses
+
+### Root Cause
+- **FSM State Clearing**: `await state.clear()` in `process_recipe_photo()` was clearing recipe generation state after first photo
+- **Food Analysis Prompts**: Previous prompts were not specific enough about JSON format and Russian food names
+- **JSON Parsing Limitations**: Simple JSON parsing failed when OpenAI returned mixed content or code blocks
+- **Missing Fallback Logic**: No fallback mechanism when JSON parsing failed, resulting in basic totals only
+
+## [0.3.45] - 2025-07-20
+
+### Fixed
+- **Critical Recipe Button Error**: Fixed "Создать рецепт" button not working due to missing `recipe_callback` function
+- **Recipe Callback Implementation**: Added proper `recipe_callback` function to handle recipe generation from button clicks
+- **User ID Handling**: Fixed callback handling to use `callback.from_user.id` instead of `callback.message.from_user.id` (which refers to the bot)
+- **Recipe Generation Flow**: Created dedicated callback flow that bypasses message-based recipe command for button interactions
+- **Data Structure Compatibility**: Fixed ML service data structure compatibility in recipe generation
+
+### Added
+- **Recipe Callback Function**: Added `recipe_callback()` function to handle "Создать рецепт" button clicks properly
+- **Callback-Specific Recipe Flow**: Added `start_recipe_generation_callback()` function for callback-based recipe generation
+- **Proper User Data Handling**: Enhanced callback handling to fetch correct user data and profile information
+- **Russian Language Support**: Maintained full Russian language support in callback-based recipe generation
+
+### Technical
+- **Callback Handler Fix**: Fixed `handle_recipe_callback()` to properly call the new `recipe_callback()` function
+- **User Data Structure**: Fixed ML service data structure by creating proper `user_data_for_ml` dictionary with required keys
+- **Function Separation**: Separated callback-based recipe generation from command-based to avoid message object conflicts
+- **Error Prevention**: Added proper error handling and logging for callback-based recipe generation
+
+### Root Cause
+- **Missing Function**: The `recipe_callback` function was referenced in `handle_recipe_callback` but never implemented
+- **User ID Confusion**: Callback handling was incorrectly using `callback.message.from_user.id` (bot ID) instead of `callback.from_user.id` (actual user ID)
+- **Data Structure Mismatch**: ML service expected specific data structure that wasn't being provided correctly
+- **Callback vs Command Flow**: Button callbacks needed separate handling from direct commands to avoid aiogram message object restrictions
+
 ## [0.3.44] - 2025-07-20
 
 ### Fixed

@@ -622,4 +622,8 @@ TRANSLATIONS.update({
     "profile_allergy_done": "✅ Done",
     "profile_setup_dietary_success": "Dietary preferences: {preferences}",
     "profile_setup_allergies_success": "Allergies: {allergies}",
+    
+    # Food analysis result headers
+    "food_items_detected": "🥘 Food Items Detected:",
+    "total_nutrition": "🍽️ Total Nutrition:",
 })

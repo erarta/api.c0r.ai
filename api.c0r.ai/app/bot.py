@@ -19,7 +19,7 @@ from handlers.profile import (
 )
 from handlers.recipe import recipe_command, handle_recipe_callback, process_recipe_photo, RecipeStates
 from handlers.daily import daily_command, handle_daily_callback
-from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command
+from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command, process_nutrition_photo, NutritionStates
 from handlers.language import language_command, handle_language_callback
 from i18n.i18n import i18n
 from loguru import logger
@@ -145,10 +145,12 @@ dp.message.register(weekly_report_command, Command(commands=["report"]))
 dp.message.register(water_tracker_command, Command(commands=["water"]))
 dp.message.register(language_command, Command(commands=["language"]))
 
-# FSM handlers for recipe generation (MUST be registered BEFORE general photo handler)
+# FSM handlers (MUST be registered BEFORE general photo handler)
 dp.message.register(process_recipe_photo, RecipeStates.waiting_for_photo)
+dp.message.register(process_nutrition_photo, NutritionStates.waiting_for_photo)
 
 # Photo handler (only for photos, not documents) - registered AFTER FSM handlers
+# This handler only processes photos when no FSM state is set
 dp.message.register(photo_handler, lambda message: message.photo)
 
 # Reject non-photo files

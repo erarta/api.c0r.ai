@@ -5,6 +5,7 @@ Handles food photo analysis and nutrition information
 import os
 import httpx
 from aiogram import types
+from aiogram.fsm.context import FSMContext
 from loguru import logger
 from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
@@ -40,10 +41,18 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     
     return "\n".join(message_parts)
 
-# Main photo handler
-async def photo_handler(message: types.Message):
+# Main photo handler - only handles photos when no FSM state is set
+async def photo_handler(message: types.Message, state: FSMContext):
     try:
         telegram_user_id = message.from_user.id
+        
+        # Check if we're in any FSM state - if so, let the FSM handlers handle it
+        current_state = await state.get_state()
+        if current_state is not None:
+            logger.info(f"Photo received for user {telegram_user_id} but FSM state is {current_state}, skipping general handler")
+            return
+        
+        logger.info(f"Photo handler called for user {telegram_user_id} with no FSM state - offering choice")
         
         # Check photo size limit (Telegram max is 20MB, we'll set 10MB limit)
         photo = message.photo[-1]  # Get highest resolution
@@ -57,7 +66,6 @@ async def photo_handler(message: types.Message):
             return
         
         # Get user info with profile
-        logger.info(f"Photo handler called by user {telegram_user_id} (@{message.from_user.username})")
         user_data = await get_user_with_profile(telegram_user_id)
         user = user_data['user']
         profile = user_data['profile']
@@ -99,187 +107,67 @@ async def photo_handler(message: types.Message):
                 ])
             )
             return
-
-        # Download photo file
-        file = await message.bot.get_file(photo.file_id)
         
-        # Get user's language
-        user = await get_or_create_user(telegram_user_id)
+        # Default behavior: offer choice between food analysis and recipe generation
         user_language = user.get('language', 'en')
         
-        await message.answer(i18n.get_text("photo_uploading", user_language))
-        logger.info(f"Starting photo upload and analysis for user {telegram_user_id}")
-        
-        # Upload photo to R2 storage
-        photo_url = await upload_telegram_photo(message.bot, photo, user['id'])
-        if photo_url:
-            logger.info(f"Photo uploaded to R2 for user {telegram_user_id}: {photo_url}")
+        if user_language == 'ru':
+            choice_text = (
+                f"📸 **Фото получено!**\n\n"
+                f"Что вы хотите сделать с этим фото?\n\n"
+                f"🍕 **Анализ еды** - Получить детальную информацию о калориях и питательности\n"
+                f"🍽️ **Создать рецепт** - Сгенерировать персонализированный рецепт\n\n"
+                f"💳 **Осталось кредитов:** {credits}"
+            )
+            analyze_button_text = "🍕 Анализ еды"
+            recipe_button_text = "🍽️ Создать рецепт"
+            cancel_button_text = "❌ Отмена"
         else:
-            logger.warning(f"Failed to upload photo to R2 for user {telegram_user_id}, using fallback")
-            photo_url = f"telegram_photo_{photo.file_id}"
+            choice_text = (
+                f"📸 **Photo received!**\n\n"
+                f"What would you like to do with this photo?\n\n"
+                f"🍕 **Analyze Food** - Get detailed calorie and nutrition information\n"
+                f"🍽️ **Generate Recipe** - Create a personalized recipe\n\n"
+                f"💳 **Credits remaining:** {credits}"
+            )
+            analyze_button_text = "🍕 Analyze Food"
+            recipe_button_text = "🍽️ Generate Recipe"
+            cancel_button_text = "❌ Cancel"
         
-        # Download file content directly as bytes for ML analysis
-        file_io = await message.bot.download_file(file.file_path)
-        file_content = file_io.getvalue()  # Convert BytesIO to bytes
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=analyze_button_text,
+                    callback_data="action_analyze_info"
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=recipe_button_text,
+                    callback_data="action_recipe"
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=cancel_button_text,
+                    callback_data="action_main_menu"
+                )
+            ]
+        ])
         
-        # Call ML service for analysis
-        logger.info(f"Sending photo to ML service for user {telegram_user_id}")
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
-            files = {
-                "photo": ("photo.jpg", file_content, "image/jpeg")  # ← ИСПРАВЛЕНО: "image" -> "photo"
-            }
-            data = {
-                "telegram_user_id": str(telegram_user_id),  # ← ИСПРАВЛЕНО: "user_id" -> "telegram_user_id"
-                "provider": "openai",
-                "user_language": user_language
-            }
-            response = await client.post(
-                f"{ML_SERVICE_URL}{Routes.ML_ANALYZE}", 
-                data=data, 
-                files=files
-            )
-            response.raise_for_status()
-            result = response.json()
-            logger.info(f"ML analysis result for user {telegram_user_id}: {result}")
-
-        # Check if food was detected
-        kbzhu = result.get("kbzhu")
-        if not kbzhu:
-            # No food detected scenario
-            await message.answer(
-                f"{i18n.get_text('photo_no_food_title', user_language)}\n\n"
-                f"{i18n.get_text('photo_no_food_tips', user_language)}\n\n"
-                f"{i18n.get_text('photo_no_food_try_again', user_language)}\n\n"
-                f"{i18n.get_text('photo_no_food_credit', user_language)}",
-                parse_mode="Markdown",
-                reply_markup=create_main_menu_keyboard()
-            )
-            # Log the failed detection but don't use credits
-            await log_user_action(
-                user_id=user['id'],
-                action_type="photo_analysis_failed",
-                photo_url=photo_url,
-                metadata={
-                    "username": message.from_user.username,
-                    "reason": "no_food_detected",
-                    "telegram_file_id": photo.file_id,
-                    "photo_size": photo.file_size
-                }
-            )
-            return
-
-        # Check if KBZHU data is valid
-        if not isinstance(kbzhu, dict) or not any(kbzhu.values()):
-            await message.answer(
-                f"{i18n.get_text('photo_analysis_failed', user_language)}",
-                parse_mode="Markdown",
-                reply_markup=create_main_menu_keyboard()
-            )
-            return
-
-        # Decrement credits only after successful analysis
-        try:
-            logger.info(f"Decrementing credits for user {telegram_user_id}")
-            updated_user = await decrement_credits(telegram_user_id)
-            logger.info(f"Credits decremented for user {telegram_user_id}: {updated_user}")
-            credits_left = updated_user["credits_remaining"]
-        except Exception as e:
-            logger.error(f"Failed to decrement credits for user {telegram_user_id}: {e}")
-            credits_left = "?"
-
-        # Log the photo analysis action
-        await log_user_action(
-            user_id=user['id'],
-            action_type="photo_analysis",
-            photo_url=photo_url,
-            kbzhu=kbzhu,
-            model_used="openai-vision",
-            metadata={
-                "username": message.from_user.username,
-                "credits_remaining": credits_left,
-                "has_profile": has_profile,
-                "telegram_file_id": photo.file_id,
-                "photo_size": photo.file_size
-            }
-        )
-
-        # Show different results based on profile
-        if has_profile:
-            # User has profile - show detailed progress
-            from datetime import datetime
-            today = datetime.now().strftime('%Y-%m-%d')
-            daily_data = await get_daily_calories_consumed(user['id'], today)
-            
-            daily_target = profile.get('daily_calories_target', 0)
-            consumed_today = daily_data['total_calories']
-            remaining = max(0, daily_target - consumed_today) if daily_target else 0
-            progress_percent = min(100, int((consumed_today / daily_target) * 100)) if daily_target else 0
-            
-            # Create progress bar
-            progress_bar = "▓" * (progress_percent // 10) + "░" * (10 - progress_percent // 10)
-            
-            result_message = (
-                f"{format_analysis_result(result, user_language)}\n\n"
-                f"{i18n.get_text('daily_progress_title', user_language)}\n"
-                f"{i18n.get_text('daily_progress_target', user_language, target=daily_target, calories=i18n.get_text('cal', user_language))}\n"
-                f"{i18n.get_text('daily_progress_consumed', user_language, consumed=consumed_today, calories=i18n.get_text('cal', user_language), percent=progress_percent)}\n"
-                f"{i18n.get_text('daily_progress_remaining', user_language, remaining=remaining, calories=i18n.get_text('cal', user_language))}\n\n"
-                f"{i18n.get_text('daily_progress_bar', user_language, bar=progress_bar, percent=progress_percent)}\n\n"
-                f"{i18n.get_text('daily_progress_meals', user_language, count=daily_data['food_items_count'])}\n"
-                f"{i18n.get_text('credits_remaining', user_language, credits=credits_left)}"
-            )
-            
-            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    types.InlineKeyboardButton(
-                        text=i18n.get_text('btn_daily_plan', user_language), 
-                        callback_data="action_daily"
-                    ),
-                    types.InlineKeyboardButton(
-                        text=i18n.get_text('btn_my_profile', user_language), 
-                        callback_data="action_profile"
-                    )
-                ]
-            ])
-        else:
-            # User without profile - encourage to set up profile
-            result_message = (
-                f"{format_analysis_result(result, user_language)}\n\n"
-                f"{i18n.get_text('daily_progress_setup_prompt', user_language)}\n\n"
-                f"{i18n.get_text('credits_remaining', user_language, credits=credits_left)}"
-            )
-            
-            keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    types.InlineKeyboardButton(
-                        text=i18n.get_text('profile_setup_btn', user_language), 
-                        callback_data="action_profile"
-                    )
-                ],
-                [
-                    types.InlineKeyboardButton(
-                        text=i18n.get_text('btn_main_menu', user_language),
-                        callback_data="action_main_menu"
-                    )
-                ]
-            ])
-
-        await message.answer(result_message, parse_mode="Markdown", reply_markup=keyboard)
-        logger.info(f"Photo analysis completed for user {telegram_user_id}. Credits left: {credits_left}")
-        
-    except httpx.HTTPStatusError as e:
-        logger.error(f"API error for user {telegram_user_id}: {e.response.status_code} {e.response.text}")
         await message.answer(
-            f"{i18n.get_text('photo_service_unavailable', user_language)}",
+            choice_text,
             parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            reply_markup=keyboard
         )
+        return
+    
     except Exception as e:
-        logger.error(f"Photo handler error for user {telegram_user_id}: {e}")
+        logger.error(f"Error in photo handler for user {telegram_user_id}: {e}")
         await message.answer(
-            f"{i18n.get_text('photo_error_analysis', user_language)}",
-            parse_mode="Markdown",
-            reply_markup=create_main_menu_keyboard()
+            "❌ **Error**\n\n"
+            "Something went wrong. Please try again.",
+            parse_mode="Markdown"
         )
 
 # Handler for successful_payment event (placeholder)

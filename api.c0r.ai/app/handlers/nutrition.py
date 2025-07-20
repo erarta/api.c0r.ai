@@ -4,6 +4,7 @@ Provides BMI, ideal weight, water needs, macro distribution, and recommendations
 """
 
 from aiogram import types
+from aiogram.fsm.state import State, StatesGroup
 from loguru import logger
 from common.supabase_client import get_user_with_profile, log_user_action, get_or_create_user
 from common.nutrition_calculations import (
@@ -15,6 +16,60 @@ from .keyboards import create_main_menu_keyboard
 from i18n.i18n import i18n
 from datetime import datetime, timedelta
 import re
+
+
+# FSM States for nutrition analysis
+class NutritionStates(StatesGroup):
+    waiting_for_photo = State()
+
+
+async def process_nutrition_photo(message: types.Message):
+    """
+    Process photo for nutrition analysis when in NutritionStates.waiting_for_photo
+    This is a wrapper around the main photo handler to ensure proper state management
+    """
+    from .photo import photo_handler
+    from aiogram.fsm.context import FSMContext
+    
+    # Get FSM context
+    state = FSMContext(storage=message.bot.get('dp').storage, key=message.bot.get('dp')._get_key(message.chat.id, message.from_user.id))
+    
+    # Clear the nutrition state since we're processing the photo
+    await state.clear()
+    
+    # Process the photo using the main photo handler
+    await photo_handler(message)
+
+
+async def get_weekly_meals_count(user_id: str) -> int:
+    """
+    Get count of analyzed meals for the past 7 days
+    
+    Args:
+        user_id: User UUID from database
+        
+    Returns:
+        Number of analyzed meals in the past week
+    """
+    from common.supabase_client import supabase
+    
+    # Calculate date range for past 7 days
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=7)
+    
+    logger.info(f"Getting weekly meals count for user {user_id} from {start_date} to {end_date}")
+    
+    try:
+        # Get all photo analyses for the past 7 days
+        logs = supabase.table("logs").select("*").eq("user_id", user_id).eq("action_type", "photo_analysis").gte("timestamp", start_date.isoformat()).lte("timestamp", end_date.isoformat()).execute().data
+        
+        meals_count = len(logs)
+        logger.info(f"Found {meals_count} analyzed meals for user {user_id} in the past week")
+        
+        return meals_count
+    except Exception as e:
+        logger.error(f"Error getting weekly meals count for user {user_id}: {e}")
+        return 0
 
 
 async def nutrition_insights_command(message: types.Message):
@@ -354,11 +409,14 @@ async def weekly_report_callback(callback: types.CallbackQuery):
             }
         )
         
-        # For now, show a placeholder - in future will analyze actual logs
+        # Get actual meals count for the past week
+        meals_count = await get_weekly_meals_count(user['id'])
+        
+        # Generate weekly report with actual data
         report_text = (
             f"{i18n.get_text('weekly_report_title', user_language)}\n\n"
             f"{i18n.get_text('weekly_report_week_of', user_language, date=datetime.now().strftime('%b %d, %Y'))}\n\n"
-            f"{i18n.get_text('weekly_report_meals_analyzed', user_language, count=0)}\n"
+            f"{i18n.get_text('weekly_report_meals_analyzed', user_language, count=meals_count)}\n"
             f"{i18n.get_text('weekly_report_avg_calories', user_language, calories=i18n.get_text('weekly_report_not_enough_data', user_language))}\n"
             f"{i18n.get_text('weekly_report_goal_progress', user_language, progress=i18n.get_text('weekly_report_setup_profile', user_language))}\n"
             f"{i18n.get_text('weekly_report_consistency_score', user_language, score='N/A')}\n\n"
@@ -418,11 +476,14 @@ async def weekly_report_command(message: types.Message):
         # Get user's language
         user_language = user.get('language', 'en')
         
-        # For now, show a placeholder - in future will analyze actual logs
+        # Get actual meals count for the past week
+        meals_count = await get_weekly_meals_count(user['id'])
+        
+        # Generate weekly report with actual data
         report_text = (
             f"{i18n.get_text('weekly_report_title', user_language)}\n\n"
             f"{i18n.get_text('weekly_report_week_of', user_language, date=datetime.now().strftime('%b %d, %Y'))}\n\n"
-            f"{i18n.get_text('weekly_report_meals_analyzed', user_language, count=0)}\n"
+            f"{i18n.get_text('weekly_report_meals_analyzed', user_language, count=meals_count)}\n"
             f"{i18n.get_text('weekly_report_avg_calories', user_language, calories=i18n.get_text('weekly_report_not_enough_data', user_language))}\n"
             f"{i18n.get_text('weekly_report_goal_progress', user_language, progress=i18n.get_text('weekly_report_setup_profile', user_language))}\n"
             f"{i18n.get_text('weekly_report_consistency_score', user_language, score='N/A')}\n\n"

@@ -41,63 +41,67 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
             prompt = """
             Проанализируйте это изображение еды и предоставьте подробную информацию о питании.
 
+            ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
+
             Пожалуйста, предоставьте:
-            1. Список отдельных продуктов питания, видимых на изображении
-            2. Оцененный вес/размер порции для каждого продукта
+            1. Список отдельных продуктов питания, видимых на изображении (используйте русские названия)
+            2. Оцененный вес/размер порции для каждого продукта в граммах
             3. Калории для каждого отдельного продукта
             4. Общую сводку по питанию
 
-            Верните ТОЛЬКО JSON объект со следующей структурой:
+            Верните ТОЛЬКО этот JSON объект:
             {
                 "food_items": [
                     {
-                        "name": "название продукта",
-                        "weight": "оцененный вес с единицами (например, 150г, 1 стакан)",
-                        "calories": число
+                        "name": "русское название продукта (например: гречка, куриная грудка, помидор)",
+                        "weight": "вес в граммах (например: 100г, 150г)",
+                        "calories": число_калорий
                     }
                 ],
                 "total_nutrition": {
-                    "calories": число,
-                    "proteins": число,
-                    "fats": число,
-                    "carbohydrates": число
+                    "calories": общее_число_калорий,
+                    "proteins": граммы_белков,
+                    "fats": граммы_жиров,
+                    "carbohydrates": граммы_углеводов
                 }
             }
 
-            Оцените значения для фактического размера порции, показанного на изображении.
-            Все числовые значения должны быть числами (не строками).
-            Будьте конкретны в отношении продуктов питания и реалистичны в отношении порций.
+            Примеры русских названий продуктов: рис, гречка, макароны, куриная грудка, говядина, лосось, картофель, морковь, капуста, яблоко, банан, хлеб, сыр, молоко, яйцо.
+            Оцените реалистичные порции. Все числовые значения должны быть числами без кавычек.
+            НЕ добавляйте никакого текста до или после JSON.
             """
         else:
             prompt = """
-            Analyze this food image and provide detailed nutritional information. 
+            Analyze this food image and provide detailed nutritional information.
+
+            IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
 
             Please provide:
-            1. List of individual food items visible in the image
-            2. Estimated weight/portion size for each item
+            1. List of individual food items visible in the image (use specific food names)
+            2. Estimated weight/portion size for each item in grams
             3. Calories for each individual item
             4. Total nutritional summary
 
-            Return ONLY a JSON object with the following structure:
+            Return ONLY this JSON object:
             {
                 "food_items": [
                     {
-                        "name": "product name",
-                        "weight": "estimated weight with units (e.g., 150g, 1 cup)",
-                        "calories": number
+                        "name": "specific food name (e.g., grilled chicken breast, brown rice, broccoli)",
+                        "weight": "weight in grams (e.g., 100g, 150g)",
+                        "calories": calorie_number
                     }
                 ],
                 "total_nutrition": {
-                    "calories": number,
-                    "proteins": number,
-                    "fats": number,
-                    "carbohydrates": number
+                    "calories": total_calorie_number,
+                    "proteins": protein_grams,
+                    "fats": fat_grams,
+                    "carbohydrates": carb_grams
                 }
             }
 
-            Estimate values for the actual serving size shown in the image.
-            All numeric values should be numbers (not strings).
-            Be specific about food items and realistic about portions.
+            Examples of specific food names: rice, pasta, chicken breast, salmon, beef, potato, carrot, apple, bread, cheese, egg.
+            Estimate realistic portion sizes. All numeric values must be numbers without quotes.
+            DO NOT add any text before or after the JSON.
             """
         
         # Call OpenAI Vision API
@@ -125,13 +129,22 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         content = response.choices[0].message.content.strip()
         logger.info(f"OpenAI response: {content}")
         
-        # Try to parse JSON from response
+        # Try to parse JSON from response with improved handling
         try:
+            # Clean up the response content
+            content = content.strip()
+            
             # Remove code block markers if present
             if content.startswith("```json"):
-                content = content[7:-3]
+                content = content[7:-3].strip()
             elif content.startswith("```"):
-                content = content[3:-3]
+                content = content[3:-3].strip()
+            
+            # Try to extract JSON from text if it's mixed with other content
+            import re
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                content = json_match.group(0)
             
             response_data = json.loads(content)
             
@@ -163,8 +176,42 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
-            # Return fallback values
-            return {
+            logger.error(f"Raw OpenAI response content: {content}")
+            
+            # Try to extract basic nutrition info from text if JSON parsing failed
+            # This is a fallback to provide some detailed info even when JSON fails
+            fallback_food_items = []
+            
+            # Simple text parsing for common food items (basic fallback)
+            import re
+            
+            # Look for food names and calories in the text
+            food_patterns = [
+                r'(\w+(?:\s+\w+)*)\s*\(([^)]+)\)\s*-?\s*(\d+)\s*(?:cal|ккал)',
+                r'(\w+(?:\s+\w+)*)\s*:\s*(\d+)\s*(?:cal|ккал)',
+                r'•\s*(\w+(?:\s+\w+)*)\s*\(([^)]+)\)\s*-?\s*(\d+)'
+            ]
+            
+            for pattern in food_patterns:
+                matches = re.findall(pattern, content, re.IGNORECASE)
+                for match in matches:
+                    if len(match) == 3:
+                        name, weight, calories = match
+                        fallback_food_items.append({
+                            "name": name.strip(),
+                            "weight": weight.strip(),
+                            "calories": int(calories)
+                        })
+                    elif len(match) == 2:
+                        name, calories = match
+                        fallback_food_items.append({
+                            "name": name.strip(),
+                            "weight": "estimated portion",
+                            "calories": int(calories)
+                        })
+            
+            # Return enhanced fallback with food items if found
+            result = {
                 "kbzhu": {
                     "calories": 250,
                     "proteins": 15.0,
@@ -172,6 +219,15 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                     "carbohydrates": 30.0
                 }
             }
+            
+            if fallback_food_items:
+                result["food_items"] = fallback_food_items
+                # Recalculate total calories from food items
+                total_calories = sum(item["calories"] for item in fallback_food_items)
+                if total_calories > 0:
+                    result["kbzhu"]["calories"] = total_calories
+            
+            return result
             
     except Exception as e:
         logger.error(f"OpenAI API error: {e}")
@@ -354,22 +410,39 @@ async def generate_recipe_with_openai(image_url: str, user_context: dict) -> dic
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI recipe response: {e}")
-            # Return fallback recipe
-            return {
-                "name": "Delicious Recipe",
-                "description": "A tasty dish made from the ingredients in your photo",
-                "prep_time": "15 minutes",
-                "cook_time": "30 minutes",
-                "servings": "4",
-                "ingredients": ["Ingredients from your photo"],
-                "instructions": ["Prepare ingredients as shown", "Cook according to your preference"],
-                "nutrition": {
-                    "calories": 300,
-                    "protein": 20,
-                    "carbs": 25,
-                    "fat": 12
+            # Return fallback recipe based on user language
+            if user_language == "ru":
+                return {
+                    "name": "Вкусный рецепт",
+                    "description": "Аппетитное блюдо из ингредиентов с вашего фото",
+                    "prep_time": "15 минут",
+                    "cook_time": "30 минут",
+                    "servings": "4",
+                    "ingredients": ["Ингредиенты с вашего фото"],
+                    "instructions": ["Подготовьте ингредиенты как показано", "Готовьте согласно вашим предпочтениям"],
+                    "nutrition": {
+                        "calories": 300,
+                        "protein": 20,
+                        "carbs": 25,
+                        "fat": 12
+                    }
                 }
-            }
+            else:
+                return {
+                    "name": "Delicious Recipe",
+                    "description": "A tasty dish made from the ingredients in your photo",
+                    "prep_time": "15 minutes",
+                    "cook_time": "30 minutes",
+                    "servings": "4",
+                    "ingredients": ["Ingredients from your photo"],
+                    "instructions": ["Prepare ingredients as shown", "Cook according to your preference"],
+                    "nutrition": {
+                        "calories": 300,
+                        "protein": 20,
+                        "carbs": 25,
+                        "fat": 12
+                    }
+                }
             
     except Exception as e:
         logger.error(f"OpenAI recipe generation error: {e}")

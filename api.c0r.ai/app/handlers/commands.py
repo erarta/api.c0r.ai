@@ -4,6 +4,7 @@ Command handlers for NeuCor Telegram Bot
 import os
 from datetime import datetime
 from aiogram import types
+from aiogram.fsm.context import FSMContext
 from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .keyboards import create_main_menu_keyboard, create_main_menu_text
@@ -589,7 +590,7 @@ async def show_profile_setup_info(callback: types.CallbackQuery, user: dict):
     await callback.message.answer(setup_text, parse_mode="Markdown", reply_markup=keyboard)
 
 # Callback handlers for interactive buttons
-async def handle_action_callback(callback: types.CallbackQuery):
+async def handle_action_callback(callback: types.CallbackQuery, state: FSMContext):
     """
     Handle callbacks from interactive buttons in /start command
     """
@@ -618,6 +619,10 @@ async def handle_action_callback(callback: types.CallbackQuery):
                     ])
                 )
                 return
+            
+            # Set nutrition state for food analysis
+            from handlers.nutrition import NutritionStates
+            await state.set_state(NutritionStates.waiting_for_photo)
             
             # Show instruction to send photo for analysis
             if user_language == 'ru':
@@ -694,6 +699,9 @@ async def handle_action_callback(callback: types.CallbackQuery):
             from .nutrition import water_tracker_callback
             await water_tracker_callback(callback)
         elif action == "main_menu":
+            # Clear any FSM state when returning to main menu (e.g., from recipe generation)
+            await state.clear()
+            
             # Show main menu
             user_data = await get_user_with_profile(telegram_user_id)
             user = user_data['user']
