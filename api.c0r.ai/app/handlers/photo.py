@@ -41,6 +41,139 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     
     return "\n".join(message_parts)
 
+# Process nutrition analysis for a photo
+async def process_nutrition_analysis(message: types.Message, state: FSMContext):
+    """
+    Process photo for nutrition analysis
+    """
+    try:
+        telegram_user_id = message.from_user.id
+        logger.info(f"Processing nutrition analysis for user {telegram_user_id}")
+        
+        # Check photo size limit
+        photo = message.photo[-1]  # Get highest resolution
+        if photo.file_size and photo.file_size > 10 * 1024 * 1024:  # 10MB limit
+            await message.answer(
+                "❌ **Photo too large!**\n\n"
+                "📏 Maximum photo size: 10MB\n"
+                "💡 Please compress your photo or take a new one.",
+                parse_mode="Markdown"
+            )
+            return
+        
+        # Get user info
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        profile = user_data['profile']
+        has_profile = user_data['has_profile']
+        
+        credits = user["credits_remaining"]
+        if credits <= 0:
+            await message.answer(
+                "❌ **No credits remaining!**\n\n"
+                "Please purchase more credits to continue.",
+                parse_mode="Markdown"
+            )
+            return
+        
+        # Send processing message
+        user_language = user.get('language', 'en')
+        if user_language == 'ru':
+            processing_msg = await message.answer("🔍 **Анализирую фото...**\n\nПожалуйста, подождите...")
+        else:
+            processing_msg = await message.answer("🔍 **Analyzing photo...**\n\nPlease wait...")
+        
+        # Download and upload photo to R2
+        photo = message.photo[-1]  # Get highest resolution photo
+        photo_url = await upload_telegram_photo(
+            message.bot, 
+            photo, 
+            str(user["id"]), 
+            "nutrition_analysis"
+        )
+        
+        # Call ML service for analysis
+        async with httpx.AsyncClient() as client:
+            # Download photo data for ML service
+            photo_file = await message.bot.get_file(photo.file_id)
+            photo_bytes = await message.bot.download_file(photo_file.file_path)
+            
+            # Prepare form data for ML service
+            files = {"photo": ("photo.jpg", photo_bytes, "image/jpeg")}
+            data = {
+                "telegram_user_id": str(telegram_user_id),
+                "provider": "openai",
+                "user_language": user_language
+            }
+            
+            response = await client.post(
+                f"{ML_SERVICE_URL}/api/v1/analyze",
+                files=files,
+                data=data,
+                timeout=60.0
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"ML service error: {response.status_code} - {response.text}")
+                await processing_msg.edit_text(
+                    "❌ **Analysis failed**\n\n"
+                    "Sorry, we couldn't analyze your photo. Please try again.",
+                    parse_mode="Markdown"
+                )
+                return
+            
+            result = response.json()
+        
+        # Format and send result
+        analysis_text = format_analysis_result(result, user_language)
+        
+        # Add daily progress if user has profile
+        if has_profile and profile:
+            daily_data = await get_daily_calories_consumed(str(user["id"]))
+            daily_consumed = daily_data.get("total_calories", 0) if isinstance(daily_data, dict) else daily_data
+            daily_target = profile.get("daily_calories_target", 2000)
+            remaining = daily_target - daily_consumed
+            
+            if user_language == 'ru':
+                progress_text = f"\n📊 **Дневной прогресс:**\nПотреблено: {daily_consumed} ккал\nЦель: {daily_target} ккал\nОсталось: {remaining} ккал"
+            else:
+                progress_text = f"\n📊 **Daily Progress:**\nConsumed: {daily_consumed} cal\nTarget: {daily_target} cal\nRemaining: {remaining} cal"
+            
+            analysis_text += progress_text
+        
+        # Decrement credits
+        await decrement_credits(telegram_user_id)
+        
+        # Log action
+        await log_user_action(str(user["id"]), "nutrition_analysis")
+        
+        # Clear the state
+        await state.clear()
+        
+        # Send result with main menu
+        keyboard = create_main_menu_keyboard(user_language)
+        
+        if user_language == 'ru':
+            final_text = f"✅ **Анализ завершен!**\n\n{analysis_text}\n\n💳 **Осталось кредитов:** {credits - 1}"
+        else:
+            final_text = f"✅ **Analysis complete!**\n\n{analysis_text}\n\n💳 **Credits remaining:** {credits - 1}"
+        
+        await processing_msg.edit_text(
+            final_text,
+            parse_mode="Markdown",
+            reply_markup=keyboard
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in nutrition analysis for user {telegram_user_id}: {e}")
+        await message.answer(
+            "❌ **Error**\n\n"
+            "Something went wrong during analysis. Please try again.",
+            parse_mode="Markdown"
+        )
+        # Clear state on error
+        await state.clear()
+
 # Main photo handler - only handles photos when no FSM state is set
 async def photo_handler(message: types.Message, state: FSMContext):
     try:
@@ -48,6 +181,13 @@ async def photo_handler(message: types.Message, state: FSMContext):
         
         # Check if we're in any FSM state - if so, let the FSM handlers handle it
         current_state = await state.get_state()
+        
+        # If we're in nutrition_analysis state, process the photo directly for analysis
+        if current_state == "nutrition_analysis":
+            logger.info(f"Photo received for user {telegram_user_id} in nutrition_analysis state - processing directly")
+            await process_nutrition_analysis(message, state)
+            return
+        
         if current_state is not None:
             logger.info(f"Photo received for user {telegram_user_id} but FSM state is {current_state}, skipping general handler")
             return

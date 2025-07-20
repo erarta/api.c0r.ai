@@ -18,9 +18,7 @@ from common.supabase_client import get_or_create_user, get_user_with_profile, lo
 from common.routes import Routes
 from i18n.i18n import i18n
 from utils.r2 import upload_photo_to_r2, upload_telegram_photo
-# Remove this import as it's not needed - we use common.supabase_client instead
-
-# Removed sanitize_markdown_text import - it conflicts with proper escaping
+from handlers.nutrition import sanitize_markdown_text
 
 logger = logging.getLogger(__name__)
 

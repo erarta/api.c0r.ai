@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.50] - 2025-07-20
+
+### Fixed
+- **CRITICAL FSM State Management Chain**: Fixed critical chain of FSM state management errors that were preventing photo analysis functionality from working properly
+- **AttributeError: 'Bot' object has no attribute 'get'**: Fixed incorrect dispatcher access in nutrition.py by importing dispatcher directly instead of using `message.bot.get('dp')`
+- **AttributeError: 'Dispatcher' object has no attribute '_get_key'**: Fixed FSMContext creation by using proper aiogram 3.x API with `dp.storage.get_key()` instead of non-existent `_get_key` method
+- **AttributeError: 'MemoryStorage' object has no attribute 'get_key'**: Fixed FSMContext creation by using proper `StorageKey` class instead of non-existent `get_key` method on MemoryStorage
+- **TypeError: photo_handler() missing 1 required positional argument: 'state'**: Fixed photo handler call by passing both `message` and `state` arguments as required by function signature
+- **TypeError: upload_telegram_photo() missing 1 required positional argument: 'user_id'**: Fixed upload function call by passing correct arguments: `bot`, `photo`, `user_id`, and `action_type`
+- **404 ML Service Error**: Fixed incorrect ML service endpoint from `/analyze_nutrition` to `/api/v1/analyze` and corrected request format from JSON to `multipart/form-data`
+- **TypeError: unsupported operand type(s) for -: 'int' and 'dict'**: Fixed daily calories calculation by properly extracting `total_calories` from dictionary returned by `get_daily_calories_consumed`
+- **Nutrition Analysis State Routing**: Fixed nutrition analysis to properly set FSM state and route photos to correct handler instead of showing choice menu
+- **Photo Handler State Detection**: Fixed photo handler to properly detect `nutrition_analysis` state and process photos directly for analysis
+
+### Added
+- **Proper FSM State Management**: Implemented correct FSM state management for nutrition analysis using `nutrition_analysis` state
+- **Direct Photo Processing**: Added `process_nutrition_analysis` function to handle photos directly when in nutrition analysis state
+- **State-Aware Photo Routing**: Enhanced photo handler to detect FSM states and route photos to appropriate handlers
+- **Robust Error Handling**: Added comprehensive error handling and logging for all FSM state management operations
+- **Proper ML Service Integration**: Fixed ML service integration with correct endpoint and request format
+
+### Technical
+- **FSMContext Creation**: Fixed FSMContext creation using proper aiogram 3.x API with `StorageKey` class
+- **Dispatcher Access**: Fixed dispatcher access by importing `dp` directly from bot module instead of using bot object
+- **Photo Handler Integration**: Enhanced photo handler to support both general photo processing and state-specific processing
+- **ML Service Communication**: Fixed ML service communication with proper endpoint `/api/v1/analyze` and `multipart/form-data` format
+- **Daily Calories Calculation**: Fixed daily calories calculation to properly handle dictionary response from `get_daily_calories_consumed`
+- **State Management Flow**: Implemented proper state management flow where nutrition analysis sets state and photo handler detects it
+
+### User Experience
+- **Fixed Photo Analysis**: Users can now successfully analyze food photos without encountering FSM state errors
+- **Proper State Transitions**: Nutrition analysis now properly sets FSM state and processes photos correctly
+- **Reliable ML Integration**: ML service integration now works reliably with proper endpoint and request format
+- **Accurate Daily Progress**: Daily calories calculation now works correctly showing proper progress information
+- **Seamless Photo Processing**: Photo processing now works seamlessly for both nutrition analysis and recipe generation
+
+### Root Cause
+- **Incorrect aiogram 3.x API Usage**: Multiple issues were caused by using outdated aiogram 2.x patterns in aiogram 3.x environment
+- **Missing State Management**: Nutrition analysis wasn't properly setting FSM state, causing photos to be processed by general handler
+- **Incorrect Function Signatures**: Multiple function calls were using incorrect argument patterns
+- **Wrong ML Service Endpoint**: Using incorrect endpoint and request format for ML service communication
+- **Data Type Mismatch**: Not properly handling dictionary responses from database functions
+
+### Testing
+- **FSM State Verification**: Verified proper FSM state management throughout nutrition analysis workflow
+- **Photo Processing Flow**: Confirmed photo processing works correctly for both nutrition analysis and recipe generation
+- **ML Service Integration**: Tested ML service integration with proper endpoint and request format
+- **Error Recovery**: Verified system properly handles and recovers from various error conditions
+
 ## [0.3.49] - 2025-07-20
 
 ### Fixed

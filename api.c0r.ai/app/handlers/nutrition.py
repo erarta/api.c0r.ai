@@ -16,6 +16,7 @@ from .keyboards import create_main_menu_keyboard
 from i18n.i18n import i18n
 from datetime import datetime, timedelta
 import re
+from aiogram.fsm.storage.base import StorageKey
 
 
 # FSM States for nutrition analysis
@@ -25,20 +26,28 @@ class NutritionStates(StatesGroup):
 
 async def process_nutrition_photo(message: types.Message):
     """
-    Process photo for nutrition analysis when in NutritionStates.waiting_for_photo
-    This is a wrapper around the main photo handler to ensure proper state management
+    Process nutrition photo and redirect to main photo handler
     """
     from .photo import photo_handler
     from aiogram.fsm.context import FSMContext
+    from aiogram.fsm.storage.memory import MemoryStorage
+    from bot import dp  # Import dispatcher directly
     
-    # Get FSM context
-    state = FSMContext(storage=message.bot.get('dp').storage, key=message.bot.get('dp')._get_key(message.chat.id, message.from_user.id))
+    # Create FSM context using proper aiogram 3.x method
+    # In aiogram 3.x, we need to create the key manually using the storage's key builder
+    storage_key = StorageKey(
+        bot_id=message.bot.id,
+        chat_id=message.chat.id,
+        user_id=message.from_user.id
+    )
+    state = FSMContext(storage=dp.storage, key=storage_key)
     
-    # Clear the nutrition state since we're processing the photo
-    await state.clear()
+    # Set the state to indicate we're in nutrition analysis mode
+    # This will make photo_handler know that we want to analyze the photo
+    await state.set_state("nutrition_analysis")
     
-    # Process the photo using the main photo handler
-    await photo_handler(message)
+    # Process the photo using the main photo handler - pass both message and state
+    await photo_handler(message, state)
 
 
 async def get_weekly_meals_count(user_id: str) -> int:
