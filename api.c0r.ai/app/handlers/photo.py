@@ -79,9 +79,9 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Send processing message
         user_language = user.get('language', 'en')
         if user_language == 'ru':
-            processing_msg = await message.answer("🔍 **Анализирую фото...**\n\nПожалуйста, подождите...")
+            processing_msg = await message.answer("🔍 Анализирую фото...\n\nПожалуйста, подождите...")
         else:
-            processing_msg = await message.answer("🔍 **Analyzing photo...**\n\nPlease wait...")
+            processing_msg = await message.answer("🔍 Analyzing photo...\n\nPlease wait...")
         
         # Download and upload photo to R2
         photo = message.photo[-1]  # Get highest resolution photo

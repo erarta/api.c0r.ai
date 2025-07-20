@@ -517,15 +517,15 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
         # Send processing message
         if user_language == 'ru':
             processing_msg_text = (
-                f"🔄 **Обрабатываю ваше фото\\.\\.\\.**\n\n"
-                f"🤖 Анализирую ингредиенты и генерирую персонализированный рецепт\\.\\.\\.\n"
-                f"⏱️ Это может занять несколько секунд\\."
+                f"🔄 Обрабатываю ваше фото...\n\n"
+                f"🤖 Анализирую ингредиенты и генерирую персонализированный рецепт...\n"
+                f"⏱️ Это может занять несколько секунд."
             )
         else:
             processing_msg_text = (
-                f"🔄 **Processing your photo\\.\\.\\.**\n\n"
-                f"🤖 Analyzing ingredients and generating personalized recipe\\.\\.\\.\n"
-                f"⏱️ This may take a few moments\\."
+                f"🔄 Processing your photo...\n\n"
+                f"🤖 Analyzing ingredients and generating personalized recipe...\n"
+                f"⏱️ This may take a few moments."
             )
         
         # Sanitize the processing message
