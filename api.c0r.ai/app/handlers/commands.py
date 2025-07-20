@@ -109,7 +109,8 @@ async def help_command(message: types.Message):
             f"{i18n.get_text('help_commands_3', user_language)}\n"
             f"{i18n.get_text('help_commands_4', user_language)}\n"
             f"{i18n.get_text('help_commands_5', user_language)}\n"
-            f"{i18n.get_text('help_commands_6', user_language)}\n\n"
+            f"{i18n.get_text('help_commands_6', user_language)}\n"
+            f"{i18n.get_text('help_commands_7', user_language)}\n\n"
             f"{i18n.get_text('help_credits_need', user_language)}\n"
             f"{i18n.get_text('help_credits_info', user_language)}\n\n"
             f"{i18n.get_text('help_support', user_language)}"
@@ -167,7 +168,8 @@ async def help_callback(callback: types.CallbackQuery):
             f"{i18n.get_text('help_commands_3', user_language)}\n"
             f"{i18n.get_text('help_commands_4', user_language)}\n"
             f"{i18n.get_text('help_commands_5', user_language)}\n"
-            f"{i18n.get_text('help_commands_6', user_language)}\n\n"
+            f"{i18n.get_text('help_commands_6', user_language)}\n"
+            f"{i18n.get_text('help_commands_7', user_language)}\n\n"
             f"{i18n.get_text('help_credits_need', user_language)}\n"
             f"{i18n.get_text('help_credits_info', user_language)}\n\n"
             f"{i18n.get_text('help_support', user_language)}"
@@ -599,35 +601,71 @@ async def handle_action_callback(callback: types.CallbackQuery):
         await callback.answer()
         
         if action == "analyze_info":
-            # Get user's language
-            user = await get_or_create_user(telegram_user_id)
+            # Handle food analysis - start waiting for photo
+            user_data = await get_user_with_profile(telegram_user_id)
+            user = user_data['user']
             user_language = user.get('language', 'en')
             
-            # Create keyboard with back button
+            # Check if user has credits
+            if user.get('credits_remaining', 0) <= 0:
+                await callback.message.answer(
+                    f"❌ **No Credits Remaining**\n\n"
+                    f"You need credits to analyze food photos.\n\n"
+                    f"💳 **Get more credits:**",
+                    parse_mode="Markdown",
+                    reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
+                        [types.InlineKeyboardButton(text="💳 Buy Credits", callback_data="action_buy")]
+                    ])
+                )
+                return
+            
+            # Show instruction to send photo for analysis
+            if user_language == 'ru':
+                instruction_text = (
+                    f"📸 **Анализ еды**\n\n"
+                    f"Отправь мне фото своей еды, и я проанализирую ее пищевую ценность!\n\n"
+                    f"✨ **Я предоставлю:**\n"
+                    f"• Детальный расчет калорий\n"
+                    f"• Белки, жиры и углеводы\n"
+                    f"• Анализ отдельных продуктов\n"
+                    f"• Отслеживание ежедневного прогресса\n\n"
+                    f"💳 **Осталось кредитов:** {user['credits_remaining']}\n"
+                    f"📱 **Просто отправь фото, чтобы начать!**"
+                )
+                recipe_button_text = "🍽️ Создать рецепт"
+                cancel_button_text = "❌ Отмена"
+            else:
+                instruction_text = (
+                    f"📸 **Food Analysis**\n\n"
+                    f"Send me a photo of your food and I'll analyze its nutritional content!\n\n"
+                    f"✨ **I'll provide:**\n"
+                    f"• Detailed calorie breakdown\n"
+                    f"• Protein, fats, and carbohydrates\n"
+                    f"• Individual food item analysis\n"
+                    f"• Daily progress tracking\n\n"
+                    f"💳 **Credits remaining:** {user['credits_remaining']}\n"
+                    f"📱 **Just send a photo to get started!**"
+                )
+                recipe_button_text = "🍽️ Generate Recipe Instead"
+                cancel_button_text = "❌ Cancel"
+            
             keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text=i18n.get_text('btn_back', user_language),
+                        text=recipe_button_text,
+                        callback_data="action_recipe"
+                    )
+                ],
+                [
+                    types.InlineKeyboardButton(
+                        text=cancel_button_text,
                         callback_data="action_main_menu"
                     )
                 ]
             ])
             
             await callback.message.answer(
-                f"📸 **{i18n.get_text('how_to_analyze_food_photos_title', user_language)}**\n\n"
-                f"1. {i18n.get_text('how_to_analyze_food_photos_step_1', user_language)}\n"
-                f"2. {i18n.get_text('how_to_analyze_food_photos_step_2', user_language)}\n"
-                f"3. {i18n.get_text('how_to_analyze_food_photos_step_3', user_language)}\n"
-                f"4. {i18n.get_text('how_to_analyze_food_photos_step_4', user_language)}\n"
-                f"   • {i18n.get_text('how_to_analyze_food_photos_result_calories', user_language)}\n"
-                f"   • {i18n.get_text('how_to_analyze_food_photos_result_protein', user_language)}\n"
-                f"   • {i18n.get_text('how_to_analyze_food_photos_result_fats', user_language)}\n"
-                f"   • {i18n.get_text('how_to_analyze_food_photos_result_carbohydrates', user_language)}\n\n"
-                f"💡 **{i18n.get_text('how_to_analyze_food_photos_tips', user_language)}**: \n"
-                f"• {i18n.get_text('how_to_analyze_food_photos_tip_1', user_language)}\n"
-                f"• {i18n.get_text('how_to_analyze_food_photos_tip_2', user_language)}\n"
-                f"• {i18n.get_text('how_to_analyze_food_photos_tip_3', user_language)}\n\n"
-                f"📤 **{i18n.get_text('how_to_analyze_food_photos_ready', user_language)}**? {i18n.get_text('how_to_analyze_food_photos_send_photo_now', user_language)}!",
+                instruction_text,
                 parse_mode="Markdown",
                 reply_markup=keyboard
             )

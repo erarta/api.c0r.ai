@@ -1,0 +1,13 @@
+---
+description: SQL & Supabase rules
+globs:
+  - "*.sql"
+  - "db/**/*.sql"
+alwaysApply: false
+---
+
+- Use PostgreSQL syntax.
+- Define clear primary and foreign keys.
+- Write `COMMENT ON TABLE` and `COMMENT ON COLUMN` for clarity.
+- Use RLS policies for user row-level security.
+- No direct writes from frontend; only via secure API.

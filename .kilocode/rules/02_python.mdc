@@ -1,0 +1,13 @@
+---
+description: Python coding rules for bots, webhooks, and backend scripts
+alwaysApply: true
+---
+
+- Always follow PEP8 style guide.
+- Use `async`/`await` for I/O tasks (network, DB).
+- Use `python-telegram-bot` v20+ for all Telegram integrations.
+- Use `httpx` or `requests` for HTTP calls.
+- Format code with `black`.
+- Lint with `flake8` or `ruff`.
+- Write tests with `pytest` or `unittest`.
+- Never hardcode secrets — load from `.env`.

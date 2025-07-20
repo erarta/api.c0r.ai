@@ -2,6 +2,124 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.44] - 2025-07-20
+
+### Fixed
+- **Recipe Generation Credit Inaccuracy**: Ensured recipe generation always fetches the most up-to-date user credit information by using `get_or_create_user` for primary user data retrieval.
+- **Recipe Generation Localization (Processing Message)**: Translated the "Processing your photo..." message into Russian.
+- **Recipe Generation Callback Conflict**: Removed conflicting `action_recipe` handling from general `handle_action_callback` to ensure correct routing to dedicated recipe handler.
+- **Food Analysis Localization**: Fixed food analysis messages not being translated to Russian
+- **Food Analysis Credit Display**: Ensured food analysis shows correct credits matching status command
+- **Recipe Generation Localization**: Fixed recipe generation messages not being translated to Russian
+- **Credit Display Consistency**: Ensured recipe generation shows correct credits matching status command
+- **User Interface Translation**: All recipe generation and food analysis buttons and messages now properly support Russian language
+- **Language-Aware UI**: Food analysis and recipe generation interfaces now adapt to user's language preference
+
+### Technical
+- **User Data Fetching Standardization**: Modified `recipe_command` and `start_recipe_generation` to prioritize `get_or_create_user` for user data, then `get_user_with_profile` for profile details, ensuring credit accuracy.
+- **Multilingual Support**: Added proper Russian translations for the photo processing message in [`recipe.py`](api.c0r.ai/app/handlers/recipe.py).
+- **Handler Routing Optimization**: Streamlined callback handling for recipe generation by removing redundant logic in `commands.py`.
+- **Multilingual Support**: Added proper Russian translations for all food analysis messages in [`commands.py`](api.c0r.ai/app/handlers/commands.py)
+- **Conditional Text Generation**: Implemented language-based text generation for instruction messages in food analysis
+- **Button Localization**: Added Russian translations for all interactive buttons in food analysis flow
+- **Consistent UX**: Aligned food analysis language support with other bot features
+- **Recipe Generation Fixes**: Re-verified and applied localization and credit display fixes for recipe generation in [`recipe.c0r.ai/app/handlers/recipe.py`](api.c0r.ai/app/handlers/recipe.py)
+
+### Root Cause
+- **Outdated User Data Fetching**: Recipe generation handlers were sometimes using `get_user_with_profile` which might not always return the most current credit balance, leading to stale credit displays.
+- **Hardcoded English Text**: The photo processing message was hardcoded in English.
+- **Conflicting Callback Handlers**: The general `handle_action_callback` was still attempting to process `action_recipe`, potentially overriding the dedicated `handle_recipe_callback`.
+- **Hardcoded English Text**: Food analysis and recipe generation messages were hardcoded in English instead of using language detection
+- **Missing Translations**: No Russian translations were provided for food analysis and recipe generation interface elements
+- **Inconsistent Localization**: Other bot features supported Russian but these two features did not
+- **Access Pattern Mismatch**: Food analysis used `user.get('credits_remaining', 0)` while status command used `user['credits_remaining']`
+
+## [0.3.43] - 2025-07-20
+
+### Fixed
+- **Recipe Generation Callback Conflict**: Removed conflicting `action_recipe` handling from general `handle_action_callback` to ensure correct routing to dedicated recipe handler.
+- **Food Analysis Localization**: Fixed food analysis messages not being translated to Russian
+- **Food Analysis Credit Display**: Ensured food analysis shows correct credits matching status command
+- **Recipe Generation Localization**: Fixed recipe generation messages not being translated to Russian
+- **Credit Display Consistency**: Ensured recipe generation shows correct credits matching status command
+- **User Interface Translation**: All recipe generation and food analysis buttons and messages now properly support Russian language
+- **Language-Aware UI**: Food analysis and recipe generation interfaces now adapt to user's language preference
+
+### Technical
+- **Handler Routing Optimization**: Streamlined callback handling for recipe generation by removing redundant logic in `commands.py`.
+- **Multilingual Support**: Added proper Russian translations for all food analysis messages in [`commands.py`](api.c0r.ai/app/handlers/commands.py)
+- **Conditional Text Generation**: Implemented language-based text generation for instruction messages in food analysis
+- **Button Localization**: Added Russian translations for all interactive buttons in food analysis flow
+- **Consistent UX**: Aligned food analysis language support with other bot features
+- **Recipe Generation Fixes**: Re-verified and applied localization and credit display fixes for recipe generation in [`recipe.py`](api.c0r.ai/app/handlers/recipe.py)
+
+### Root Cause
+- **Conflicting Callback Handlers**: The general `handle_action_callback` was still attempting to process `action_recipe`, potentially overriding the dedicated `handle_recipe_callback`.
+- **Hardcoded English Text**: Food analysis and recipe generation messages were hardcoded in English instead of using language detection
+- **Missing Translations**: No Russian translations were provided for food analysis and recipe generation interface elements
+- **Inconsistent Localization**: Other bot features supported Russian but these two features did not
+- **Access Pattern Mismatch**: Food analysis used `user.get('credits_remaining', 0)` while status command used `user['credits_remaining']`
+
+## [0.3.42] - 2025-07-20
+
+### Fixed
+- **Food Analysis Localization**: Fixed food analysis messages not being translated to Russian
+- **Food Analysis Credit Display**: Ensured food analysis shows correct credits matching status command
+- **Recipe Generation Localization**: Fixed recipe generation messages not being translated to Russian
+- **Credit Display Consistency**: Ensured recipe generation shows correct credits matching status command
+- **User Interface Translation**: All recipe generation and food analysis buttons and messages now properly support Russian language
+- **Language-Aware UI**: Food analysis and recipe generation interfaces now adapt to user's language preference
+
+### Technical
+- **Multilingual Support**: Added proper Russian translations for all food analysis messages in [`commands.py`](api.c0r.ai/app/handlers/commands.py)
+- **Conditional Text Generation**: Implemented language-based text generation for instruction messages in food analysis
+- **Button Localization**: Added Russian translations for all interactive buttons in food analysis flow
+- **Consistent UX**: Aligned food analysis language support with other bot features
+- **Recipe Generation Fixes**: Re-verified and applied localization and credit display fixes for recipe generation in [`recipe.py`](api.c0r.ai/app/handlers/recipe.py)
+
+### Root Cause
+- **Hardcoded English Text**: Food analysis and recipe generation messages were hardcoded in English instead of using language detection
+- **Missing Translations**: No Russian translations were provided for food analysis and recipe generation interface elements
+- **Inconsistent Localization**: Other bot features supported Russian but these two features did not
+- **Access Pattern Mismatch**: Food analysis used `user.get('credits_remaining', 0)` while status command used `user['credits_remaining']`
+
+## [0.3.41] - 2025-07-20
+
+### Fixed
+- **Recipe Generation Localization**: Fixed recipe generation messages not being translated to Russian
+- **Credit Display Consistency**: Ensured recipe generation shows correct credits matching status command
+- **User Interface Translation**: All recipe generation buttons and messages now properly support Russian language
+- **Language-Aware UI**: Recipe generation interface now adapts to user's language preference
+
+### Technical
+- **Multilingual Support**: Added proper Russian translations for all recipe generation messages in [`recipe.py`](api.c0r.ai/app/handlers/recipe.py)
+- **Conditional Text Generation**: Implemented language-based text generation for instruction messages
+- **Button Localization**: Added Russian translations for all interactive buttons in recipe generation flow
+- **Consistent UX**: Aligned recipe generation language support with other bot features
+
+### Root Cause
+- **Hardcoded English Text**: Recipe generation messages were hardcoded in English instead of using language detection
+- **Missing Translations**: No Russian translations were provided for recipe generation interface elements
+- **Inconsistent Localization**: Other bot features supported Russian but recipe generation did not
+## [0.3.40] - 2025-07-19
+
+### Fixed
+- **Credit Display Inconsistency**: Fixed inconsistent credit field access in recipe generation feature
+- **Recipe Generation Credits**: Changed from `user.get('credits_remaining', 0)` to `user['credits_remaining']` for consistency with status command
+- **Data Access Pattern**: Standardized credit field access across all handlers to use direct dictionary access
+- **User Experience**: Recipe generation now displays the same credit count as status check functionality
+
+### Technical
+- **Field Access Consistency**: Updated all credit references in [`recipe.py`](api.c0r.ai/app/handlers/recipe.py) to use direct dictionary access
+- **Error Prevention**: Eliminated potential discrepancy between safe access with default value and direct access
+- **Code Standardization**: Aligned recipe generation credit access pattern with commands handler implementation
+- **Data Integrity**: Ensured consistent credit display across all bot features
+
+### Root Cause
+- **Access Pattern Mismatch**: Recipe generation used `user.get('credits_remaining', 0)` while status command used `user['credits_remaining']`
+- **Default Value Issue**: Safe access with default value of 0 could show incorrect credits if field was missing
+- **Inconsistent Implementation**: Different handlers used different patterns for accessing the same data field
+
 ## [0.3.39] - 2025-07-18
 
 ### Fixed

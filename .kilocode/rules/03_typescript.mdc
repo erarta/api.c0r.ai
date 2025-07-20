@@ -1,0 +1,15 @@
+---
+description: TypeScript rules for Cloudflare Workers and frontend logic
+globs:
+  - "*.ts"
+  - "api/**/*.ts"
+alwaysApply: false
+---
+
+- Follow Airbnb TypeScript style guide.
+- Always use `strict` mode and explicit types.
+- Use `Hono` or native Cloudflare Workers API for routing.
+- Use Supabase official JS SDK for DB.
+- Add types/interfaces for all request & response payloads.
+- Lint with `eslint`.
+- Write unit tests with `Jest`.

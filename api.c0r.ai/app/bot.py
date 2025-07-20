@@ -10,12 +10,14 @@ from handlers.commands import start_command, help_command, status_command, buy_c
 from handlers.photo import photo_handler
 from handlers.payments import handle_pre_checkout_query, handle_successful_payment, handle_buy_callback
 from handlers.profile import (
-    profile_command, 
+    profile_command,
     handle_profile_callback,
     process_age, process_height, process_weight,
     process_gender, process_activity, process_goal,
+    process_dietary_preferences, process_allergies,
     ProfileStates
 )
+from handlers.recipe import recipe_command, handle_recipe_callback, process_recipe_photo, RecipeStates
 from handlers.daily import daily_command, handle_daily_callback
 from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command
 from handlers.language import language_command, handle_language_callback
@@ -132,17 +134,21 @@ dp.message.middleware(rate_limit_middleware)
 
 # Command handlers
 dp.message.register(start_command, Command(commands=["start"]))
-dp.message.register(help_command, Command(commands=["help"])) 
+dp.message.register(help_command, Command(commands=["help"]))
 dp.message.register(status_command, Command(commands=["status"]))
 dp.message.register(buy_credits_command, Command(commands=["buy"]))
 dp.message.register(profile_command, Command(commands=["profile"]))
+dp.message.register(recipe_command, Command(commands=["recipe"]))
 dp.message.register(daily_command, Command(commands=["daily"]))
 dp.message.register(nutrition_insights_command, Command(commands=["insights"]))
 dp.message.register(weekly_report_command, Command(commands=["report"]))
 dp.message.register(water_tracker_command, Command(commands=["water"]))
 dp.message.register(language_command, Command(commands=["language"]))
 
-# Photo handler (only for photos, not documents)
+# FSM handlers for recipe generation (MUST be registered BEFORE general photo handler)
+dp.message.register(process_recipe_photo, RecipeStates.waiting_for_photo)
+
+# Photo handler (only for photos, not documents) - registered AFTER FSM handlers
 dp.message.register(photo_handler, lambda message: message.photo)
 
 # Reject non-photo files
@@ -188,13 +194,18 @@ dp.message.register(process_age, ProfileStates.waiting_for_age)
 dp.message.register(process_height, ProfileStates.waiting_for_height)
 dp.message.register(process_weight, ProfileStates.waiting_for_weight)
 
-# Callback handlers
+
+# Callback handlers - ORDER MATTERS!
+# Recipe callback must be registered BEFORE general action callback to avoid conflicts
+dp.callback_query.register(handle_recipe_callback, lambda callback: callback.data == "action_recipe")
 dp.callback_query.register(handle_action_callback, lambda callback: callback.data.startswith("action_"))
 dp.callback_query.register(handle_buy_callback, lambda callback: callback.data.startswith("buy_"))
 dp.callback_query.register(handle_profile_callback, lambda callback: callback.data.startswith("profile_"))
 dp.callback_query.register(process_gender, lambda callback: callback.data.startswith("gender_"))
 dp.callback_query.register(process_activity, lambda callback: callback.data.startswith("activity_"))
 dp.callback_query.register(process_goal, lambda callback: callback.data.startswith("goal_"))
+dp.callback_query.register(process_dietary_preferences, lambda callback: callback.data.startswith("diet_"))
+dp.callback_query.register(process_allergies, lambda callback: callback.data.startswith("allergy_"))
 dp.callback_query.register(handle_daily_callback, lambda callback: callback.data.startswith("daily_"))
 dp.callback_query.register(handle_language_callback, lambda callback: callback.data.startswith("language_"))
 # Nutrition insights section navigation

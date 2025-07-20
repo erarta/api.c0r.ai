@@ -231,6 +231,12 @@ async def validate_profile_completeness(profile_data: dict) -> tuple[bool, list[
         if field not in profile_data or profile_data[field] is None:
             missing_fields.append(field)
     
+    # Optional fields with defaults
+    if 'dietary_preferences' not in profile_data:
+        profile_data['dietary_preferences'] = ['none']
+    if 'allergies' not in profile_data:
+        profile_data['allergies'] = ['none']
+    
     is_complete = len(missing_fields) == 0
     return is_complete, missing_fields
 

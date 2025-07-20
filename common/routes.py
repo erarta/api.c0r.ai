@@ -5,6 +5,7 @@ Centralized routes configuration for all services
 class Routes:
     # === ML Service routes ===
     ML_ANALYZE = "/api/v1/analyze"
+    ML_GENERATE_RECIPE = "/api/v1/generate-recipe"
     ML_HEALTH = "/"
     
     # === Payment Service routes ===

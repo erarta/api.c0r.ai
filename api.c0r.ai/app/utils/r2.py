@@ -44,16 +44,17 @@ def get_r2_client():
         region_name='auto'
     )
 
-def generate_photo_filename(user_id: str, file_extension: str = "jpg") -> str:
+def generate_photo_filename(user_id: str, file_extension: str = "jpg", action_type: str = "photo_analysis") -> str:
     """
     Generate unique filename for photo
     
     Args:
         user_id: User UUID
         file_extension: File extension (default: jpg)
+        action_type: Type of action (photo_analysis, recipe_generation)
         
     Returns:
-        Unique filename in format: user_id/YYYY/MM/DD/uuid.ext
+        Unique filename in format: user_id/YYYY/MM/DD/action_type/uuid.ext
     """
     from datetime import datetime
     
@@ -64,8 +65,8 @@ def generate_photo_filename(user_id: str, file_extension: str = "jpg") -> str:
     # Generate unique identifier
     photo_uuid = str(uuid.uuid4())
     
-    # Create filename: user_id/2025/01/20/uuid.jpg
-    filename = f"{user_id}/{date_path}/{photo_uuid}.{file_extension}"
+    # Create filename: user_id/2025/01/20/action_type/uuid.jpg
+    filename = f"{user_id}/{date_path}/{action_type}/{photo_uuid}.{file_extension}"
     
     logger.info(f"Generated photo filename: {filename}")
     return filename
@@ -115,7 +116,7 @@ def validate_photo_file(file_data: bytes, max_size_mb: int = 10) -> tuple[bool, 
     logger.info(f"File validation passed: {detected_format}, {file_size_mb:.1f}MB")
     return True, f"Valid {detected_format} image"
 
-async def upload_photo_to_r2(photo_data: bytes, user_id: str, content_type: str = "image/jpeg") -> Optional[str]:
+async def upload_photo_to_r2(photo_data: bytes, user_id: str, content_type: str = "image/jpeg", action_type: str = "photo_analysis") -> Optional[str]:
     """
     Upload photo to Cloudflare R2 with validation
     
@@ -123,6 +124,7 @@ async def upload_photo_to_r2(photo_data: bytes, user_id: str, content_type: str 
         photo_data: Photo binary data
         user_id: User UUID
         content_type: MIME type of the photo
+        action_type: Type of action (photo_analysis, recipe_generation)
         
     Returns:
         Signed URL of uploaded photo or None if failed
@@ -140,7 +142,7 @@ async def upload_photo_to_r2(photo_data: bytes, user_id: str, content_type: str 
         
         # Generate filename
         file_extension = "jpg" if "jpeg" in content_type else "png"
-        filename = generate_photo_filename(user_id, file_extension)
+        filename = generate_photo_filename(user_id, file_extension, action_type)
         
         # Create R2 client
         r2_client = get_r2_client()
@@ -184,7 +186,7 @@ async def upload_photo_to_r2(photo_data: bytes, user_id: str, content_type: str 
         logger.error(f"Unexpected error uploading to R2: {e}")
         return None
 
-async def upload_telegram_photo(bot, photo, user_id: str) -> Optional[str]:
+async def upload_telegram_photo(bot, photo, user_id: str, action_type: str = "photo_analysis") -> Optional[str]:
     """
     Upload Telegram photo to R2
     
@@ -192,6 +194,7 @@ async def upload_telegram_photo(bot, photo, user_id: str) -> Optional[str]:
         bot: Telegram bot instance
         photo: Telegram photo object
         user_id: User UUID
+        action_type: Type of action (photo_analysis, recipe_generation)
         
     Returns:
         Public URL of uploaded photo or None if failed
@@ -213,7 +216,7 @@ async def upload_telegram_photo(bot, photo, user_id: str) -> Optional[str]:
         logger.info(f"Downloaded photo data for user {user_id}, size: {len(photo_data)} bytes")
         
         # Upload to R2
-        url = await upload_photo_to_r2(photo_data, user_id, "image/jpeg")
+        url = await upload_photo_to_r2(photo_data, user_id, "image/jpeg", action_type)
         
         if url:
             logger.info(f"✅ R2 upload SUCCESS for user {user_id}: {url}")

@@ -1,0 +1,13 @@
+---
+description: General coding conventions for c0r.AI project
+alwaysApply: true
+---
+
+- Use Python ≥ 3.10 for bots and webhooks.
+- Use TypeScript ≥ 4.5 for Cloudflare Workers.
+- Follow PEP8 for Python; Airbnb style for TypeScript.
+- Format with Black, Flake8/Ruff for linting.
+- Use `.env` for all secrets; never hardcode keys.
+- Add clear logging (INFO, ERROR, DEBUG).
+- Always after update code also update CHANGELOG.md
+- If you see that file you are editing contains more than 500 lines consider refactoring this file into logical chunks but before you do the refactoring get the approve this is required

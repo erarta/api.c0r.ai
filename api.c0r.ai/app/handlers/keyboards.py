@@ -55,14 +55,35 @@ def create_main_menu_text(language: str = "en", has_profile: bool = False):
     """Create main menu message with interactive buttons"""
     from i18n.i18n import i18n
     
-    # Base buttons that are always shown
+    # New layout according to requirements:
+    # 1. "Создать рецепт по твоей фотке" - 2 columns (top)
+    # 2. "Анализировать еду по твоей фотке" - 2 columns
+    # 3. "Купить кредиты" - 2 columns
+    # 4. All other buttons below
+    
     keyboard = [
+        # Top row: Recipe generation (2 columns)
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text("btn_get_recipe", language),
+                callback_data="action_recipe"
+            )
+        ],
+        # Second row: Food analysis (2 columns)
         [
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_analyze_food", language),
                 callback_data="action_analyze_info"
             )
         ],
+        # Third row: Buy credits (2 columns)
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text("btn_buy_credits", language),
+                callback_data="action_buy"
+            )
+        ],
+        # Fourth row: Status and nutrition insights
         [
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_check_status", language),
@@ -73,14 +94,14 @@ def create_main_menu_text(language: str = "en", has_profile: bool = False):
     
     # Add nutrition insights button only if user has profile
     if has_profile:
-        keyboard[1].append(
+        keyboard[3].append(
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_nutrition_insights", language),
                 callback_data="action_nutrition_insights"
             )
         )
     
-    # Add profile and daily plan buttons
+    # Add remaining buttons
     keyboard.extend([
         [
             types.InlineKeyboardButton(
@@ -104,15 +125,9 @@ def create_main_menu_text(language: str = "en", has_profile: bool = False):
         ],
         [
             types.InlineKeyboardButton(
-                text=i18n.get_text("btn_buy_credits", language),
-                callback_data="action_buy"
-            ),
-            types.InlineKeyboardButton(
                 text=i18n.get_text("btn_help_guide", language),
                 callback_data="action_help"
-            )
-        ],
-        [
+            ),
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_language", language),
                 callback_data="action_language"
