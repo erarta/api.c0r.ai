@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.51] - 2025-07-20
+
+### Fixed
+- **Message Formatting Issues**: Fixed Telegram message formatting by removing extra asterisks and backslashes from processing messages
+- **Photo Analysis Message**: Removed extra asterisks from "🔍 **Анализирую фото...**" message in photo.py
+- **Recipe Processing Message**: Removed extra backslashes from recipe processing messages in recipe.py including:
+  - "🔄 Обрабатываю ваше фото\\.\\.\\." → "🔄 Обрабатываю ваше фото..."
+  - "🤖 Анализирую ингредиенты и генерирую персонализированный рецепт\\.\\.\\." → "🤖 Анализирую ингредиенты и генерирую персонализированный рецепт..."
+  - "⏱️ Это может занять несколько секунд\\." → "⏱️ Это может занять несколько секунд."
+- **English Message Consistency**: Applied same formatting fixes to English messages for consistency
+- **Markdown Parsing**: Improved message readability by removing unnecessary Markdown escaping that was causing display issues
+
+### Technical
+- **Message Cleanup**: Removed excessive Markdown formatting that was making messages harder to read
+- **Consistent Formatting**: Applied consistent formatting across both Russian and English messages
+- **User Experience**: Messages now display cleanly without extra formatting characters
+
+### User Experience
+- **Cleaner Messages**: Processing messages now display cleanly without extra asterisks or backslashes
+- **Better Readability**: Users see cleaner, more professional-looking messages during photo processing
+- **Consistent Interface**: Both Russian and English interfaces now have consistent message formatting
+
 ## [0.3.50] - 2025-07-20
 
 ### Fixed
