@@ -25,7 +25,7 @@ from app.handlers.commands import handle_action_callback
 from app.handlers.photo import photo_handler, process_nutrition_analysis
 from app.handlers.recipe import process_recipe_photo
 from app.handlers.nutrition import process_nutrition_photo
-from app.common.supabase_client import get_user_with_profile, decrement_credits, log_user_action
+from common.supabase_client import get_user_with_profile, decrement_credits, log_user_action
 from app.utils.r2 import upload_telegram_photo
 
 

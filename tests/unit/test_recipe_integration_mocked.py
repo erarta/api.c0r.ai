@@ -13,7 +13,7 @@ import json
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from api.c0r.ai.app.handlers.recipe import (
+from app.handlers.recipe import (
     RecipeStates, 
     handle_recipe_callback, 
     process_recipe_photo,
@@ -135,7 +135,7 @@ class TestRecipeIntegrationMocked:
     @pytest.mark.asyncio
     async def test_recipe_callback_with_credits(self, mock_callback_query, mock_state, mock_user_data):
         """Test recipe callback when user has sufficient credits"""
-        with patch('api.c0r.ai.app.handlers.recipe.get_user_with_profile') as mock_get_user:
+        with patch('app.handlers.recipe.get_user_with_profile') as mock_get_user:
             mock_get_user.return_value = mock_user_data
             
             # Call handler
@@ -167,11 +167,11 @@ class TestRecipeIntegrationMocked:
         # Set FSM state to waiting for photo
         mock_state.get_state.return_value = RecipeStates.waiting_for_photo
         
-        with patch('api.c0r.ai.app.handlers.recipe.get_user_with_profile') as mock_get_user, \
-             patch('api.c0r.ai.app.handlers.recipe.upload_telegram_photo') as mock_upload, \
-             patch('api.c0r.ai.app.handlers.recipe.generate_recipe_from_photo') as mock_generate, \
-             patch('api.c0r.ai.app.handlers.recipe.log_user_action') as mock_log, \
-             patch('api.c0r.ai.app.handlers.recipe.deduct_credit') as mock_deduct, \
+        with patch('app.handlers.recipe.get_user_with_profile') as mock_get_user, \
+             patch('app.handlers.recipe.upload_telegram_photo') as mock_upload, \
+             patch('app.handlers.recipe.generate_recipe_from_photo') as mock_generate, \
+             patch('app.handlers.recipe.log_user_action') as mock_log, \
+             patch('app.handlers.recipe.deduct_credit') as mock_deduct, \
              patch('aiogram.Bot.get_current') as mock_bot_current:
             
             # Setup mocks

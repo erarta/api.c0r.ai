@@ -465,7 +465,18 @@ async def buy_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Error in buy callback for user {telegram_user_id}: {e}")
-        await callback.message.answer(i18n.get_text("error_general", user_language))
+        # Get user language for error message
+        try:
+            user = await get_or_create_user(telegram_user_id)
+            user_language = user.get('language', 'en')
+        except:
+            user_language = 'en'
+        
+        error_message = i18n.get_text("error_general", user_language)
+        if "ServerDisconnectedError" in str(e):
+            error_message = f"❌ {i18n.get_text('payment_service_unavailable', user_language, default='Payment service temporarily unavailable. Please try again later.')}"
+        
+        await callback.message.answer(error_message)
 
 # Profile callback handler - handles button clicks
 async def profile_callback(callback: types.CallbackQuery):

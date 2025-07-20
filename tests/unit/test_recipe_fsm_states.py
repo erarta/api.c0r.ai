@@ -10,8 +10,8 @@ from aiogram.types import Message, CallbackQuery, User, Chat, PhotoSize
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from api.c0r.ai.app.handlers.recipe import RecipeStates, handle_recipe_callback, handle_recipe_photo
-from api.c0r.ai.app.handlers.keyboards import get_main_menu_keyboard
+from app.handlers.recipe import RecipeStates, handle_recipe_callback, process_recipe_photo
+from app.handlers.keyboards import create_main_menu_keyboard
 
 
 class TestRecipeFSMStates:
@@ -74,7 +74,7 @@ class TestRecipeFSMStates:
     @pytest.mark.asyncio
     async def test_recipe_callback_sets_waiting_photo_state(self, mock_callback_query, mock_state):
         """Test that recipe callback sets FSM state to waiting for photo"""
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase:
+        with patch('app.handlers.recipe.supabase') as mock_supabase:
             # Mock user with credits
             mock_supabase.table().select().eq().execute.return_value.data = [
                 {'id': 12345, 'credits_remaining': 5}
@@ -95,7 +95,7 @@ class TestRecipeFSMStates:
     @pytest.mark.asyncio
     async def test_recipe_callback_insufficient_credits(self, mock_callback_query, mock_state):
         """Test recipe callback when user has insufficient credits"""
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase:
+        with patch('app.handlers.recipe.supabase') as mock_supabase:
             # Mock user with no credits
             mock_supabase.table().select().eq().execute.return_value.data = [
                 {'id': 12345, 'credits_remaining': 0}
@@ -118,7 +118,7 @@ class TestRecipeFSMStates:
     @pytest.mark.asyncio
     async def test_recipe_callback_user_not_found(self, mock_callback_query, mock_state):
         """Test recipe callback when user is not found in database"""
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase:
+        with patch('app.handlers.recipe.supabase') as mock_supabase:
             # Mock empty user data
             mock_supabase.table().select().eq().execute.return_value.data = []
             
@@ -140,10 +140,10 @@ class TestRecipeFSMStates:
         # Mock FSM state as waiting for photo
         mock_state.get_state.return_value = RecipeStates.waiting_for_photo
         
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase, \
-             patch('api.c0r.ai.app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
-             patch('api.c0r.ai.app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
-             patch('api.c0r.ai.app.handlers.recipe.bot') as mock_bot:
+        with patch('app.handlers.recipe.supabase') as mock_supabase, \
+             patch('app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
+             patch('app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
+             patch('app.handlers.recipe.bot') as mock_bot:
             
             # Mock successful upload
             mock_upload.return_value = 'https://r2.example.com/photo.jpg'
@@ -163,7 +163,7 @@ class TestRecipeFSMStates:
             mock_bot.get_file.return_value.file_path = 'test/path.jpg'
             
             # Call handler
-            await handle_recipe_photo(mock_message, mock_state)
+            await process_recipe_photo(mock_message, mock_state)
             
             # Verify state was cleared after processing
             mock_state.clear.assert_called_once()
@@ -184,7 +184,7 @@ class TestRecipeFSMStates:
         mock_state.get_state.return_value = None
         
         # Call handler
-        await handle_recipe_photo(mock_message, mock_state)
+        await process_recipe_photo(mock_message, mock_state)
         
         # Verify no processing occurred
         mock_state.clear.assert_not_called()
@@ -200,7 +200,7 @@ class TestRecipeFSMStates:
         mock_message.photo = None
         
         # Call handler
-        await handle_recipe_photo(mock_message, mock_state)
+        await process_recipe_photo(mock_message, mock_state)
         
         # Verify no processing occurred
         mock_state.clear.assert_not_called()
@@ -211,9 +211,9 @@ class TestRecipeFSMStates:
         # Mock FSM state as waiting for photo
         mock_state.get_state.return_value = RecipeStates.waiting_for_photo
         
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase, \
-             patch('api.c0r.ai.app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
-             patch('api.c0r.ai.app.handlers.recipe.bot') as mock_bot:
+        with patch('app.handlers.recipe.supabase') as mock_supabase, \
+             patch('app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
+             patch('app.handlers.recipe.bot') as mock_bot:
             
             # Mock failed upload
             mock_upload.return_value = None
@@ -227,7 +227,7 @@ class TestRecipeFSMStates:
             mock_bot.get_file.return_value.file_path = 'test/path.jpg'
             
             # Call handler
-            await handle_recipe_photo(mock_message, mock_state)
+            await process_recipe_photo(mock_message, mock_state)
             
             # Verify state was cleared
             mock_state.clear.assert_called_once()
@@ -243,10 +243,10 @@ class TestRecipeFSMStates:
         # Mock FSM state as waiting for photo
         mock_state.get_state.return_value = RecipeStates.waiting_for_photo
         
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase, \
-             patch('api.c0r.ai.app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
-             patch('api.c0r.ai.app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
-             patch('api.c0r.ai.app.handlers.recipe.bot') as mock_bot:
+        with patch('app.handlers.recipe.supabase') as mock_supabase, \
+             patch('app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
+             patch('app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
+             patch('app.handlers.recipe.bot') as mock_bot:
             
             # Mock successful upload
             mock_upload.return_value = 'https://r2.example.com/photo.jpg'
@@ -266,7 +266,7 @@ class TestRecipeFSMStates:
             mock_bot.get_file.return_value.file_path = 'test/path.jpg'
             
             # Call handler
-            await handle_recipe_photo(mock_message, mock_state)
+            await process_recipe_photo(mock_message, mock_state)
             
             # Verify state was cleared
             mock_state.clear.assert_called_once()
@@ -282,10 +282,10 @@ class TestRecipeFSMStates:
         # Mock FSM state as waiting for photo
         mock_state.get_state.return_value = RecipeStates.waiting_for_photo
         
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase, \
-             patch('api.c0r.ai.app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
-             patch('api.c0r.ai.app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
-             patch('api.c0r.ai.app.handlers.recipe.bot') as mock_bot:
+        with patch('app.handlers.recipe.supabase') as mock_supabase, \
+             patch('app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
+             patch('app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
+             patch('app.handlers.recipe.bot') as mock_bot:
             
             # Mock successful upload and generation
             mock_upload.return_value = 'https://r2.example.com/photo.jpg'
@@ -303,7 +303,7 @@ class TestRecipeFSMStates:
             mock_bot.get_file.return_value.file_path = 'test/path.jpg'
             
             # Call handler
-            await handle_recipe_photo(mock_message, mock_state)
+            await process_recipe_photo(mock_message, mock_state)
             
             # Verify credits were deducted
             update_call = mock_supabase.table().update().eq().execute
@@ -316,7 +316,7 @@ class TestRecipeFSMStates:
     @pytest.mark.asyncio
     async def test_fsm_state_transitions(self, mock_callback_query, mock_state):
         """Test complete FSM state transition flow"""
-        with patch('api.c0r.ai.app.handlers.recipe.supabase') as mock_supabase:
+        with patch('app.handlers.recipe.supabase') as mock_supabase:
             # Mock user with credits
             mock_supabase.table().select().eq().execute.return_value.data = [
                 {'id': 12345, 'credits_remaining': 5}
@@ -334,9 +334,9 @@ class TestRecipeFSMStates:
             # Test state clearing after photo processing
             mock_state.get_state.return_value = RecipeStates.waiting_for_photo
             
-            with patch('api.c0r.ai.app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
-                 patch('api.c0r.ai.app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
-                 patch('api.c0r.ai.app.handlers.recipe.bot') as mock_bot:
+            with patch('app.handlers.recipe.upload_photo_to_r2') as mock_upload, \
+                 patch('app.handlers.recipe.generate_recipe_with_openai') as mock_generate, \
+                 patch('app.handlers.recipe.bot') as mock_bot:
                 
                 # Mock successful processing
                 mock_upload.return_value = 'https://r2.example.com/photo.jpg'
@@ -359,7 +359,7 @@ class TestRecipeFSMStates:
                 mock_message.photo = [photo_size]
                 
                 # Process photo
-                await handle_recipe_photo(mock_message, mock_state)
+                await process_recipe_photo(mock_message, mock_state)
                 
                 # Verify state was cleared
                 mock_state.clear.assert_called_once()

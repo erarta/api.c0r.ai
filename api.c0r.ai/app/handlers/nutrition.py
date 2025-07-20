@@ -1020,10 +1020,10 @@ async def generate_macro_distribution_section(profile: dict, user: dict) -> str:
     
     content = (
         f"**Оптимальное распределение макронутриентов**\n\n"
-        f"**Белки:** {macro_data['protein_g']}г ({macro_data['protein_percent']}%)\n"
-        f"**Жиры:** {macro_data['fats_g']}г ({macro_data['fats_percent']}%)\n"
-        f"**Углеводы:** {macro_data['carbs_g']}г ({macro_data['carbs_percent']}%)\n\n"
-        f"**Общее количество калорий:** {macro_data['total_calories']} ккал\n\n"
+        f"**Белки:** {macro_data['protein']['grams']}г ({macro_data['protein']['percent']}%)\n"
+        f"**Жиры:** {macro_data['fat']['grams']}г ({macro_data['fat']['percent']}%)\n"
+        f"**Углеводы:** {macro_data['carbs']['grams']}г ({macro_data['carbs']['percent']}%)\n\n"
+        f"**Общее количество калорий:** {calories} ккал\n\n"
         f"**Рекомендации:**\n"
         f"• Белки: строительный материал для мышц\n"
         f"• Жиры: источник энергии и витаминов\n"
