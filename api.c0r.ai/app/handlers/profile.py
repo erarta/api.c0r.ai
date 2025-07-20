@@ -952,7 +952,10 @@ async def process_allergies(callback: types.CallbackQuery, state: FSMContext):
     else:
         selected_text = i18n.get_text('profile_allergy_none', user_language)
     
-    await callback.answer(f"{i18n.get_text('profile_setup_allergies_success', user_language, allergies=selected_text)}")
+    try:
+        await callback.answer(f"{i18n.get_text('profile_setup_allergies_success', user_language, allergies=selected_text)}")
+    except Exception as e:
+        logger.warning(f"Could not answer callback for user {callback.from_user.id}: {e}")
 
 async def complete_profile_setup(callback: types.CallbackQuery, state: FSMContext):
     """Complete profile setup with all collected data"""
@@ -982,7 +985,10 @@ async def complete_profile_setup(callback: types.CallbackQuery, state: FSMContex
         missing_text = ", ".join(missing_fields)
         error_message = i18n.get_text('profile_error_missing_fields', user_language, fields=missing_text)
         
-        await callback.answer(error_message)
+        try:
+            await callback.answer(error_message)
+        except Exception as e:
+            logger.warning(f"Could not answer callback for user {callback.from_user.id}: {e}")
         
         # Restart profile setup
         await start_profile_setup(callback.message, state, callback.from_user.id)
@@ -1128,7 +1134,11 @@ async def complete_profile_setup(callback: types.CallbackQuery, state: FSMContex
             ]
         ])
         
-        await callback.answer()
+        try:
+            await callback.answer()
+        except Exception as e:
+            logger.warning(f"Could not answer callback for user {telegram_user_id}: {e}")
+        
         await callback.message.answer(success_text, parse_mode="Markdown", reply_markup=keyboard)
         
         logger.info(f"Profile {'created' if was_created else 'updated'} for user {telegram_user_id}")
@@ -1141,15 +1151,21 @@ async def complete_profile_setup(callback: types.CallbackQuery, state: FSMContex
         user_language = user.get('language', 'en')
         
         # Provide more specific error message for missing data
-        if "Missing or invalid" in str(e):
-            await callback.answer(f"❌ {i18n.get_text('profile_incomplete', user_language)}")
-        else:
-            await callback.answer(i18n.get_text("error_general", user_language))
+        try:
+            if "Missing or invalid" in str(e):
+                await callback.answer(f"❌ {i18n.get_text('profile_incomplete', user_language)}")
+            else:
+                await callback.answer(i18n.get_text("error_general", user_language))
+        except Exception as callback_error:
+            logger.warning(f"Could not answer callback for user {callback.from_user.id}: {callback_error}")
         await state.clear()
     except Exception as e:
         logger.error(f"Error saving profile for user {telegram_user_id}: {e}")
         # Get user's language for error message
         user = await get_or_create_user(callback.from_user.id)
         user_language = user.get('language', 'en')
-        await callback.answer(i18n.get_text("error_general", user_language))
+        try:
+            await callback.answer(i18n.get_text("error_general", user_language))
+        except Exception as callback_error:
+            logger.warning(f"Could not answer callback for user {callback.from_user.id}: {callback_error}")
         await state.clear()

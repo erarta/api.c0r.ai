@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.61] - 2025-07-20
+
+### Fixed
+- **Callback Query Timeout**: Fixed TelegramBadRequest "query is too old and response timeout expired" error in profile setup process
+- **Callback Answer Error Handling**: Added try-catch blocks around all `callback.answer()` calls to handle expired callback queries gracefully
+- **Profile Setup Stability**: Improved error handling in `complete_profile_setup`, `process_allergies`, and other callback handlers
+- **User Experience**: Users no longer see errors when callback queries expire during profile setup
+
 ## [0.3.60] - 2025-07-20
 
 ### Fixed
