@@ -1,0 +1,67 @@
+# Internationalization (i18n) Maintenance Rules
+
+## Core Principle
+Every user-facing text change MUST be properly internationalized and translated for all supported languages.
+
+## Supported Languages
+- **English (en)** - Primary language, source of truth
+- **Russian (ru)** - Secondary language, full translation required
+
+## Structure
+```
+i18n/
+├── en/                     # English translations (primary)
+│   ├── welcome.py         # Welcome messages and onboarding
+│   ├── help.py           # Help commands and instructions
+│   ├── profile.py        # User profile management
+│   ├── payments.py       # Payment-related messages
+│   ├── errors.py         # Error messages and validation
+│   ├── nutrition.py      # Nutrition analysis results
+│   ├── daily.py          # Daily tracking and statistics
+│   ├── recipes.py        # Recipe generation and management
+│   └── reports.py        # Reports and analytics
+└── ru/                    # Russian translations (mirror structure)
+```
+
+## Translation Update Requirements
+
+### Adding New Text
+- Add to appropriate English module first (`i18n/en/module.py`)
+- Add corresponding Russian translation (`i18n/ru/module.py`)
+- Use descriptive key names that indicate context
+- Include placeholders for dynamic content
+- Test both language versions
+
+### Modifying Existing Text
+- Update English version first
+- Update Russian version to match
+- Maintain consistent key names
+- Preserve placeholder formatting
+- Test in both languages
+
+## Key Naming Convention
+Format: `CONTEXT_ACTION_ELEMENT`
+- Good: `"welcome_first_time_user"`, `"error_invalid_image_format"`, `"payment_subscription_expired"`
+- Bad: `"msg1"`, `"error"`, `"text"`, `"button"`
+
+## Content Standards
+- **English**: Clear, concise language with consistent friendly tone
+- **Russian**: Equivalent meaning, appropriate grammar, formal "Вы" for user address
+
+## Checklist
+Before merging changes with new/modified text:
+- [ ] English translation added/updated
+- [ ] Russian translation added/updated
+- [ ] Key names follow naming convention
+- [ ] Placeholders work correctly in both languages
+- [ ] Text tested in bot interface
+- [ ] No hardcoded strings in code
+- [ ] Module organization is appropriate
+
+## Common Mistakes to Avoid
+- Hardcoding text directly in bot code
+- Using generic key names
+- Forgetting to translate new text
+- Inconsistent placeholder formatting
+
+Proper internationalization is crucial for user experience. Every user should feel the product was made specifically for their language and culture.

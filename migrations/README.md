@@ -1,87 +1,124 @@
 # Database Migrations
 
-This directory contains all database migration files organized by type and date.
+This directory contains all database migration files organized by type and date with automated tracking system.
 
-## Structure
+## 🏗️ Structure
 
 ```
 migrations/
 ├── README.md                    # This file
 ├── database/                    # Database schema migrations
-│   ├── 2025-07-20_recipe_migration.sql
-│   ├── 2025-07-20_constraints.sql
-│   └── 2025-07-20_multilingual.sql
+│   ├── 2025-01-26_schema_migrations.sql
+│   ├── 2025-01-21_constraints.sql
+│   └── 2025-01-21_multilingual.sql
 ├── rollbacks/                   # Rollback scripts
-│   ├── 2025-07-20_recipe_migration_rollback.sql
-│   └── 2025-07-20_constraints_rollback.sql
+│   ├── 2025-01-26_schema_migrations_rollback.sql
+│   ├── 2025-01-21_constraints_rollback.sql
+│   └── 2025-01-21_multilingual_rollback.sql
 └── schema/                      # Schema definitions
-    └── schema.sql
+    └── initial_schema.sql
 ```
 
-## Migration Naming Convention
+## 🚀 Automated Migration System
 
-All migration files follow the naming pattern:
-`YYYY-MM-DD_description.sql`
-
-## Migration Types
-
-### Database Migrations (`database/`)
-- Schema changes (CREATE TABLE, ALTER TABLE, etc.)
-- Data migrations
-- Index creation/modification
-- Constraint additions
-
-### Rollback Scripts (`rollbacks/`)
-- Corresponding rollback for each migration
-- Named with `_rollback` suffix
-- Should undo changes made by the main migration
-
-### Schema Definitions (`schema/`)
-- Complete database schema definitions
-- Reference schemas for different environments
-
-## Usage
+### Migration Tracking
+- All migrations are tracked in `schema_migrations` table
+- Automatic checksum validation prevents duplicate runs
+- Built-in rollback support with tracking
+- Deployment notifications to service bot
 
 ### Running Migrations
 ```bash
-# Connect to your database
-psql -h your-host -d your-database -U your-user
+# Automated migration runner (recommended)
+python scripts/run_migrations.py
 
-# Run a specific migration
-\i migrations/database/2025-07-20_recipe_migration.sql
-
-# Or run via command line
-psql -h your-host -d your-database -U your-user -f migrations/database/2025-07-20_recipe_migration.sql
+# Manual migration (for specific cases)
+psql -h your-host -d your-database -U your-user -f migrations/database/migration_file.sql
 ```
 
 ### Rolling Back
 ```bash
-# Run the corresponding rollback script
-\i migrations/rollbacks/2025-07-20_recipe_migration_rollback.sql
+# Automated rollback (coming soon)
+python scripts/rollback_migration.py migration_name
+
+# Manual rollback
+psql -h your-host -d your-database -U your-user -f migrations/rollbacks/migration_rollback.sql
 ```
 
-## Migration History
+## 📋 Migration Naming Convention
+
+All migration files follow the pattern: `YYYY-MM-DD_description.sql`
+
+**Examples:**
+- `2025-01-26_schema_migrations.sql` - Migration tracking system
+- `2025-01-21_multilingual.sql` - Multilingual support
+- `2025-01-21_constraints.sql` - Database constraints
+
+## 📊 Migration Types
+
+### Database Migrations (`database/`)
+- Schema changes (CREATE TABLE, ALTER TABLE, etc.)
+- Data migrations and transformations
+- Index creation/modification
+- Constraint additions
+- System table creation
+
+### Rollback Scripts (`rollbacks/`)
+- Corresponding rollback for each migration
+- Named with `_rollback` suffix
+- Should completely undo changes made by main migration
+- Tracked in `schema_migrations` table
+
+### Schema Definitions (`schema/`)
+- Complete database schema definitions
+- Reference schemas for different environments
+- Initial setup scripts
+
+## 📈 Migration History
 
 | Date | Migration | Description | Status |
 |------|-----------|-------------|--------|
-| 2025-07-20 | recipe_migration | Added recipe generation functionality | ✅ Applied |
-| 2025-07-20 | constraints | Added database constraints | ✅ Applied |
-| 2025-07-20 | multilingual | Added multilingual support | ✅ Applied |
+| 2025-01-26 | schema_migrations | Migration tracking system | ✅ Applied |
+| 2025-01-21 | multilingual | Multilingual support | ✅ Applied |
+| 2025-01-21 | constraints | Database constraints | ✅ Applied |
 
-## Best Practices
+## ✅ Best Practices
 
-1. **Always create rollback scripts** for each migration
-2. **Test migrations** in development environment first
-3. **Backup database** before running migrations in production
-4. **Document changes** in this README when adding new migrations
-5. **Use descriptive names** for migration files
-6. **Include comments** in SQL files explaining the changes
+1. **Use automated runner** - `python scripts/run_migrations.py`
+2. **Always create rollback scripts** for each migration
+3. **Test migrations** in development environment first
+4. **Include descriptive comments** in SQL files
+5. **Follow naming convention** strictly
+6. **Update this README** when adding new migrations
+7. **Use migration tracking** - never run migrations manually in production
 
-## Migration Checklist
+## 🔧 Migration Checklist
 
-Before applying a migration:
-- [ ] Migration tested in development
+Before creating a migration:
+- [ ] Migration follows naming convention
 - [ ] Rollback script created and tested
+- [ ] Migration tested in development
+- [ ] Comments added explaining changes
+- [ ] README updated with migration info
+- [ ] Migration added to tracking system
+
+Before applying in production:
 - [ ] Database backup created
-- [ ] Migration documented in history table above
+- [ ] Migration runner script used
+- [ ] Service bot notifications configured
 - [ ] Team notified of schema changes
+
+## 🚨 Emergency Procedures
+
+### Failed Migration Recovery
+1. Check `schema_migrations` table for status
+2. Run corresponding rollback script
+3. Fix migration issues
+4. Re-run migration with fixes
+
+### Manual Migration Tracking
+If you need to manually mark a migration as applied:
+```sql
+INSERT INTO schema_migrations (filename, rollback_filename, checksum, status)
+VALUES ('migration_name.sql', 'migration_name_rollback.sql', 'manual_checksum', 'applied');
+```

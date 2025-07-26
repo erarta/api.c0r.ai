@@ -1,6 +1,0 @@
----
-description: Migrations for Supabase
-alwaysApply: true
----
-
-- For every migration you make put date for filename and generate rollback and simple description for migration

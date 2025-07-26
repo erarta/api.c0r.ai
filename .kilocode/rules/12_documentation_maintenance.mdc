@@ -1,0 +1,64 @@
+---
+description: Documentation maintenance and update rules for c0r.AI project
+alwaysApply: true
+---
+
+# Documentation Maintenance Rules
+
+## Core Principle
+Every code change affecting user experience MUST update corresponding documentation.
+
+## Update Requirements
+
+### API Changes
+- Update `docs/api/endpoints.md` with new/changed endpoints
+- Update `docs/api/examples.md` with usage examples
+- Update authentication docs if auth changes
+- Update SDK documentation
+
+### Feature Changes
+- Update relevant guides in `docs/guides/`
+- Update integration docs in `docs/integrations/`
+- Update getting-started if onboarding changes
+- Update troubleshooting with new known issues
+
+### Configuration Changes
+- Update deployment guides and installation instructions
+- Update `.env.example` files and Docker configurations
+
+### Database Changes
+- Update `migrations/README.md`
+- Update architecture docs if schema changes
+- Update API docs if data models change
+
+## File Standards
+- Use kebab-case filenames: `payment-integration.md`
+- Organize by functionality, not technology
+- Keep README.md files updated in each directory
+- Start each document with brief overview
+- Include practical code snippets
+- Use relative paths for internal links
+
+## Checklist
+Before merging any PR:
+- [ ] All affected documentation updated
+- [ ] New features have corresponding guides
+- [ ] API changes documented
+- [ ] Configuration changes documented
+- [ ] Links tested and working
+
+## Review Process
+- Read documentation from user perspective
+- Test all code snippets and commands
+- Verify all links work correctly
+- Documentation changes reviewed like code
+
+## Automation
+- Check broken links: `markdown-link-check docs/**/*.md`
+- Spell check: `cspell "docs/**/*.md"`
+- Lint markdown: `markdownlint docs/`
+
+## Emergency Updates
+For hotfixes: update documentation immediately after code fix, create follow-up task for comprehensive review within 48 hours.
+
+Documentation is part of the feature. A feature is not complete until it has proper, up-to-date documentation.

@@ -20,7 +20,7 @@ def patch_i18n():
     """Patch i18n module to return meaningful text for tests"""
     with patch('i18n.i18n.i18n') as mock_i18n:
         # Configure the mock to return formatted strings
-        mock_i18n.get_text.side_effect = lambda key, lang='en': f"[{lang.upper()}] {key}"
+        mock_i18n.get_text.side_effect = lambda key, language='en', **kwargs: f"[{language.upper()}] {key}"
         yield mock_i18n
 
 

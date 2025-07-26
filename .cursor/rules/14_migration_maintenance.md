@@ -1,0 +1,75 @@
+# Database Migration Maintenance Rules
+
+## Core Principle
+Every database schema change MUST be implemented through tracked migrations with corresponding rollback scripts.
+
+## System Overview
+- All migrations tracked in `schema_migrations` table
+- Automatic checksum validation prevents duplicate runs
+- Built-in rollback support with status tracking
+- Deployment notifications to service bot
+
+## Migration Creation Rules
+
+### Naming Convention
+```
+YYYY-MM-DD_description.sql
+YYYY-MM-DD_description_rollback.sql
+```
+
+### Content Standards
+Every migration file MUST include:
+- Brief description comment with date
+- Detailed description of changes
+- SQL statements with explanatory comments
+- Table and column comments for clarity
+
+### Rollback Requirements
+Every migration MUST have a corresponding rollback:
+- Rollback script created simultaneously with migration
+- Rollback tested in development environment
+- Rollback script undoes ALL changes from migration
+- Rollback maintains data integrity
+
+## Execution Rules
+
+### Use Automated Runner
+Always use: `python scripts/run_migrations.py`
+Manual execution only for emergencies.
+
+### Pre-Migration Checklist
+- [ ] Migration tested in development environment
+- [ ] Rollback script created and tested
+- [ ] Database backup created
+- [ ] Migration added to tracking system
+- [ ] Team notified of schema changes
+- [ ] Downtime window scheduled if needed
+
+### Post-Migration Verification
+- [ ] Verify migration applied successfully
+- [ ] Check application functionality
+- [ ] Monitor for errors in logs
+- [ ] Verify rollback script works if needed
+- [ ] Update documentation if schema changed
+
+## Testing Requirements
+- Test forward migration in development
+- Test rollback in development
+- Run migration on staging environment
+- Test application functionality
+- Verify performance impact
+
+## Emergency Procedures
+1. Stop application to prevent data corruption
+2. Check migration status in `schema_migrations` table
+3. Run rollback script for failed migration
+4. Fix migration issues in development
+5. Re-test migration thoroughly
+6. Re-run corrected migration
+
+## Documentation Requirements
+- Update `migrations/README.md` with migration info
+- Update architecture docs if schema changes
+- Update API docs if data models change
+
+Database migrations are critical infrastructure changes. They must be treated with the same rigor as production code deployment.

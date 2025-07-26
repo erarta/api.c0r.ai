@@ -42,8 +42,9 @@ class I18nManager:
         self.translations = self._load_translations()
     
     def _load_translations(self) -> Dict[str, Dict[str, str]]:
-        """Load all translations from separate files"""
+        """Load all translations from modular files"""
         try:
+            # Import from new modular structure
             from .en import TRANSLATIONS as EN_TRANSLATIONS
             from .ru import TRANSLATIONS as RU_TRANSLATIONS
             
@@ -52,12 +53,22 @@ class I18nManager:
                 Language.RUSSIAN.value: RU_TRANSLATIONS,
             }
         except ImportError as e:
-            logger.error(f"Failed to import translation files: {e}")
-            # Fallback to empty dictionaries if import fails
-            return {
-                Language.ENGLISH.value: {},
-                Language.RUSSIAN.value: {},
-            }
+            logger.error(f"Failed to import modular translation files: {e}")
+            # Fallback to original files if modular import fails
+            try:
+                from .en import TRANSLATIONS as EN_TRANSLATIONS
+                from .ru import TRANSLATIONS as RU_TRANSLATIONS
+                
+                return {
+                    Language.ENGLISH.value: EN_TRANSLATIONS,
+                    Language.RUSSIAN.value: RU_TRANSLATIONS,
+                }
+            except ImportError as e2:
+                logger.error(f"Failed to import fallback translation files: {e2}")
+                return {
+                    Language.ENGLISH.value: {},
+                    Language.RUSSIAN.value: {},
+                }
     
     def detect_language(self, user_country: Optional[str] = None, phone_number: Optional[str] = None) -> str:
         """

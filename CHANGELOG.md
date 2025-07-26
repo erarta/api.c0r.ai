@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Database Migration System**: Complete migration tracking and management system
+  - `migrations/database/2025-01-26_schema_migrations.sql` - Migration tracking table with checksums and rollback support
+  - `scripts/run_migrations.py` - Automated migration runner with Supabase integration (200 lines)
+  - Automatic migration detection and execution with duplicate prevention
+  - Rollback capability with corresponding rollback scripts
+- **Deployment Notification System**: Automated deployment status reporting
+  - `scripts/deploy_notifications.py` - Telegram bot integration for deployment notifications (180 lines)
+  - Success/failure notifications with detailed error reporting
+  - Integration with service bot for deployment monitoring
+- **Modular i18n Translation System**: Restructured translation files for better maintainability
+  - Split large English translation file (629 lines) into 8 focused modules:
+    - `i18n/en/welcome.py` - Welcome messages and onboarding
+    - `i18n/en/help.py` - Help system and commands
+    - `i18n/en/profile.py` - Profile management and setup
+    - `i18n/en/payments.py` - Payment processing messages
+    - `i18n/en/errors.py` - Error messages and validation
+    - `i18n/en/nutrition.py` - Nutrition analysis and calculations
+    - `i18n/en/daily.py` - Daily tracking and logging
+    - `i18n/en/recipes.py` - Recipe generation and management
+    - `i18n/en/reports.py` - Report generation and analytics
+  - Updated `i18n/i18n.py` with modular loading and fallback support
+  - Started Russian translation modularization with `i18n/ru/welcome.py`
+- **Deployment Documentation**: Comprehensive production deployment guide with migration procedures in `docs/deployment/production-deployment.md`
+- **Deployment Q&A**: Detailed answers to common deployment questions in `docs/deployment/deployment-qa.md`
+
 ### Changed
 - **Code Organization**: Refactored `common/supabase_client.py` into modular structure under `common/db/`
 - **Payment Configuration**: Centralized payment plans configuration in `common/config/payment_plans.py`
@@ -15,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Project Structure**: Cleaned up root directory by removing unused files and organizing utilities
 - **Service Architecture**: Reorganized entire codebase into modular service architecture under `/services`
 - **Health Endpoints**: Standardized health check responses using shared `create_health_response()` function
+- **Translation Architecture**: Moved from monolithic translation files to modular, maintainable structure
+
+### Removed
+- **Duplicate Code Elimination**: Removed `Cloudflare_Worker/` directory as functionality was already migrated to `services/api/edge/`
+- **Old Migration Files**: Cleaned up root directory migration files that were moved to structured `/migrations` system
 
 ### Added
 - **Modular Service Architecture**: New service-based organization:
