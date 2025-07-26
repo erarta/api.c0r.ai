@@ -8,8 +8,10 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-# Add the parent directory to the path to import common modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+from tests.test_utils import setup_test_imports
+
+# Ensure proper imports
+setup_test_imports()
 
 # Import the module to test
 from common import nutrition_calculations

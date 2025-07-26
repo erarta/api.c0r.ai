@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Test Suite Refactoring**: Comprehensive test infrastructure improvements for better maintainability and coverage
+  - **Modular FSM Tests**: Split large `test_fsm_state_management.py` (534 lines) into 4 focused modules:
+    - `tests/unit/test_fsm_basic_operations.py` - Basic FSM state operations and transitions (120 lines)
+    - `tests/unit/test_fsm_nutrition_flow.py` - Nutrition analysis workflow tests (150 lines)
+    - `tests/unit/test_fsm_recipe_flow.py` - Recipe generation workflow tests (150 lines)
+    - `tests/unit/test_fsm_error_handling.py` - FSM error handling and edge cases (170 lines)
+  - **Shared Test Infrastructure**: Centralized test utilities and fixtures
+    - `tests/test_utils.py` - Standardized import path setup for all tests
+    - `tests/shared_fixtures.py` - Common fixtures for FSM, user data, and ML responses (125 lines)
+    - `tests/base_test_classes.py` - Base test classes with common functionality (70 lines)
+    - `tests/conftest.py` - Global test configuration with environment setup
+    - `tests/.env.test` - Test-specific environment variables
+  - **External Service Mocks**: Comprehensive mocking system for integration tests
+    - `tests/mocks/external_services.py` - Mock implementations for Supabase, YooKassa, ML service, Telegram bot, and R2 storage (170 lines)
+    - `tests/integration/test_payment_integration.py` - Proper integration tests with mocking (220 lines)
+  - **AsyncMock Configuration Fixes**: Resolved AsyncMock-related test failures with proper async fixture setup
+  - **Standardized Import Paths**: Unified import path management across all test files using `setup_test_imports()`
+  - **Enhanced Test Documentation**: Comprehensive test suite documentation in `tests/README.md` (200 lines)
 - **Database Migration System**: Complete migration tracking and management system
   - `migrations/database/2025-01-26_schema_migrations.sql` - Migration tracking table with checksums and rollback support
   - `scripts/run_migrations.py` - Automated migration runner with Supabase integration (200 lines)
