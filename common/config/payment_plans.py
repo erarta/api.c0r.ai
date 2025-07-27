@@ -48,8 +48,8 @@ PRICE_CONFIG = {
         "pro": 34900,
     },
     "development": {
-        "basic": 1000,   # 10 RUB in kopecks (minimum Telegram amount)
-        "pro": 5000,     # 50 RUB in kopecks (minimum Telegram amount)
+        "basic": 9900,   # Use production prices in development too
+        "pro": 34900,
     },
     "test": {
         "basic": 10000,  # 100 RUB in kopecks (minimum for Telegram test payments)
@@ -71,7 +71,7 @@ def get_payment_plans() -> Dict[str, Dict[str, Any]]:
         env = "test"
     
     # Get prices for current environment
-    prices = PRICE_CONFIG.get(env, PRICE_CONFIG["development"])
+    prices = PRICE_CONFIG.get(env, PRICE_CONFIG["production"])  # Default to production prices
     
     # Build payment plans with appropriate prices
     payment_plans = {}
@@ -80,6 +80,13 @@ def get_payment_plans() -> Dict[str, Dict[str, Any]]:
             **base_plan,
             "price": prices[plan_id]
         }
+    
+    # Log configuration for debugging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Payment plans loaded - Environment: {env}, Test mode: {is_test_mode()}")
+    for plan_id, plan in payment_plans.items():
+        logger.info(f"  {plan_id}: {plan['price']} kopecks ({plan['price']/100} RUB) - {plan['credits']} credits")
     
     return payment_plans
 
