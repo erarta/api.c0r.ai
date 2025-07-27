@@ -52,8 +52,8 @@ PRICE_CONFIG = {
         "pro": 5000,     # 50 RUB in kopecks (minimum Telegram amount)
     },
     "test": {
-        "basic": 1000,   # Minimum amounts for testing
-        "pro": 5000,
+        "basic": 10000,  # 100 RUB in kopecks (minimum for Telegram test payments)
+        "pro": 50000,    # 500 RUB in kopecks
     }
 }
 

@@ -31,15 +31,13 @@ async def health():
     """Comprehensive health check for Payment service"""
     from shared.health import create_comprehensive_health_response
     
-    # Check external service dependencies
-    external_services = {}
-    if API_SERVICE_URL:
-        external_services["api_service"] = f"{API_SERVICE_URL}/"
+    # Note: We don't check API service health to avoid circular dependency
+    # API service checks Pay service, but Pay service doesn't check API service
     
     return await create_comprehensive_health_response(
         service_name="pay",
         check_database=True,
-        check_external_services=external_services,
+        check_external_services={},  # No external service checks to avoid circular dependency
         additional_info={
             "api_service_configured": bool(API_SERVICE_URL),
             "yookassa_configured": bool(os.getenv("YOOKASSA_SHOP_ID") and os.getenv("YOOKASSA_SECRET_KEY")),

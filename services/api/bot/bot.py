@@ -219,6 +219,20 @@ dp.callback_query.register(handle_nutrition_menu_callback, lambda callback: call
 dp.pre_checkout_query.register(handle_pre_checkout_query)
 dp.message.register(handle_successful_payment, lambda message: message.successful_payment)
 
+# Debug handler for all messages
+async def debug_handler(message: types.Message):
+    """Debug handler to log all incoming messages"""
+    logger.info(f"=== DEBUG: INCOMING MESSAGE ===")
+    logger.info(f"Message type: {type(message)}")
+    logger.info(f"From user: {message.from_user.id}")
+    logger.info(f"Message text: {message.text}")
+    logger.info(f"Has successful_payment: {hasattr(message, 'successful_payment')}")
+    if hasattr(message, 'successful_payment') and message.successful_payment:
+        logger.info(f"Successful payment data: {message.successful_payment}")
+    logger.info(f"=====================================")
+
+dp.message.register(debug_handler)
+
 async def start_bot():
     try:
         logger.info("Starting Telegram bot...")

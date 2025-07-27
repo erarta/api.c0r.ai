@@ -128,6 +128,14 @@ async def handle_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
     """
     Handle pre-checkout query - validate payment before processing
     """
+    logger.info(f"=== PRE-CHECKOUT QUERY RECEIVED ===")
+    logger.info(f"Pre-checkout query: {pre_checkout_query}")
+    logger.info(f"From user: {pre_checkout_query.from_user.id}")
+    logger.info(f"Payload: {pre_checkout_query.invoice_payload}")
+    logger.info(f"Total amount: {pre_checkout_query.total_amount}")
+    logger.info(f"Currency: {pre_checkout_query.currency}")
+    logger.info(f"=====================================")
+    
     try:
         # Parse payload to get plan and user info
         payload = pre_checkout_query.invoice_payload
@@ -173,6 +181,12 @@ async def handle_successful_payment(message: types.Message):
     """
     Handle successful payment - add credits to user account
     """
+    logger.info(f"=== SUCCESSFUL PAYMENT RECEIVED ===")
+    logger.info(f"Message: {message}")
+    logger.info(f"From user: {message.from_user.id}")
+    logger.info(f"Successful payment: {message.successful_payment}")
+    logger.info(f"=====================================")
+    
     try:
         payment = message.successful_payment
         payload = payment.invoice_payload
