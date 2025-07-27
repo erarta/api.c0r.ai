@@ -5,68 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.62] - 2025-07-27
-
-### Fixed
-- **Food Analysis Functionality**: Complete fix for nutrition analysis from photos
-  - **Import Path Issues**: Fixed `ModuleNotFoundError: No module named 'bot'` in `services/api/bot/handlers/nutrition.py`
-    - Corrected absolute import `from bot import dp` to relative path `from services.api.bot.bot import dp`
-  - **Import Path Issues**: Fixed `ModuleNotFoundError: No module named 'handlers'` in action callbacks
-    - Moved `from .nutrition import NutritionStates` import to top of `services/api/bot/handlers/commands.py`
-  - **Authentication Headers**: Fixed 401 "Invalid or missing internal API token" error in ML service communication
-    - Added `X-Internal-Token` headers to `process_nutrition_analysis` function in `services/api/bot/handlers/photo.py`
-    - Properly configured `multipart/form-data` Content-Type handling for photo uploads
-  - **OpenAI Regional Blocking**: Implemented comprehensive fallback mechanism for regional restrictions
-    - Added proxy support for OpenAI client with `HTTP_PROXY`/`HTTPS_PROXY` environment variables
-    - Implemented automatic fallback from OpenAI to Google Gemini API when OpenAI fails
-    - Added full Gemini Vision API integration in `services/ml/gemini/client.py`
-    - Handles specific OpenAI errors: "unsupported_country_region_territory" and connection failures
-  - **Docker Service Communication**: Fixed inter-service communication issues after Docker restart
-    - Resolved network connectivity between API and ML services
-    - Ensured proper service health checks and dependency management
-
-### Added
-- **Google Gemini Vision API Integration**: Complete alternative ML provider implementation
-  - **Full Gemini Client**: Implemented `analyze_food_with_gemini()` function in `services/ml/gemini/client.py`
-    - Base64 image encoding and proper API request formatting
-    - Multilingual prompt support (Russian/English) for food analysis
-    - JSON response parsing with error handling
-    - Comprehensive logging for debugging and monitoring
-  - **Fallback Mechanism**: Automatic provider switching in ML service
-    - Primary: OpenAI GPT-4o-mini for food analysis
-    - Fallback: Google Gemini 1.5 Flash when OpenAI fails
-    - Configurable via `GEMINI_API_KEY` environment variable
-    - Graceful error handling and user notification
-  - **Proxy Configuration**: Enhanced OpenAI client with proxy support
-    - Optional HTTP/HTTPS proxy configuration via environment variables
-    - Automatic proxy detection and client configuration
-    - Maintains backward compatibility when proxies not configured
-  - **Enhanced Error Handling**: Improved error messages and user experience
-    - Clear distinction between OpenAI and Gemini analysis results
-    - Proper error propagation and user feedback
-    - Comprehensive logging for debugging and monitoring
-
-### Changed
-- **ML Service Architecture**: Enhanced ML service with multi-provider support
-  - **Provider Selection**: Added provider parameter support in `/api/v1/analyze` endpoint
-    - Default: "openai" (existing behavior)
-    - Explicit: "gemini" for direct Gemini usage
-    - Automatic: Fallback to Gemini when OpenAI fails
-  - **Environment Configuration**: Added Gemini API key configuration
-    - `GEMINI_API_KEY` environment variable for Gemini API access
-    - Placeholder configuration in `.env` file
-    - Optional proxy configuration for OpenAI bypass
-  - **Service Communication**: Enhanced inter-service authentication
-    - Proper `X-Internal-Token` header handling in all ML service requests
-    - Correct `multipart/form-data` Content-Type management
-    - Improved error handling and logging
-
-### Security
-- **API Token Validation**: Enhanced inter-service authentication security
-  - Proper token validation in ML service endpoints
-  - Secure header handling for multipart requests
-  - Comprehensive error logging for security monitoring
-
 ## [Unreleased]
 
 ### Fixed
@@ -223,56 +161,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Comprehensive documentation for new configuration and migration systems
 - **Security**: Enhanced inter-service security with mandatory authentication
 
-## [0.3.61] - 2025-07-20
-
-### Fixed
-- **Callback Query Timeout**: Fixed TelegramBadRequest "query is too old and response timeout expired" error in profile setup process
-- **Callback Answer Error Handling**: Added try-catch blocks around all `callback.answer()` calls to handle expired callback queries gracefully
-- **Profile Setup Stability**: Improved error handling in `complete_profile_setup`, `process_allergies`, and other callback handlers
-- **User Experience**: Users no longer see errors when callback queries expire during profile setup
-
-## [0.3.60] - 2025-07-20
-
-### Fixed
-- **Profile Setup Error Handling**: Fixed UnboundLocalError in `complete_profile_setup` function caused by missing `user_language` variable in exception handling blocks
-- **Exception Block Variable Scope**: Added proper `user_language` initialization in `except ValueError` and `except Exception` blocks
-- **Profile Setup Flow**: Ensured consistent variable scope throughout the profile setup process including all error handling paths
-- **Test Suite**: Verified core nutrition calculation and formatting tests pass successfully
-
-## [0.3.56] - 2025-07-20
-
-### Fixed
-- **Profile Display Enhancement**: Added dietary preferences and allergies information to profile display
-- **Profile Display Translation**: All profile fields now show translated values instead of English codes
-- **Profile Display Format**: Fixed duplicate emojis and units in profile display (e.g., "👨 👨 Мужской", "170 см см")
-- **Macro Distribution Error**: Fixed KeyError 'protein_g' in nutrition section by correcting data structure access
-- **Payment Service Error**: Added proper error handling for ServerDisconnectedError in payment processing
-- **Payment Error Translation**: Added Russian translation for payment service unavailable message
-
-### Added
-- **Profile Display Sections**: Added dedicated sections for dietary preferences and allergies in profile display
-- **Translation Keys**: Added new translation keys for profile display enhancements
-- **Error Handling**: Enhanced error handling for payment service connectivity issues
-
-## [0.3.54] - 2025-07-20
-
-### Fixed
-- **Profile Setup Translation**: Fixed UnboundLocalError in `process_age` and `process_goal` functions where `user_language` variable was not defined
-- **Telegram Markdown Error**: Fixed TelegramBadRequest "can't parse entities" error by removing `parse_mode="Markdown"` from messages containing emojis
-- **Profile Setup Flow**: Ensured all profile setup steps use proper Russian translations with emoji support
-
-### Added
-- **Enhanced Translations**: Added comprehensive Russian translations for all profile setup steps
-- **Emoji Support**: Added emoji indicators for better user experience in profile setup
-- **Error Handling**: Improved error handling for Telegram message formatting issues
-
 ---
 
 ## Archive
 
 For older changelog entries, see the organized files in the [`changelogs/`](changelogs/) directory:
 
-- [`changelogs/v0.3.x.md`](changelogs/v0.3.x.md) - Version 0.3.x changes
+- [`changelogs/v0.3.x.md`](changelogs/v0.3.x.md) - Version 0.3.x changes (0.3.0 - 0.3.62)
 - [`changelogs/v0.2.x.md`](changelogs/v0.2.x.md) - Version 0.2.x changes  
 - [`changelogs/v0.1.x.md`](changelogs/v0.1.x.md) - Version 0.1.x changes
 - [`changelogs/v0.0.x.md`](changelogs/v0.0.x.md) - Version 0.0.x changes
