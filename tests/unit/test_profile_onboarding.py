@@ -40,7 +40,7 @@ from handlers.profile import (
 @pytest.fixture(autouse=True)
 def patch_i18n_get_text():
     """Patch i18n.get_text to return real English text"""
-    with patch('handlers.profile.i18n.get_text') as mock_get_text:
+    with patch('handlers.profile.i18n.i18n.get_text') as mock_get_text:
         def fake_get_text(key, lang, **kwargs):
             # Return real English text from i18n/en.py
             en_texts = {

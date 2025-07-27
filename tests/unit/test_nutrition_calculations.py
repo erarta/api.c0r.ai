@@ -8,8 +8,10 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-# Add the parent directory to the path to import common modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+from tests.test_utils import setup_test_imports
+
+# Ensure proper imports
+setup_test_imports()
 
 # Import the module to test
 from common import nutrition_calculations
@@ -20,7 +22,7 @@ def patch_i18n():
     """Patch i18n module to return meaningful text for tests"""
     with patch('i18n.i18n.i18n') as mock_i18n:
         # Configure the mock to return formatted strings
-        mock_i18n.get_text.side_effect = lambda key, lang='en': f"[{lang.upper()}] {key}"
+        mock_i18n.get_text.side_effect = lambda key, language='en', **kwargs: f"[{language.upper()}] {key}"
         yield mock_i18n
 
 

@@ -3,11 +3,70 @@ description: General coding conventions for c0r.AI project
 alwaysApply: true
 ---
 
-- Use Python ≥ 3.10 for bots and webhooks.
-- Use TypeScript ≥ 4.5 for Cloudflare Workers.
-- Follow PEP8 for Python; Airbnb style for TypeScript.
-- Format with Black, Flake8/Ruff for linting.
-- Use `.env` for all secrets; never hardcode keys.
-- Add clear logging (INFO, ERROR, DEBUG).
-- Always after update code also update CHANGELOG.md
-- If you see that file you are editing contains more than 500 lines consider refactoring this file into logical chunks but before you do the refactoring get the approve this is required
+## 🔧 General Language & Tools
+
+- Use **Python ≥ 3.10** for backend, bots, and webhooks.
+- Use **TypeScript ≥ 4.5** for Cloudflare Workers and frontend.
+- Follow **PEP8** for Python; **Airbnb** style guide for TypeScript.
+- Use **Black** (Python) for formatting, **Ruff** or **Flake8** for linting.
+- Use **Prettier + ESLint** for frontend.
+- Use `.env` files for all secrets and config values; **never hardcode** credentials or tokens.
+
+## 📦 Code Structure & Modularity
+
+- **Each file must contain only one class or a group of strongly related functions.**
+- **Maximum file size: 350 lines.** If exceeded, break it into logical modules.
+- Break large functions into **reusable smaller functions**.
+- Always **extract repeated code** into utilities/helpers.
+- Follow the **SOLID principles** (especially Single Responsibility & Dependency Inversion).
+- For shared logic, use `core/`, `utils/`, or `services/` directories.
+
+## 🧱 Project Architecture
+
+- Use **domain-driven design** where applicable.
+- Use **dependency injection** for extensibility and testing.
+- Group code by **feature** (feature-first), not by technical layer (e.g., `src/features/auth/`, not `src/controllers/`, `src/models/`, etc).
+
+## 🔍 Code Quality
+
+- All functions must have **clear docstrings or comments** if non-trivial.
+- Add **type hints** for all function parameters and return types.
+- Write **unit tests** for all non-trivial logic.
+- For each pull request:
+  - Check test coverage.
+  - Update `CHANGELOG.md` if functionality changes.
+  - Add logging for new features or error-handling logic.
+
+## 🪵 Logging
+
+- Use structured logging: `INFO`, `DEBUG`, `WARNING`, `ERROR`, `CRITICAL`.
+- Never leave debug `print()` in production code.
+- Include **trace IDs** in logs for async/parallel jobs if possible.
+
+## 🧪 Testing
+
+- Use **pytest** for Python tests and **Vitest** or **Jest** for TypeScript.
+- Mock external services in tests.
+- Prefer **integration tests** for workflows and **unit tests** for isolated logic.
+
+## ✅ Pull Requests & Review
+
+- PR must pass **lint**, **tests**, and **CI**.
+- Add a meaningful title and description.
+- If refactoring a file over 500 lines, **get approval first** before restructuring.
+- Never leave commented-out code unless justified in the PR.
+
+## 🚀 Performance & Reliability
+
+- Optimize for **readability first**, then performance.
+- Cache expensive operations if needed (e.g., memoization, Redis).
+- Avoid deep nesting; use **early returns** when possible.
+- Prefer **async/await** over callbacks for readability and error handling.
+
+## 🧠 Extra Best Practices
+
+- Prefer **composition over inheritance**.
+- Use **immutable data structures** where possible.
+- Write code as if the next developer will maintain it — because they will.
+- Keep functions **pure** (no side-effects) when possible.
+- Avoid global state.

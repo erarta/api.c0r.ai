@@ -6,10 +6,15 @@ globs:
 alwaysApply: false
 ---
 
-- Follow Airbnb TypeScript style guide.
-- Always use `strict` mode and explicit types.
-- Use `Hono` or native Cloudflare Workers API for routing.
-- Use Supabase official JS SDK for DB.
-- Add types/interfaces for all request & response payloads.
-- Lint with `eslint`.
-- Write unit tests with `Jest`.
+## 🧠 Code Style & Standards
+
+- Follow the **Airbnb TypeScript Style Guide** with project-specific tweaks if needed.
+- Enable **`strict` mode** in `tsconfig.json`. Always define **explicit types** — avoid `any`.
+- Prefer **`type`** over `interface` unless extending multiple interfaces.
+- Use **named exports** (not default exports) for consistency and easier refactoring.
+- Prefer **readonly**, `const`, and **immutable data structures**.
+
+## 🌐 API & Routing
+
+- Use `Hono` or native **Cloudflare Workers API** — avoid mixing paradigms.
+- Always define **clear route handlers**: no

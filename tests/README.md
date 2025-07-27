@@ -1,216 +1,243 @@
-# c0r.ai API Test Suite
+# Test Suite Documentation
 
-Comprehensive testing system for the c0r.ai API to ensure code quality and prevent deployment of broken code.
+## 🧪 Overview
 
-## 🎯 Testing Strategy
+This test suite provides comprehensive coverage for the c0r.AI nutrition analysis bot, including unit tests, integration tests, and end-to-end testing scenarios.
 
-### Critical Bug Coverage
-- **Nutrition Insights NoneType Error**: Specifically tests the bug where `profile.get()` was called on `None`
-- **Version Consistency**: Ensures version is correctly displayed across all system components
-- **Profile Validation**: Tests all profile validation scenarios
+## 📁 Structure
 
-### Test Structure
 ```
 tests/
-├── unit/                    # Unit tests for individual components
-│   ├── test_nutrition.py   # Nutrition handler tests (critical)
-│   ├── test_commands.py    # Commands handler tests
-│   └── test_nutrition_calculations.py  # Calculation engine tests
-├── integration/            # Integration tests for component interaction
-│   └── test_api_integration.py  # Full API integration tests
-├── coverage/               # Coverage reports (generated)
-├── run_tests.py           # Main test runner with coverage
-├── deploy_test.sh         # Deployment readiness test script
-└── requirements.txt       # Test dependencies
+├── unit/                       # Unit tests (isolated functionality)
+│   ├── test_fsm_basic_operations.py    # FSM state transitions
+│   ├── test_fsm_nutrition_flow.py      # Nutrition analysis workflow
+│   ├── test_fsm_recipe_flow.py         # Recipe generation workflow
+│   ├── test_fsm_error_handling.py      # FSM error scenarios
+│   ├── test_nutrition_calculations.py   # Nutrition calculations
+│   ├── test_nutrition_sanitization.py  # Markdown sanitization
+│   ├── test_recipe_fsm_states.py       # Recipe FSM states
+│   └── ...
+├── integration/                # Integration tests (external services)
+│   ├── test_api_integration.py         # API endpoint testing
+│   ├── test_telegram_payments.py       # Payment integration
+│   ├── test_yookassa_integration.py    # YooKassa payment tests
+│   └── ...
+├── shared_fixtures.py          # Shared test fixtures
+├── base_test_classes.py        # Base test classes
+├── test_utils.py              # Common utilities
+├── conftest.py                # Global test configuration
+└── .env.test                  # Test environment variables
 ```
 
 ## 🚀 Running Tests
 
-### Quick Test Run
+### All Tests
 ```bash
-# Run all tests with coverage
-python tests/run_tests.py
+python -m pytest tests/
 ```
 
-### Specific Test Categories
+### Unit Tests Only
 ```bash
-# Unit tests only
-python -m pytest tests/unit/ -v
-
-# Integration tests only  
-python -m pytest tests/integration/ -v
-
-# Critical nutrition tests
-python -m pytest tests/unit/test_nutrition.py -v
-
-# Version consistency tests
-python -m pytest tests/unit/test_commands.py::TestVersionConsistency -v
+python -m pytest tests/unit/
 ```
 
-### Deployment Test Suite
+### Integration Tests Only
 ```bash
-# Run full deployment readiness test
-chmod +x tests/deploy_test.sh
-./tests/deploy_test.sh
+python -m pytest tests/integration/
 ```
 
-## 📊 Coverage Requirements
-
-- **Minimum Coverage**: 85%
-- **Critical Components**: Must have >85% coverage
-  - `handlers/nutrition.py` (nutrition insights)
-  - `handlers/commands.py` (core commands)
-  - `common/nutrition_calculations.py` (calculation engine)
-  - `common/supabase_client.py` (database operations)
-
-### Coverage Reports
-- **HTML Report**: `tests/coverage/combined_html/index.html`
-- **JSON Report**: `tests/coverage/combined_coverage.json`
-- **Markdown Report**: `tests/coverage/coverage_report.md`
-
-## 🛡️ Deployment Protection
-
-### Pre-deployment Checks
-The `deploy_test.sh` script MUST pass before any production deployment:
-
-1. **Syntax Check**: Validates Python syntax
-2. **Critical Tests**: Runs bug-specific tests
-3. **Integration Tests**: Tests component interaction
-4. **Coverage Check**: Ensures ≥85% coverage
-5. **Version Consistency**: Validates version display
-6. **Import Tests**: Checks all imports work
-7. **File Existence**: Verifies critical files present
-
-### CI/CD Integration
-```yaml
-# Example GitHub Actions step
-- name: Run Deployment Tests
-  run: |
-    chmod +x tests/deploy_test.sh
-    ./tests/deploy_test.sh
+### With Coverage
+```bash
+python -m pytest tests/ --cov=. --cov-report=html --cov-report=term
 ```
+
+### Specific Test File
+```bash
+python -m pytest tests/unit/test_nutrition_calculations.py -v
+```
+
+### Specific Test Method
+```bash
+python -m pytest tests/unit/test_fsm_basic_operations.py::TestFSMBasicOperations::test_analyze_button_sets_correct_state -v
+```
+
+## 🏗️ Test Architecture
+
+### Shared Components
+
+#### Base Test Classes
+- **`BaseHandlerTest`**: Common fixtures for handler testing
+- **`BaseFSMTest`**: FSM-specific test functionality
+- **`BaseIntegrationTest`**: Integration test utilities
+
+#### Shared Fixtures
+- **`mock_bot`**: Properly configured bot mock
+- **`state`**: FSM context with memory storage
+- **`mock_user_data`**: Standard user profile data
+- **`mock_ml_response`**: ML service response mock
+- **`mock_recipe_response`**: Recipe generation response mock
+
+#### Test Utilities
+- **`setup_test_imports()`**: Standardized import path configuration
+- **Environment setup**: Test-specific environment variables
+
+### FSM Test Structure
+
+The FSM (Finite State Machine) tests are organized into focused modules:
+
+1. **Basic Operations** (`test_fsm_basic_operations.py`)
+   - State setting and clearing
+   - Button interactions
+   - State transitions
+
+2. **Nutrition Flow** (`test_fsm_nutrition_flow.py`)
+   - Nutrition analysis workflow
+   - Photo processing
+   - ML service integration
+
+3. **Recipe Flow** (`test_fsm_recipe_flow.py`)
+   - Recipe generation workflow
+   - Dietary preferences handling
+   - Error scenarios
+
+4. **Error Handling** (`test_fsm_error_handling.py`)
+   - Exception handling
+   - Edge cases
+   - Recovery scenarios
+
+## 🔧 Configuration
+
+### Environment Variables
+Test environment is configured via `tests/.env.test`:
+```bash
+SUPABASE_URL=http://localhost:54321
+SUPABASE_SERVICE_ROLE_KEY=test_key
+YOOKASSA_SHOP_ID=test_shop_id
+YOOKASSA_SECRET_KEY=test_secret_key
+ML_SERVICE_URL=http://localhost:8001
+TELEGRAM_BOT_TOKEN=test_token
+ENVIRONMENT=test
+```
+
+### Pytest Configuration
+Settings in `tests/pytest.ini`:
+- Async test support
+- Custom markers
+- Warning filters
+- Test discovery patterns
+
+## 📊 Coverage Targets
+
+- **Overall Coverage**: ≥85%
+- **Critical Paths**: 100%
+- **FSM Logic**: 100%
+- **Nutrition Calculations**: 100%
 
 ## 🧪 Test Categories
 
 ### Unit Tests
-- **TestNutritionInsights**: Tests nutrition insights functionality
-  - `test_nutrition_insights_with_none_profile` - Critical bug fix
-  - `test_nutrition_insights_with_empty_profile` - Edge case
-  - `test_nutrition_insights_with_partial_profile` - Partial data
-  - `test_nutrition_insights_with_complete_profile` - Happy path
-
-- **TestCommands**: Tests command handlers
-  - `test_status_command_with_version` - Version display
-  - `test_start_command_new_user` - New user flow
-  - `test_handle_action_callback` - Button interactions
-
-- **TestNutritionCalculations**: Tests calculation engine
-  - `test_bmi_*` - BMI calculations for all categories
-  - `test_water_needs_*` - Water requirement calculations
-  - `test_macro_distribution_*` - Macro nutrient distribution
+- **Nutrition Calculations**: BMI, water needs, macro distribution
+- **Message Formatting**: Markdown sanitization, text processing
+- **FSM State Management**: State transitions, error handling
+- **Profile Management**: User onboarding, profile updates
 
 ### Integration Tests
-- **TestUserJourney**: Complete user flows
-  - `test_new_user_complete_flow` - New user experience
-  - `test_existing_user_with_profile_flow` - Existing user with profile
+- **API Endpoints**: Health checks, analysis endpoints
+- **External Services**: ML service, payment processing
+- **Database Operations**: User data, transaction logging
+- **Bot Integration**: Telegram API, webhook handling
 
-- **TestCriticalPaths**: Critical bug scenarios
-  - `test_nutrition_insights_critical_path` - Exact bug scenario from logs
-  - `test_user_with_profile_critical_path` - Working user scenario
-
-## 🔧 Test Development
-
-### Adding New Tests
-1. Create test file in appropriate directory (`unit/` or `integration/`)
-2. Follow naming convention: `test_*.py`
-3. Use descriptive test names: `test_specific_functionality`
-4. Include docstrings explaining test purpose
-5. Mock external dependencies
-6. Test both success and failure scenarios
+## 🔍 Best Practices
 
 ### Test Structure
+1. **Arrange-Act-Assert** pattern
+2. **Descriptive test names** explaining what is being tested
+3. **Single responsibility** per test method
+4. **Proper mocking** of external dependencies
+
+### Fixture Usage
 ```python
-class TestComponentName:
-    """Test suite for component functionality"""
-    
+from tests.base_test_classes import BaseFSMTest
+from tests.shared_fixtures import *
+
+class TestMyFeature(BaseFSMTest):
     @pytest.mark.asyncio
-    async def test_specific_functionality(self):
-        """Test specific functionality with detailed description"""
-        # Arrange
-        setup_mocks()
-        
-        # Act
-        result = await function_under_test()
-        
-        # Assert
-        assert expected_result == result
+    async def test_feature_behavior(self, state, mock_user_data):
+        # Test implementation
+        pass
 ```
 
-### Mocking Guidelines
-- Mock external dependencies (database, API calls)
-- Use `AsyncMock` for async functions
-- Mock at the appropriate level (not too deep)
-- Verify mocks are called correctly
+### Import Standardization
+```python
+from tests.test_utils import setup_test_imports
 
-## 📋 Test Maintenance
+# Ensure proper imports
+setup_test_imports()
 
-### Version Updates
-When updating version in `config.py`:
-1. Update version-related tests
-2. Update expected version in deployment script
-3. Run full test suite to ensure consistency
+# Import application modules
+from app.handlers.photo import photo_handler
+```
 
-### Adding New Features
-1. Write tests first (TDD approach)
-2. Ensure critical paths are tested
-3. Add integration tests for complex interactions
-4. Update coverage requirements if needed
+## 🐛 Debugging Tests
 
-### Bug Fixes
-1. Create failing test that reproduces the bug
-2. Fix the bug
-3. Ensure test now passes
-4. Add additional edge case tests
+### Common Issues
+1. **Import Errors**: Ensure `setup_test_imports()` is called
+2. **AsyncMock Issues**: Use proper async fixtures
+3. **State Management**: Clear FSM state between tests
+4. **Mock Configuration**: Verify mock return values
 
-## 🚨 Common Issues
+### Debug Commands
+```bash
+# Run with detailed output
+python -m pytest tests/unit/test_fsm_basic_operations.py -v -s
 
-### Test Failures
-- **Import Errors**: Check Python path setup in test files
-- **Mock Issues**: Ensure mocks are patched at correct location
-- **Async Issues**: Use `@pytest.mark.asyncio` for async tests
-- **Coverage Low**: Add tests for uncovered code paths
+# Run with pdb on failure
+python -m pytest tests/unit/test_fsm_basic_operations.py --pdb
 
-### Deployment Failures
-- **Syntax Errors**: Fix Python syntax issues
-- **Missing Dependencies**: Install test requirements
-- **Version Mismatch**: Update version in config.py
-- **Coverage Below 85%**: Add more tests or improve existing ones
+# Run specific test with coverage
+python -m pytest tests/unit/test_nutrition_calculations.py::TestCalculateBMI::test_bmi_normal_weight --cov=common.nutrition_calculations --cov-report=term-missing
+```
 
-## 💡 Best Practices
+## 📈 Continuous Integration
 
-1. **Test Independence**: Tests should not depend on each other
-2. **Clear Naming**: Use descriptive test and function names
-3. **Documentation**: Include docstrings for complex tests
-4. **Edge Cases**: Test boundary conditions and error scenarios
-5. **Mock Appropriately**: Mock external dependencies, not internal logic
-6. **Maintain Coverage**: Keep coverage above 85%
-7. **Update Tests**: Update tests when functionality changes
+### Pre-commit Checks
+- All tests must pass
+- Coverage threshold must be met
+- No linting errors
+- Import paths standardized
+
+### Deployment Pipeline
+- Unit tests run on every commit
+- Integration tests run on pull requests
+- Full test suite runs before deployment
+- Coverage reports generated and uploaded
+
+## 🔄 Maintenance
+
+### Adding New Tests
+1. Choose appropriate test category (unit/integration)
+2. Use existing base classes and fixtures
+3. Follow naming conventions
+4. Ensure proper mocking
+5. Update documentation if needed
+
+### Updating Existing Tests
+1. Maintain backward compatibility
+2. Update related fixtures if needed
+3. Verify all dependent tests still pass
+4. Update coverage expectations
 
 ## 📞 Support
 
-If you encounter issues with the test suite:
-1. Check this README for common solutions
-2. Review test logs for specific error messages
-3. Ensure all dependencies are installed
-4. Contact the development team for assistance
+For test-related issues:
+1. Check this documentation
+2. Review existing test patterns
+3. Verify environment setup
+4. Check import paths and fixtures
 
-## 🔄 Continuous Improvement
+---
 
-The test suite is continuously improved to:
-- Catch more bugs before deployment
-- Improve coverage of critical paths
-- Reduce test execution time
-- Enhance test reliability
-- Better integration with CI/CD pipelines
-
-Remember: **All tests must pass before production deployment!** 
+**Last Updated**: 2025-07-26  
+**Test Framework**: pytest 8.2.0  
+**Python Version**: 3.13+  
+**Coverage Target**: 85%

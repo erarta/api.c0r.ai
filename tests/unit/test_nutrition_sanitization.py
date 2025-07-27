@@ -4,8 +4,11 @@ Test nutrition insights markdown sanitization
 import pytest
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'api.c0r.ai')))
+
+from tests.test_utils import setup_test_imports
+
+# Ensure proper imports
+setup_test_imports()
 
 # Create a mock function since we can't import the full module due to Supabase dependencies
 def sanitize_markdown_text(text: str) -> str:
