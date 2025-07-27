@@ -91,9 +91,9 @@ echo -e "${GREEN}✅ Test environment variables set${NC}"
 
 # Step 2: Check Python syntax
 echo -e "\n${YELLOW}🔍 Checking Python syntax...${NC}"
-run_command "python -m py_compile api.c0r.ai/app/config.py" "Checking config.py syntax"
-run_command "python -m py_compile api.c0r.ai/app/handlers/nutrition.py" "Checking nutrition.py syntax"
-run_command "python -m py_compile api.c0r.ai/app/handlers/commands.py" "Checking commands.py syntax"
+run_command "python -m py_compile services/api/bot/config.py" "Checking bot config.py syntax"
+run_command "python -m py_compile services/api/bot/handlers/nutrition.py" "Checking nutrition.py syntax"
+run_command "python -m py_compile services/api/bot/handlers/commands.py" "Checking commands.py syntax"
 run_command "python -m py_compile common/nutrition_calculations.py" "Checking nutrition_calculations.py syntax"
 
 # Step 3: Run critical unit tests
@@ -152,9 +152,9 @@ echo -e "\n${YELLOW}🎯 Final deployment readiness check...${NC}"
 
 # Check if all critical files exist
 critical_files=(
-    "api.c0r.ai/app/config.py"
-    "api.c0r.ai/app/handlers/nutrition.py"
-    "api.c0r.ai/app/handlers/commands.py"
+    "services/api/bot/config.py"
+    "services/api/bot/handlers/nutrition.py"
+    "services/api/bot/handlers/commands.py"
     "common/nutrition_calculations.py"
     "docker-compose.yml"
     "CHANGELOG.md"

@@ -14,7 +14,7 @@ import asyncio
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../api.c0r.ai/app'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
 
-from handlers.commands import (
+from services.api.bot.handlers.commands import (
     start_command,
     help_command,
     help_callback,
@@ -38,10 +38,10 @@ class TestStartCommand:
         message.from_user.first_name = "Test"
         message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 3, 'language': 'en'}):
-            with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.commands.log_user_action', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 3, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.detect_and_set_user_language', return_value='en'):
+                with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
+                    with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                         await start_command(message)
                         
                         message.answer.assert_called_once()
@@ -65,10 +65,10 @@ class TestStartCommand:
             'created_at': '2024-01-01T00:00:00Z'
         }
         
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.commands.create_main_menu_text', return_value="Welcome back message"):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_text', return_value="Welcome back message"):
                         
                         await start_command(message)
                         
@@ -82,8 +82,8 @@ class TestStartCommand:
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', side_effect=Exception("Database error")):
-            with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', side_effect=Exception("Database error")):
+            with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                 await start_command(message)
                 
                 message.answer.assert_called_once()
@@ -102,8 +102,8 @@ class TestHelpCommand:
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
-            with patch('handlers.commands.log_user_action', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 await help_command(message)
                 
                 message.answer.assert_called_once()
@@ -120,9 +120,9 @@ class TestHelpCommand:
         callback.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                     await help_callback(callback)
                     callback.message.answer.assert_called_once()
                     call_args = callback.message.answer.call_args[0][0]
@@ -144,9 +144,9 @@ class TestHelpCommand:
             'credits_remaining': 5
         }
         
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                     
                     await help_callback(callback)
                     
@@ -173,10 +173,10 @@ class TestStatusCommand:
             'created_at': '2024-01-01T00:00:00Z'
         }
         
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.get_user_total_paid', return_value=100.0):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=100.0):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         
                         await status_command(message)
                         
@@ -196,10 +196,10 @@ class TestStatusCommand:
         callback.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'created_at': '2024-01-01T00:00:00Z', 'language': 'en'}):
-            with patch('handlers.commands.get_user_total_paid', return_value=0):
-                with patch('handlers.commands.log_user_action', return_value=None):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'created_at': '2024-01-01T00:00:00Z', 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0):
+                with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         await status_callback(callback)
                         
                         callback.message.answer.assert_called_once()
@@ -222,10 +222,10 @@ class TestStatusCommand:
             'created_at': '2024-01-15T10:30:00Z'
         }
         
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.get_user_total_paid', return_value=0.0):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0.0):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         
                         await status_command(message)
                         
@@ -241,8 +241,8 @@ class TestStatusCommand:
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', side_effect=Exception("Database error")):
-            with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', side_effect=Exception("Database error")):
+            with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                 await status_command(message)
                 
                 message.answer.assert_called_once()
@@ -261,10 +261,10 @@ class TestBuyCreditsCommand:
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'language': 'en'}):
-            with patch('handlers.commands.get_user_total_paid', return_value=0):
-                with patch('handlers.commands.log_user_action', return_value=None):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0):
+                with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         await buy_credits_command(message)
                         
                         message.answer.assert_called_once()
@@ -282,10 +282,10 @@ class TestBuyCreditsCommand:
         callback.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'language': 'en'}):
-            with patch('handlers.commands.get_user_total_paid', return_value=0):
-                with patch('handlers.commands.log_user_action', return_value=None):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0):
+                with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         await buy_callback(callback)
                         
                         callback.message.answer.assert_called_once()
@@ -320,9 +320,9 @@ class TestProfileCallback:
             'has_profile': True
         }
         
-        with patch('handlers.commands.get_user_with_profile', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.show_profile_info', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.show_profile_info', return_value=None):
                     
                     await profile_callback(callback)
                     
@@ -343,9 +343,9 @@ class TestProfileCallback:
             'has_profile': False
         }
         
-        with patch('handlers.commands.get_user_with_profile', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.show_profile_setup_info', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.show_profile_setup_info', return_value=None):
                     
                     await profile_callback(callback)
                     
@@ -365,7 +365,7 @@ class TestActionCallback:
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
-        with patch('handlers.commands.help_callback', return_value=None) as mock_help:
+        with patch('services.api.bot.handlers.commands.help_callback', return_value=None) as mock_help:
             
             await handle_action_callback(callback)
             
@@ -382,7 +382,7 @@ class TestActionCallback:
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
-        with patch('handlers.commands.status_callback', return_value=None) as mock_status:
+        with patch('services.api.bot.handlers.commands.status_callback', return_value=None) as mock_status:
             
             await handle_action_callback(callback)
             
@@ -399,7 +399,7 @@ class TestActionCallback:
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
-        with patch('handlers.commands.buy_callback', return_value=None) as mock_buy:
+        with patch('services.api.bot.handlers.commands.buy_callback', return_value=None) as mock_buy:
             
             await handle_action_callback(callback)
             
@@ -416,7 +416,7 @@ class TestActionCallback:
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
-        with patch('handlers.commands.profile_callback', return_value=None) as mock_profile:
+        with patch('services.api.bot.handlers.commands.profile_callback', return_value=None) as mock_profile:
             
             await handle_action_callback(callback)
             
@@ -432,9 +432,9 @@ class TestActionCallback:
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_text', return_value=("🚀 **Choose an option:**", None)):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.create_main_menu_text', return_value=("🚀 **Choose an option:**", None)):
                     await handle_action_callback(callback)
                     
                     # Should call message.answer for main_menu action
@@ -452,8 +452,8 @@ class TestActionCallback:
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
-            with patch('handlers.commands.log_user_action', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 with patch('handlers.nutrition.nutrition_insights_callback', return_value=None) as mock_nutrition:
                     await handle_action_callback(callback)
                     
@@ -470,8 +470,8 @@ class TestActionCallback:
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
-            with patch('handlers.commands.log_user_action', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 await handle_action_callback(callback)
                 
                 # Should not call message.answer for unknown actions
@@ -487,9 +487,9 @@ class TestActionCallback:
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.create_main_menu_text', side_effect=Exception("Handler error")):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.create_main_menu_text', side_effect=Exception("Handler error")):
                     await handle_action_callback(callback)
                     assert callback.answer.call_count == 2
                     callback.answer.assert_any_call("An error occurred. Please try again later.")
@@ -500,7 +500,7 @@ class TestVersionConsistency:
     
     def test_version_import(self):
         """Test that VERSION is properly imported and accessible"""
-        from config import VERSION
+        from services.api.bot.config import VERSION
         assert isinstance(VERSION, str)
         assert len(VERSION) > 0
         # Version should follow semantic versioning pattern (x.y.z)
@@ -509,7 +509,7 @@ class TestVersionConsistency:
     
     def test_version_format(self):
         """Test that VERSION follows semantic versioning format"""
-        from config import VERSION
+        from services.api.bot.config import VERSION
         import re
         
         # Test semantic versioning pattern: X.Y.Z

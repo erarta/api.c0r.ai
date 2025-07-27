@@ -1,0 +1,71 @@
+# Changelog Maintenance Rules
+
+## ⚠️ CRITICAL RULE - MAIN CHANGELOG.md MUST STAY CLEAN
+
+**NEVER add detailed change entries to the main `CHANGELOG.md` file!**
+
+- **Main CHANGELOG.md**: Only structure, links, archive references
+- **All content**: Goes in `changelogs/` directory files
+- **Purpose**: Keep main file as clean index
+
+## 📋 Structure
+
+### Main CHANGELOG.md
+- **Purpose**: Links to organized files ONLY
+- **Content**: Header, empty `[Unreleased]`, archive links, guidelines
+- **Rule**: NO detailed change entries here!
+
+### Organized Files
+- **Location**: `changelogs/` directory
+- **Naming**: `v0.X.x.md` for each major version
+- **Content**: All versions within that major version range
+
+## 📝 Version Entry Format
+
+### Version Header
+```markdown
+## [0.3.68] - 2025-07-27
+```
+
+### Categories (in order)
+1. **Added** - New features
+2. **Changed** - Changes in existing functionality
+3. **Deprecated** - Soon-to-be removed features
+4. **Removed** - Removed features
+5. **Fixed** - Bug fixes
+6. **Security** - Security-related changes
+
+### Entry Structure
+```markdown
+### Fixed
+- **Feature Name**: Brief description
+  - **Sub-feature**: Detailed explanation
+    - Specific change detail
+```
+
+## 🔄 Workflow
+
+### Adding Changes
+1. **Add directly** to appropriate version file in `changelogs/` directory
+2. **Keep main clean** - only update archive links when new major version files created
+3. **Use proper format** - follow Keep a Changelog standards
+
+### Version Release
+1. **Create version entry** at top of appropriate changelog file
+2. **Add all changes** directly to new version section
+3. **Update main CHANGELOG** only if new major version file created
+4. **Never add detailed content** to main CHANGELOG.md
+
+## ✅ Quality Standards
+
+### Entry Requirements
+- **Clear titles**: Use bold feature names with descriptive titles
+- **Technical details**: Include file paths, function names, technical context
+- **User impact**: Explain how changes affect user experience
+- **Consistency**: Use consistent formatting and terminology
+
+### Formatting Rules
+- **Bold feature names**: Use `**Feature Name**` for main features
+- **Code references**: Use backticks for file paths and technical terms
+- **Hierarchical structure**: Use proper indentation for sub-features
+- **Date format**: Use YYYY-MM-DD format for version dates

@@ -21,7 +21,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r api.c0r.ai/app/requirements.txt
+        # Install main project dependencies
+        pip install -r requirements.txt
+        # Install service-specific dependencies
+        pip install -r services/api/bot/requirements.txt
+        pip install -r services/ml/requirements.txt
+        pip install -r services/pay/requirements.txt
+        # Install test dependencies
         pip install -r tests/requirements.txt
         
     - name: Run deployment tests
