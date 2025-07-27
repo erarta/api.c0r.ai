@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'common')
 from common.config.payment_plans import get_payment_plans, PAYMENT_PLANS
 
 # Application Version
-VERSION = "0.3.19"
+VERSION = "0.3.68"
 
 # System information
 SYSTEM_NAME = "c0r.ai"

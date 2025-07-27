@@ -31,7 +31,8 @@ async def process_nutrition_photo(message: types.Message):
     from .photo import photo_handler
     from aiogram.fsm.context import FSMContext
     from aiogram.fsm.storage.memory import MemoryStorage
-    from services.api.bot.bot import dp  # Import dispatcher directly
+    # Import dispatcher from bot module - avoid circular import
+    import services.api.bot.bot as bot_module
     
     # Create FSM context using proper aiogram 3.x method
     # In aiogram 3.x, we need to create the key manually using the storage's key builder
@@ -40,7 +41,7 @@ async def process_nutrition_photo(message: types.Message):
         chat_id=message.chat.id,
         user_id=message.from_user.id
     )
-    state = FSMContext(storage=dp.storage, key=storage_key)
+    state = FSMContext(storage=bot_module.dp.storage, key=storage_key)
     
     # Set the state to indicate we're in nutrition analysis mode
     # This will make photo_handler know that we want to analyze the photo

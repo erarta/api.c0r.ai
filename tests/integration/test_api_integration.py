@@ -10,12 +10,11 @@ from unittest.mock import Mock, AsyncMock, patch
 from aiogram import types
 
 # Add project paths
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../api.c0r.ai/app'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../common'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
 
-from handlers.commands import start_command, status_command, help_command
-from handlers.nutrition import nutrition_insights_command, water_tracker_command
-from handlers.keyboards import create_main_menu_keyboard
+from services.api.bot.handlers.commands import start_command, status_command, help_command
+from services.api.bot.handlers.nutrition import nutrition_insights_command, water_tracker_command
+from services.api.bot.handlers.keyboards import create_main_menu_keyboard
 
 class TestUserJourney:
     """Integration tests for complete user journey"""
@@ -44,9 +43,9 @@ class TestUserJourney:
         }
         
         # Test 1: Start command for new user
-        with patch('handlers.commands.get_or_create_user', return_value=new_user):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=new_user):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.detect_and_set_user_language', return_value='en'):
                     
                     await start_command(message)
                     
@@ -60,10 +59,10 @@ class TestUserJourney:
         message.answer.reset_mock()
         
         # Test 2: Status command shows correct information
-        with patch('handlers.commands.get_or_create_user', return_value=new_user):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.get_user_total_paid', return_value=0.0):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=new_user):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0.0):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         
                         await status_command(message)
                         
@@ -84,9 +83,9 @@ class TestUserJourney:
             'has_profile': False
         }
         
-        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data_no_profile):
-            with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', return_value=user_data_no_profile):
+            with patch('services.api.bot.handlers.nutrition.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     await nutrition_insights_command(message)
                     
@@ -132,9 +131,9 @@ class TestUserJourney:
         }
         
         # Test 1: Start command for existing user
-        with patch('handlers.commands.get_or_create_user', return_value=existing_user):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=existing_user):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.detect_and_set_user_language', return_value='en'):
                     
                     await start_command(message)
                     
@@ -147,10 +146,10 @@ class TestUserJourney:
         message.answer.reset_mock()
         
         # Test 2: Status command shows paid user info
-        with patch('handlers.commands.get_or_create_user', return_value=existing_user):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.get_user_total_paid', return_value=399.0):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=existing_user):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=399.0):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         
                         await status_command(message)
                         
@@ -163,9 +162,9 @@ class TestUserJourney:
         message.answer.reset_mock()
         
         # Test 3: Nutrition insights with complete profile
-        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data_with_profile):
-            with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', return_value=user_data_with_profile):
+            with patch('services.api.bot.handlers.nutrition.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
                     
                     await nutrition_insights_command(message)
                     
@@ -177,10 +176,10 @@ class TestUserJourney:
         message.answer.reset_mock()
         
         # Test 4: Water tracker with profile
-        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data_with_profile):
-            with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.create_main_menu_keyboard', return_value=None):
-                    with patch('handlers.nutrition.calculate_water_needs') as mock_water:
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', return_value=user_data_with_profile):
+            with patch('services.api.bot.handlers.nutrition.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.nutrition.create_main_menu_keyboard', return_value=None):
+                    with patch('services.api.bot.handlers.nutrition.calculate_water_needs') as mock_water:
                         mock_water.return_value = {
                             'liters': 2.8,
                             'glasses': 11,
@@ -211,8 +210,8 @@ class TestErrorHandlingIntegration:
         message.answer = AsyncMock()
         
         # Test database error in start command
-        with patch('handlers.commands.get_or_create_user', side_effect=Exception("Database connection failed")):
-            with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', side_effect=Exception("Database connection failed")):
+            with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                 
                 await start_command(message)
                 
@@ -224,8 +223,8 @@ class TestErrorHandlingIntegration:
         message.answer.reset_mock()
         
         # Test database error in status command
-        with patch('handlers.commands.get_or_create_user', side_effect=Exception("Database connection failed")):
-            with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', side_effect=Exception("Database connection failed")):
+            with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                 
                 await status_command(message)
                 
@@ -237,8 +236,8 @@ class TestErrorHandlingIntegration:
         message.answer.reset_mock()
         
         # Test database error in nutrition insights
-        with patch('handlers.nutrition.get_user_with_profile', side_effect=Exception("Database connection failed")):
-            with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', side_effect=Exception("Database connection failed")):
+            with patch('services.api.bot.handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                 
                 await nutrition_insights_command(message)
                 
@@ -272,9 +271,9 @@ class TestErrorHandlingIntegration:
             'has_profile': True
         }
         
-        with patch('handlers.nutrition.get_user_with_profile', return_value=corrupted_user_data):
-            with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', return_value=corrupted_user_data):
+            with patch('services.api.bot.handlers.nutrition.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     await nutrition_insights_command(message)
                     
@@ -310,9 +309,9 @@ class TestKeyboardIntegration:
         }
         
         # Test that start command works
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.detect_and_set_user_language', return_value='en'):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.detect_and_set_user_language', return_value='en'):
                     
                     await start_command(message)
                     
@@ -323,8 +322,8 @@ class TestKeyboardIntegration:
         message.answer.reset_mock()
         
         # Test help command works
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 
                 await help_command(message)
                 
@@ -353,10 +352,10 @@ class TestVersionConsistencyIntegration:
         }
         
         # Test status command
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.get_user_total_paid', return_value=0.0):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0.0):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         
                         await status_command(message)
                         
@@ -376,10 +375,10 @@ class TestVersionConsistencyIntegration:
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
-        with patch('handlers.commands.get_or_create_user', return_value=user_data):
-            with patch('handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.commands.get_user_total_paid', return_value=0.0):
-                    with patch('handlers.commands.create_main_menu_keyboard', return_value=None):
+        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
+            with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0.0):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         
                         from handlers.commands import status_callback
                         await status_callback(callback)
@@ -413,9 +412,9 @@ class TestCriticalPathsIntegration:
             'has_profile': False
         }
         
-        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
-            with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', return_value=user_data):
+            with patch('services.api.bot.handlers.nutrition.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.nutrition.get_or_create_user', return_value={'language': 'en'}):
                     
                     # This should NOT raise an exception anymore
                     await nutrition_insights_command(message)
@@ -460,9 +459,9 @@ class TestCriticalPathsIntegration:
             'has_profile': True
         }
         
-        with patch('handlers.nutrition.get_user_with_profile', return_value=user_data):
-            with patch('handlers.nutrition.log_user_action', return_value=None):
-                with patch('handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
+        with patch('services.api.bot.handlers.nutrition.get_user_with_profile', return_value=user_data):
+            with patch('services.api.bot.handlers.nutrition.log_user_action', return_value=None):
+                with patch('services.api.bot.handlers.nutrition.show_nutrition_insights_menu') as mock_show_menu:
                     
                     # This should show nutrition insights menu
                     await nutrition_insights_command(message)
