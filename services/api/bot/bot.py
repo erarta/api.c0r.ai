@@ -6,10 +6,10 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-from handlers.commands import start_command, help_command, status_command, buy_credits_command, handle_action_callback
-from handlers.photo import photo_handler
-from handlers.payments import handle_pre_checkout_query, handle_successful_payment, handle_buy_callback
-from handlers.profile import (
+from services.api.bot.handlers.commands import start_command, help_command, status_command, buy_credits_command, handle_action_callback
+from services.api.bot.handlers.photo import photo_handler
+from services.api.bot.handlers.payments import handle_pre_checkout_query, handle_successful_payment, handle_buy_callback
+from services.api.bot.handlers.profile import (
     profile_command,
     handle_profile_callback,
     process_age, process_height, process_weight,
@@ -17,10 +17,10 @@ from handlers.profile import (
     process_dietary_preferences, process_allergies,
     ProfileStates
 )
-from handlers.recipe import recipe_command, handle_recipe_callback, process_recipe_photo, RecipeStates
-from handlers.daily import daily_command, handle_daily_callback
-from handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command, process_nutrition_photo, NutritionStates
-from handlers.language import language_command, handle_language_callback
+from services.api.bot.handlers.recipe import recipe_command, handle_recipe_callback, process_recipe_photo, RecipeStates
+from services.api.bot.handlers.daily import daily_command, handle_daily_callback
+from services.api.bot.handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command, process_nutrition_photo, NutritionStates
+from services.api.bot.handlers.language import language_command, handle_language_callback
 from i18n.i18n import i18n
 from loguru import logger
 
@@ -211,7 +211,7 @@ dp.callback_query.register(process_allergies, lambda callback: callback.data.sta
 dp.callback_query.register(handle_daily_callback, lambda callback: callback.data.startswith("daily_"))
 dp.callback_query.register(handle_language_callback, lambda callback: callback.data.startswith("language_"))
 # Nutrition insights section navigation
-from handlers.nutrition import handle_nutrition_section_callback, handle_nutrition_menu_callback
+from services.api.bot.handlers.nutrition import handle_nutrition_section_callback, handle_nutrition_menu_callback
 dp.callback_query.register(handle_nutrition_section_callback, lambda callback: callback.data.startswith("nutrition_section_"))
 dp.callback_query.register(handle_nutrition_menu_callback, lambda callback: callback.data == "nutrition_menu")
 

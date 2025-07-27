@@ -17,8 +17,8 @@ from aiogram.fsm.state import State, StatesGroup
 from common.supabase_client import get_or_create_user, get_user_with_profile, log_user_action, decrement_credits
 from common.routes import Routes
 from i18n.i18n import i18n
-from utils.r2 import upload_photo_to_r2, upload_telegram_photo
-from handlers.nutrition import sanitize_markdown_text
+from services.api.bot.utils.r2 import upload_photo_to_r2, upload_telegram_photo
+from services.api.bot.handlers.nutrition import sanitize_markdown_text
 
 logger = logging.getLogger(__name__)
 
@@ -90,13 +90,13 @@ async def recipe_command(message: types.Message, state: FSMContext):
             if user_language == 'ru':
                 error_text = (
                     f"❌ **Кредиты закончились**\n\n"
-                    f"Для генерации рецептов по фото нужны кредиты\\.\n\n"
+                    f"Для генерации рецептов по фото нужны кредиты\.\n\n"
                     f"💳 **Получи больше кредитов:**"
                 )
             else:
                 error_text = (
                     f"❌ **No Credits Remaining**\n\n"
-                    f"You need credits to generate recipes from photos\\.\n\n"
+                    f"You need credits to generate recipes from photos\.\n\n"
                     f"💳 **Get more credits:**"
                 )
             
@@ -175,13 +175,13 @@ async def recipe_callback(callback: types.CallbackQuery, state: FSMContext):
             if user_language == 'ru':
                 error_text = (
                     f"❌ **Кредиты закончились**\n\n"
-                    f"Для генерации рецептов по фото нужны кредиты\\.\n\n"
+                    f"Для генерации рецептов по фото нужны кредиты\.\n\n"
                     f"💳 **Получи больше кредитов:**"
                 )
             else:
                 error_text = (
                     f"❌ **No Credits Remaining**\n\n"
-                    f"You need credits to generate recipes from photos\\.\n\n"
+                    f"You need credits to generate recipes from photos\.\n\n"
                     f"💳 **Get more credits:**"
                 )
             
@@ -493,13 +493,13 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
             if user_language == 'ru':
                 error_text = (
                     f"❌ **Кредиты закончились**\n\n"
-                    f"Для генерации рецептов по фото нужны кредиты\\.\n\n"
+                    f"Для генерации рецептов по фото нужны кредиты\.\n\n"
                     f"💳 **Получи больше кредитов:**"
                 )
             else:
                 error_text = (
                     f"❌ **No Credits Remaining**\n\n"
-                    f"You need credits to generate recipes from photos\\.\n\n"
+                    f"You need credits to generate recipes from photos\.\n\n"
                     f"💳 **Get more credits:**"
                 )
             
@@ -551,7 +551,7 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
             if not photo_url:
                 upload_error_text = (
                     f"❌ **Upload Failed**\n\n"
-                    f"Failed to upload photo\\. Please try again\\."
+                    f"Failed to upload photo\. Please try again\."
                 )
                 upload_error_text = sanitize_markdown_text(upload_error_text)
                 
@@ -567,7 +567,7 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
                 'profile': profile,
                 'has_profile': has_profile
             }
-            recipe_data = await generate_recipe_from_photo(photo_url, user_data_for_ml)
+            recipe_data = await generate_recipe_from_photo(photo_url, user_data_for_ml, telegram_user_id)
             
             if not recipe_data:
                 # Create keyboard with main menu button
@@ -581,12 +581,12 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
                 if user_language == 'ru':
                     error_text = (
                         f"❌ **Генерация рецепта не удалась**\n\n"
-                        f"Не удалось создать рецепт по этому фото\\. Попробуйте с более четким изображением еды или ингредиентов\\."
+                        f"Не удалось создать рецепт по этому фото. Попробуйте с более четким изображением еды или ингредиентов."
                     )
                 else:
                     error_text = (
                         f"❌ **Recipe Generation Failed**\n\n"
-                        f"Unable to generate recipe from this photo\\. Please try with a clearer image of food or ingredients\\."
+                        f"Unable to generate recipe from this photo. Please try with a clearer image of food or ingredients."
                     )
                 
                 # Sanitize the error text
@@ -627,7 +627,7 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
             from .keyboards import create_main_menu_keyboard
             await processing_msg.edit_text(
                 f"❌ **Processing Error**\n\n"
-                f"An error occurred while processing your photo\\. Please try again\\.",
+                f"An error occurred while processing your photo\. Please try again\.",
                 parse_mode="Markdown",
                 reply_markup=create_main_menu_keyboard(user_language)
             )
@@ -645,7 +645,7 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
         except Exception as inner_e:
             logger.error(f"Error sending error message: {inner_e}")
             # Fallback message without any DB dependencies
-            await message.answer("❌ An error occurred\\. Please try again later\\.")
+            await message.answer("❌ An error occurred\. Please try again later\.")
         finally:
             # Clear FSM state to prevent user from being stuck
             try:
@@ -653,7 +653,7 @@ async def process_recipe_photo(message: types.Message, state: FSMContext):
             except Exception:
                 pass  # Ignore state clearing errors
 
-async def generate_recipe_from_photo(photo_url: str, user_data: dict) -> dict:
+async def generate_recipe_from_photo(photo_url: str, user_data: dict, telegram_user_id: int) -> dict:
     """Generate recipe from photo using ML service"""
     try:
         user = user_data['user']
@@ -683,18 +683,33 @@ async def generate_recipe_from_photo(photo_url: str, user_data: dict) -> dict:
             })
         
         # Call ML service for recipe generation
-        ml_service_url = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
+        ml_service_url = os.getenv("ML_SERVICE_URL", "http://ml:8001")
         
         # Prepare form data for ML service
         form_data = aiohttp.FormData()
         form_data.add_field('image_url', photo_url)
-        form_data.add_field('telegram_user_id', str(user['id']))
+        form_data.add_field('telegram_user_id', str(telegram_user_id))
         form_data.add_field('user_context', json.dumps(user_context))
+        
+        # Debug logging
+        logger.info(f"DEBUG: Sending to ML service:")
+        logger.info(f"  - image_url: {photo_url}")
+        logger.info(f"  - telegram_user_id: {telegram_user_id}")
+        logger.info(f"  - user_context: {json.dumps(user_context)}")
+        logger.info(f"  - ML service URL: {ml_service_url}{Routes.ML_GENERATE_RECIPE}")
+        
+        # Get authentication headers (without Content-Type for form data)
+        from shared.auth import get_auth_headers
+        auth_headers = get_auth_headers()
+        # Remove Content-Type to let aiohttp.FormData set it automatically
+        if 'Content-Type' in auth_headers:
+            del auth_headers['Content-Type']
         
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"{ml_service_url}{Routes.ML_GENERATE_RECIPE}",
                 data=form_data,
+                headers=auth_headers,
                 timeout=aiohttp.ClientTimeout(total=60)
             ) as response:
                 if response.status == 200:

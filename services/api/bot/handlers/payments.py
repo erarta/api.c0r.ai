@@ -7,7 +7,7 @@ from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
-from config import PAYMENT_PLANS
+from services.api.bot.config import PAYMENT_PLANS
 import traceback
 import json
 

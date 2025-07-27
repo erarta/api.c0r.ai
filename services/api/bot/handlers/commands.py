@@ -8,9 +8,10 @@ from aiogram.fsm.context import FSMContext
 from loguru import logger
 from common.supabase_client import get_or_create_user, log_user_action, get_user_with_profile, get_daily_calories_consumed, get_user_total_paid
 from .keyboards import create_main_menu_keyboard, create_main_menu_text
+from .nutrition import NutritionStates
 from i18n.i18n import i18n
 from .language import detect_and_set_user_language
-from config import VERSION, PAYMENT_PLANS
+from services.api.bot.config import VERSION, PAYMENT_PLANS
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -632,7 +633,6 @@ async def handle_action_callback(callback: types.CallbackQuery, state: FSMContex
                 return
             
             # Set nutrition state for food analysis
-            from handlers.nutrition import NutritionStates
             await state.set_state(NutritionStates.waiting_for_photo)
             
             # Show instruction to send photo for analysis

@@ -3,59 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Successful - c0r.ai</title>
+    <title>Payment Successful - c0r.AI</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .container {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 3rem;
+            background: white;
             border-radius: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
         }
         .success-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            font-size: 64px;
+            color: #4CAF50;
+            margin-bottom: 20px;
         }
         h1 {
-            margin: 0 0 1rem 0;
-            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
         }
-        p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-        .button {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: #4CAF50;
-            color: white;
-            text-decoration: none;
+        .credits-info {
+            background: #f8f9fa;
             border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .credits-count {
+            font-size: 36px;
             font-weight: bold;
-            transition: all 0.3s ease;
+            color: #667eea;
+            margin-bottom: 5px;
         }
-        .button:hover {
-            background: #45a049;
-            transform: translateY(-2px);
+        .plan-name {
+            color: #666;
+            font-size: 18px;
         }
-        .details {
-            margin-top: 2rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
+        .telegram-button {
+            background: #0088cc;
+            color: white;
+            padding: 15px 30px;
+            border: none;
             border-radius: 10px;
-            font-size: 0.9rem;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .telegram-button:hover {
+            background: #006699;
+        }
+        .footer {
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -65,19 +79,26 @@
         <h1>Payment Successful!</h1>
         <p>Your credits have been added to your account.</p>
         
-        <div class="details">
-            <p><strong>User ID:</strong> {{ user_id }}</p>
-            <p><strong>Plan:</strong> {{ plan_name }}</p>
-            <p><strong>Credits Added:</strong> {{ credits_count }}</p>
+        <div class="credits-info">
+            <div class="credits-count">{{ credits_count }}</div>
+            <div class="plan-name">{{ plan_name }}</div>
         </div>
         
-        <a href="https://t.me/your_bot_username" class="button">
-            Return to Bot
+        <a href="https://t.me/CorDiet_Bot" class="telegram-button">
+            Return to Telegram Bot
         </a>
         
-        <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">
-            You can now return to the Telegram bot and continue analyzing your food!
-        </p>
+        <div class="footer">
+            <p>Thank you for using c0r.AI!</p>
+            <p>Your credits are now available in the bot.</p>
+        </div>
     </div>
+    
+    <script>
+        // Auto-redirect to Telegram after 5 seconds
+        setTimeout(function() {
+            window.location.href = 'https://t.me/CorDiet_Bot';
+        }, 5000);
+    </script>
 </body>
-</html> 
+</html>

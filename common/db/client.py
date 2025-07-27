@@ -12,8 +12,12 @@ SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
 # Initialize Supabase client
 try:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    logger.info("Supabase client initialized successfully")
+    if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        logger.info("Supabase client initialized successfully")
+    else:
+        logger.warning("Supabase URL or Service Key not provided")
+        supabase: Client = None
 except Exception as e:
     # For testing environments where env vars might not be set
     logger.warning(f"Failed to initialize Supabase client: {e}")

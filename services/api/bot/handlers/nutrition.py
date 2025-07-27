@@ -31,7 +31,7 @@ async def process_nutrition_photo(message: types.Message):
     from .photo import photo_handler
     from aiogram.fsm.context import FSMContext
     from aiogram.fsm.storage.memory import MemoryStorage
-    from bot import dp  # Import dispatcher directly
+    from services.api.bot.bot import dp  # Import dispatcher directly
     
     # Create FSM context using proper aiogram 3.x method
     # In aiogram 3.x, we need to create the key manually using the storage's key builder

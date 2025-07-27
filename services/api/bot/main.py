@@ -2,14 +2,14 @@ import sys; print("PYTHONPATH:", sys.path)
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 import asyncio
-from bot import start_bot
+from services.api.bot.bot import start_bot
 import os
 import httpx
 from common.routes import Routes
 from common.supabase_client import (
     get_or_create_user, get_user_by_telegram_id, decrement_credits, add_credits, log_analysis, add_payment
 )
-from utils.r2 import test_r2_connection, get_photo_stats, get_user_photos
+from services.api.bot.utils.r2 import test_r2_connection, get_photo_stats, get_user_photos
 from shared.auth import require_internal_auth, get_auth_headers
 from loguru import logger
 

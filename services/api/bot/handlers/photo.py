@@ -9,10 +9,10 @@ from aiogram.fsm.context import FSMContext
 from loguru import logger
 from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
-from utils.r2 import upload_telegram_photo
+from services.api.bot.utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
 from i18n.i18n import i18n
-from config import PAYMENT_PLANS
+from services.api.bot.config import PAYMENT_PLANS
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
@@ -106,10 +106,18 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
                 "user_language": user_language
             }
             
+            # Get authentication headers
+            from shared.auth import get_auth_headers
+            auth_headers = get_auth_headers()
+            # Remove Content-Type to let httpx set it automatically for multipart/form-data
+            if 'Content-Type' in auth_headers:
+                del auth_headers['Content-Type']
+            
             response = await client.post(
                 f"{ML_SERVICE_URL}/api/v1/analyze",
                 files=files,
                 data=data,
+                headers=auth_headers,
                 timeout=60.0
             )
             

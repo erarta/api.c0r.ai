@@ -8,7 +8,7 @@ from typing import Optional
 # Add common directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
-from config.payment_plans import get_payment_plans, PAYMENT_PLANS
+from common.config.payment_plans import get_payment_plans, PAYMENT_PLANS
 
 # Application Version
 VERSION = "0.3.19"

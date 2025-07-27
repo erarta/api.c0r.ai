@@ -1,7 +1,11 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
+import sys
 import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 import base64
 import json
+import httpx
 from openai import OpenAI
 from loguru import logger
 from common.routes import Routes
@@ -14,9 +18,26 @@ app = FastAPI()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Initialize OpenAI client
+# Initialize OpenAI client with proxy support
 if OPENAI_API_KEY:
-    openai_client = OpenAI(api_key=OPENAI_API_KEY)
+    # Check for proxy settings
+    http_proxy = os.getenv("HTTP_PROXY") or os.getenv("http_proxy")
+    https_proxy = os.getenv("HTTPS_PROXY") or os.getenv("https_proxy")
+    
+    if http_proxy or https_proxy:
+        logger.info(f"Using proxy: HTTP={http_proxy}, HTTPS={https_proxy}")
+        openai_client = OpenAI(
+            api_key=OPENAI_API_KEY,
+            http_client=httpx.Client(
+                proxies={
+                    "http://": http_proxy,
+                    "https://": https_proxy
+                } if http_proxy or https_proxy else None
+            )
+        )
+    else:
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        logger.info("OpenAI client initialized without proxy")
 else:
     openai_client = None
     logger.warning("OpenAI API key not provided")
@@ -491,11 +512,25 @@ async def analyze_file(
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
         
-        # Analyze with OpenAI (default provider)
+        # Analyze with selected provider
         if provider == "openai" or not provider:
-            analysis_result = await analyze_food_with_openai(image_bytes, user_language)
+            try:
+                analysis_result = await analyze_food_with_openai(image_bytes, user_language)
+            except Exception as e:
+                logger.warning(f"OpenAI analysis failed: {e}")
+                # Fallback to Gemini if OpenAI fails
+                if GEMINI_API_KEY:
+                    logger.info("Falling back to Gemini for analysis")
+                    from .gemini.client import analyze_food_with_gemini
+                    analysis_result = await analyze_food_with_gemini(image_bytes, user_language)
+                else:
+                    raise HTTPException(status_code=500, detail=f"OpenAI analysis failed: {str(e)}")
         elif provider == "gemini":
-            # For now, only OpenAI is supported
+            if not GEMINI_API_KEY:
+                raise HTTPException(status_code=400, detail="Gemini API key not configured")
+            from .gemini.client import analyze_food_with_gemini
+            analysis_result = await analyze_food_with_gemini(image_bytes, user_language)
+        else:
             raise HTTPException(status_code=400, detail=f"Provider '{provider}' not supported")
         
         logger.info(f"Analysis complete for user {telegram_user_id}: {analysis_result}")
@@ -520,6 +555,10 @@ async def generate_recipe(
     Generate recipe from food image using OpenAI GPT-4o
     """
     try:
+        logger.info(f"DEBUG: ML service received request:")
+        logger.info(f"  - image_url: {image_url}")
+        logger.info(f"  - telegram_user_id: {telegram_user_id}")
+        logger.info(f"  - user_context: {user_context}")
         logger.info(f"Generating recipe for user {telegram_user_id}")
         
         # Parse user context JSON
