@@ -11,7 +11,7 @@ from loguru import logger
 
 from .core.models.managers.model_manager import ModelManager
 from .core.models.config.sota_config import ModelTier, TaskType
-from .modules.location.detector import LocationDetector
+from .modules.location.detector import UserLocationDetector
 from .core.prompts.base.prompt_builder import PromptBuilder
 from .core.reliability.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from .core.reliability.fallback_manager import FallbackManager, FallbackStrategy
@@ -36,7 +36,7 @@ class MLService:
         
         # Initialize core components
         self.model_manager = ModelManager()
-        self.location_detector = LocationDetector()
+        self.location_detector = UserLocationDetector()
         self.prompt_builder = PromptBuilder()
         
         # Initialize reliability components
@@ -59,7 +59,7 @@ class MLService:
         
         logger.info("✅ ML Service initialized successfully")
     
-    def analyze_food(self, 
+    async def analyze_food(self,
                     image_data: bytes,
                     user_language: str = "ru",
                     user_context: Dict[str, Any] = None,
@@ -90,8 +90,9 @@ class MLService:
             # Step 1: Detect user location and regional context
             location_result = None
             if user_id:
-                location_result = self.location_detector.detect_location(
-                    user_id=user_id,
+                location_result = await self.location_detector.detect_user_location(
+                    telegram_user_id=str(user_id),
+                    user_language=user_language,
                     telegram_user=telegram_user
                 )
                 if location_result:
@@ -102,7 +103,7 @@ class MLService:
             regional_context = location_result.regional_context if location_result else None
             
             # Use fallback manager for analysis
-            analysis_result = self.food_analysis_fallback.execute(
+            analysis_result = await self.food_analysis_fallback.execute(
                 image_data=image_data,
                 user_language=user_language,
                 user_context=user_context or {},
@@ -181,7 +182,7 @@ class MLService:
                 }
             }
     
-    def generate_recipes(self,
+    async def generate_recipes(self,
                         image_data: bytes,
                         user_language: str = "ru",
                         user_context: Dict[str, Any] = None,
@@ -212,8 +213,9 @@ class MLService:
             # Step 1: Detect location if needed
             location_result = None
             if user_id:
-                location_result = self.location_detector.detect_location(
-                    user_id=user_id,
+                location_result = await self.location_detector.detect_user_location(
+                    telegram_user_id=str(user_id),
+                    user_language=user_language,
                     telegram_user=telegram_user
                 )
                 if location_result:
@@ -222,7 +224,7 @@ class MLService:
             # Step 2: Use fallback manager for recipe generation
             regional_context = location_result.regional_context if location_result else None
             
-            recipe_result = self.recipe_generation_fallback.execute(
+            recipe_result = await self.recipe_generation_fallback.execute(
                 image_data=image_data,
                 user_language=user_language,
                 user_context=user_context or {},
@@ -311,7 +313,7 @@ class MLService:
         
         # Get component health
         model_health = self.model_manager.get_health_status()
-        location_stats = self.location_detector.get_stats()
+        location_stats = self.location_detector.get_cache_stats()
         
         # Calculate service metrics
         uptime = time.time() - self.stats["service_start_time"]
@@ -351,7 +353,7 @@ class MLService:
         return {
             "service_stats": self.stats.copy(),
             "model_manager_stats": self.model_manager.get_health_status(),
-            "location_detector_stats": self.location_detector.get_stats(),
+            "location_detector_stats": self.location_detector.get_cache_stats(),
             "fallback_stats": {
                 "food_analysis": self.food_analysis_fallback.get_stats(),
                 "recipe_generation": self.recipe_generation_fallback.get_stats()
@@ -463,25 +465,25 @@ class MLService:
         
         logger.debug("✅ Health monitoring configured")
     
-    def _analyze_food_primary(self, **kwargs):
+    async def _analyze_food_primary(self, **kwargs):
         """Primary food analysis method"""
-        return self.model_manager.analyze_food(**kwargs)
+        return await self.model_manager.analyze_food(**kwargs)
     
-    def _analyze_food_fallback(self, **kwargs):
+    async def _analyze_food_fallback(self, **kwargs):
         """Fallback food analysis method"""
         # Use lower tier model for fallback
         kwargs['tier'] = ModelTier.PREMIUM
-        return self.model_manager.analyze_food(**kwargs)
+        return await self.model_manager.analyze_food(**kwargs)
     
-    def _generate_recipes_primary(self, **kwargs):
+    async def _generate_recipes_primary(self, **kwargs):
         """Primary recipe generation method"""
-        return self.model_manager.generate_recipes(**kwargs)
+        return await self.model_manager.generate_recipes(**kwargs)
     
-    def _generate_recipes_fallback(self, **kwargs):
+    async def _generate_recipes_fallback(self, **kwargs):
         """Fallback recipe generation method"""
         # Use lower tier model for fallback
         kwargs['tier'] = ModelTier.PREMIUM
-        return self.model_manager.generate_recipes(**kwargs)
+        return await self.model_manager.generate_recipes(**kwargs)
     
     def _check_model_manager_health(self):
         """Health check for model manager"""
@@ -518,7 +520,7 @@ class MLService:
         from .core.reliability.health_monitor import HealthCheckResult, HealthStatus
         
         try:
-            stats = self.location_detector.get_stats()
+            stats = self.location_detector.get_cache_stats()
             
             # Simple health check based on cache hit rate
             cache_hit_rate = stats.get("cache_hit_rate", 0)
