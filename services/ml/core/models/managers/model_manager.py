@@ -90,8 +90,35 @@ class ModelManager:
             
             provider = self.providers[provider_key]
             
-            # Создаем промпт (пока используем базовый, позже заменим на улучшенный)
-            prompt = self._create_basic_food_analysis_prompt(user_language, regional_context)
+            # Используем PromptBuilder для создания улучшенного промпта
+            from ...prompts.base.prompt_builder import PromptBuilder
+            from ....modules.location.models import RegionalContext
+            
+            prompt_builder = PromptBuilder()
+            
+            # Преобразуем regional_context в объект RegionalContext если нужно
+            if regional_context and not isinstance(regional_context, RegionalContext):
+                # Создаем базовый региональный контекст если передан dict
+                from ....modules.location.models import RegionalContext
+                regional_context_obj = RegionalContext(
+                    region_code=regional_context.get('region_code', 'RU'),
+                    cuisine_types=regional_context.get('cuisine_types', ['русская']),
+                    common_products=regional_context.get('common_products', ['картофель', 'капуста', 'морковь']),
+                    cooking_methods=regional_context.get('cooking_methods', ['варка', 'жарка', 'тушение']),
+                    measurement_units=regional_context.get('measurement_units', 'metric'),
+                    food_culture_notes=regional_context.get('food_culture_notes', 'Традиционная русская кухня'),
+                    seasonal_products=regional_context.get('seasonal_products', {})
+                )
+            else:
+                regional_context_obj = regional_context
+            
+            # Создаем улучшенный промпт с мотивацией и региональным контекстом
+            prompt = prompt_builder.build_food_analysis_prompt(
+                user_language=user_language,
+                regional_context=regional_context_obj,
+                user_profile=user_profile or {},
+                motivation_level="standard"
+            )
             
             # Генерируем ответ
             logger.debug(f"🚀 Using provider: {provider}")
@@ -119,7 +146,8 @@ class ModelManager:
             )
     
     async def generate_triple_recipes(self,
-                                    image_url: str,
+                                    image_data: bytes,
+                                    user_language: str,
                                     user_context: Dict[str, Any],
                                     regional_context: Dict[str, Any],
                                     tier: ModelTier = None) -> ModelResponse:
@@ -138,20 +166,42 @@ class ModelManager:
             
             if provider_key not in self.providers:
                 logger.warning(f"⚠️ Provider {provider_key} not available, trying fallback...")
-                return await self._try_fallback_recipes(image_url, user_context, regional_context)
+                return await self._try_fallback_recipes(image_data, user_language, user_context, regional_context)
             
             provider = self.providers[provider_key]
             
-            # Создаем промпт для тройной генерации (пока базовый)
-            prompt = self._create_basic_recipe_generation_prompt(
-                user_context.get('language', 'en'),
-                regional_context,
-                user_context
+            # Используем PromptBuilder для создания улучшенного промпта рецептов
+            from ...prompts.base.prompt_builder import PromptBuilder
+            from ....modules.location.models import RegionalContext
+            
+            prompt_builder = PromptBuilder()
+            
+            # Преобразуем regional_context в объект RegionalContext если нужно
+            if regional_context and not isinstance(regional_context, RegionalContext):
+                from ....modules.location.models import RegionalContext
+                regional_context_obj = RegionalContext(
+                    region_code=regional_context.get('region_code', 'RU'),
+                    cuisine_types=regional_context.get('cuisine_types', ['русская']),
+                    common_products=regional_context.get('common_products', ['картофель', 'капуста', 'морковь']),
+                    cooking_methods=regional_context.get('cooking_methods', ['варка', 'жарка', 'тушение']),
+                    measurement_units=regional_context.get('measurement_units', 'metric'),
+                    food_culture_notes=regional_context.get('food_culture_notes', 'Традиционная русская кухня'),
+                    seasonal_products=regional_context.get('seasonal_products', {})
+                )
+            else:
+                regional_context_obj = regional_context
+            
+            # Создаем улучшенный промпт для генерации рецептов
+            prompt = prompt_builder.build_recipe_generation_prompt(
+                user_language=user_language,
+                regional_context=regional_context_obj,
+                user_profile=user_context or {},
+                recipe_count=3
             )
             
             # Генерируем ответ
             logger.debug(f"🚀 Using provider: {provider}")
-            response = await provider.generate_with_retry(prompt, None)  # Пока без изображения
+            response = await provider.generate_with_retry(prompt, image_data)
             
             # Логируем результат
             if response.success:
@@ -192,7 +242,33 @@ class ModelManager:
                 if provider_key in self.providers:
                     logger.info(f"🔄 Trying fallback with {provider_key}")
                     provider = self.providers[provider_key]
-                    prompt = self._create_basic_food_analysis_prompt(user_language, regional_context)
+                    # Используем PromptBuilder и для fallback
+                    from ...prompts.base.prompt_builder import PromptBuilder
+                    from ....modules.location.models import RegionalContext
+                    
+                    prompt_builder = PromptBuilder()
+                    
+                    # Преобразуем regional_context в объект RegionalContext если нужно
+                    if regional_context and not isinstance(regional_context, RegionalContext):
+                        from ....modules.location.models import RegionalContext
+                        regional_context_obj = RegionalContext(
+                            region_code=regional_context.get('region_code', 'RU'),
+                            cuisine_types=regional_context.get('cuisine_types', ['русская']),
+                            common_products=regional_context.get('common_products', ['картофель', 'капуста', 'морковь']),
+                            cooking_methods=regional_context.get('cooking_methods', ['варка', 'жарка', 'тушение']),
+                            measurement_units=regional_context.get('measurement_units', 'metric'),
+                            food_culture_notes=regional_context.get('food_culture_notes', 'Традиционная русская кухня'),
+                            seasonal_products=regional_context.get('seasonal_products', {})
+                        )
+                    else:
+                        regional_context_obj = regional_context
+                    
+                    prompt = prompt_builder.build_food_analysis_prompt(
+                        user_language=user_language,
+                        regional_context=regional_context_obj,
+                        user_profile=user_profile or {},
+                        motivation_level="standard"
+                    )
                     response = await provider.generate_with_retry(prompt, image_data)
                     
                     if response.success:
@@ -217,7 +293,8 @@ class ModelManager:
         )
     
     async def _try_fallback_recipes(self,
-                                  image_url: str,
+                                  image_data: bytes,
+                                  user_language: str,
                                   user_context: Dict[str, Any],
                                   regional_context: Dict[str, Any]) -> ModelResponse:
         """Попытка fallback для генерации рецептов"""
@@ -232,12 +309,34 @@ class ModelManager:
                 if provider_key in self.providers:
                     logger.info(f"🔄 Trying fallback with {provider_key}")
                     provider = self.providers[provider_key]
-                    prompt = self._create_basic_recipe_generation_prompt(
-                        user_context.get('language', 'en'),
-                        regional_context,
-                        user_context
+                    # Используем PromptBuilder и для fallback рецептов
+                    from ...prompts.base.prompt_builder import PromptBuilder
+                    from ....modules.location.models import RegionalContext
+                    
+                    prompt_builder = PromptBuilder()
+                    
+                    # Преобразуем regional_context в объект RegionalContext если нужно
+                    if regional_context and not isinstance(regional_context, RegionalContext):
+                        from ....modules.location.models import RegionalContext
+                        regional_context_obj = RegionalContext(
+                            region_code=regional_context.get('region_code', 'RU'),
+                            cuisine_types=regional_context.get('cuisine_types', ['русская']),
+                            common_products=regional_context.get('common_products', ['картофель', 'капуста', 'морковь']),
+                            cooking_methods=regional_context.get('cooking_methods', ['варка', 'жарка', 'тушение']),
+                            measurement_units=regional_context.get('measurement_units', 'metric'),
+                            food_culture_notes=regional_context.get('food_culture_notes', 'Традиционная русская кухня'),
+                            seasonal_products=regional_context.get('seasonal_products', {})
+                        )
+                    else:
+                        regional_context_obj = regional_context
+                    
+                    prompt = prompt_builder.build_recipe_generation_prompt(
+                        user_language=user_language,
+                        regional_context=regional_context_obj,
+                        user_profile=user_context or {},
+                        recipe_count=3
                     )
-                    response = await provider.generate_with_retry(prompt, None)
+                    response = await provider.generate_with_retry(prompt, image_data)
                     
                     if response.success:
                         logger.info(f"✅ Fallback successful with {provider_key}")

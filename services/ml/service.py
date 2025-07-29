@@ -106,8 +106,8 @@ class MLService:
             analysis_result = await self.food_analysis_fallback.execute(
                 image_data=image_data,
                 user_language=user_language,
-                user_context=user_context or {},
                 regional_context=regional_context,
+                user_profile=user_context or {},
                 tier=tier
             )
             
@@ -467,23 +467,23 @@ class MLService:
     
     async def _analyze_food_primary(self, **kwargs):
         """Primary food analysis method"""
-        return await self.model_manager.analyze_food(**kwargs)
+        return await self.model_manager.generate_food_analysis(**kwargs)
     
     async def _analyze_food_fallback(self, **kwargs):
         """Fallback food analysis method"""
         # Use lower tier model for fallback
         kwargs['tier'] = ModelTier.PREMIUM
-        return await self.model_manager.analyze_food(**kwargs)
+        return await self.model_manager.generate_food_analysis(**kwargs)
     
     async def _generate_recipes_primary(self, **kwargs):
         """Primary recipe generation method"""
-        return await self.model_manager.generate_recipes(**kwargs)
+        return await self.model_manager.generate_triple_recipes(**kwargs)
     
     async def _generate_recipes_fallback(self, **kwargs):
         """Fallback recipe generation method"""
         # Use lower tier model for fallback
         kwargs['tier'] = ModelTier.PREMIUM
-        return await self.model_manager.generate_recipes(**kwargs)
+        return await self.model_manager.generate_triple_recipes(**kwargs)
     
     def _check_model_manager_health(self):
         """Health check for model manager"""

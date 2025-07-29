@@ -17,27 +17,70 @@ from services.api.bot.config import PAYMENT_PLANS
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
 
-# Helper to format KBZHU nicely with detailed breakdown
+# Helper to format rich analysis result from ML service
 def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     message_parts = []
     
-    # Add food items breakdown if available
-    if "food_items" in result and result["food_items"]:
-        message_parts.append("🥘 *Food Items Detected:*")
-        for item in result["food_items"]:
-            name = item.get("name", "Unknown")
-            weight = item.get("weight", "Unknown")
-            calories = item.get("calories", 0)
-            message_parts.append(f"• {name} ({weight}) - {calories} {i18n.get_text('cal', user_language)}")
-        message_parts.append("")  # Empty line
-    
-    # Add total KBZHU
-    kbzhu = result.get("kbzhu", {})
-    message_parts.append("🍽️ *Total Nutrition:*")
-    message_parts.append(f"Calories: {kbzhu.get('calories', '?')} {i18n.get_text('cal', user_language)}")
-    message_parts.append(f"Proteins: {kbzhu.get('proteins', '?')} {i18n.get_text('g', user_language)}")
-    message_parts.append(f"Fats: {kbzhu.get('fats', '?')} {i18n.get_text('g', user_language)}")
-    message_parts.append(f"Carbohydrates: {kbzhu.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
+    # Check if we have the new rich format from PromptBuilder
+    if "analysis" in result and isinstance(result["analysis"], dict):
+        analysis = result["analysis"]
+        
+        # Add motivation message if available (without "Мотивация:" label)
+        if "motivation_message" in analysis and analysis["motivation_message"]:
+            message_parts.append(f"💚 {analysis['motivation_message']}")
+            message_parts.append("")  # Empty line
+        
+        # Add food items breakdown
+        if "food_items" in analysis and analysis["food_items"]:
+            message_parts.append(f"🥘 *{i18n.get_text('food_items_detected', user_language)}*")
+                
+            for item in analysis["food_items"]:
+                name = item.get("name", "Unknown")
+                weight_grams = item.get("weight_grams", 0)
+                calories = item.get("calories", 0)
+                
+                # Add health benefits if available
+                health_benefits = item.get("health_benefits", "")
+                if health_benefits:
+                    message_parts.append(f"• {name} ({weight_grams}г) - {calories} ккал")
+                    message_parts.append(f"  💚 {health_benefits}")
+                else:
+                    message_parts.append(f"• {name} ({weight_grams}г) - {calories} ккал")
+            message_parts.append("")  # Empty line
+        
+        # Add total nutrition
+        if "total_nutrition" in analysis:
+            nutrition = analysis["total_nutrition"]
+            message_parts.append(f"🍽️ *{i18n.get_text('total_nutrition', user_language)}*")
+            message_parts.append(f"{i18n.get_text('calories_label', user_language)}: {nutrition.get('calories', '?')} {i18n.get_text('cal', user_language)}")
+            message_parts.append(f"{i18n.get_text('proteins_label', user_language)}: {nutrition.get('proteins', '?')} {i18n.get_text('g', user_language)}")
+            message_parts.append(f"{i18n.get_text('fats_label', user_language)}: {nutrition.get('fats', '?')} {i18n.get_text('g', user_language)}")
+            message_parts.append(f"{i18n.get_text('carbohydrates_label', user_language)}: {nutrition.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
+        
+        # Add encouragement message if available (without "Поощрение:" label)
+        if "encouragement" in analysis and analysis["encouragement"]:
+            message_parts.append("")  # Empty line
+            message_parts.append(f"✨ {analysis['encouragement']}")
+            
+    else:
+        # Fallback to old format for backward compatibility
+        # Add food items breakdown if available
+        if "food_items" in result and result["food_items"]:
+            message_parts.append(f"🥘 *{i18n.get_text('food_items_detected', user_language)}*")
+            for item in result["food_items"]:
+                name = item.get("name", "Unknown")
+                weight = item.get("weight", "Unknown")
+                calories = item.get("calories", 0)
+                message_parts.append(f"• {name} ({weight}) - {calories} {i18n.get_text('cal', user_language)}")
+            message_parts.append("")  # Empty line
+        
+        # Add total KBZHU
+        kbzhu = result.get("kbzhu", {})
+        message_parts.append(f"🍽️ *{i18n.get_text('total_nutrition', user_language)}*")
+        message_parts.append(f"{i18n.get_text('calories_label', user_language)}: {kbzhu.get('calories', '?')} {i18n.get_text('cal', user_language)}")
+        message_parts.append(f"{i18n.get_text('proteins_label', user_language)}: {kbzhu.get('proteins', '?')} {i18n.get_text('g', user_language)}")
+        message_parts.append(f"{i18n.get_text('fats_label', user_language)}: {kbzhu.get('fats', '?')} {i18n.get_text('g', user_language)}")
+        message_parts.append(f"{i18n.get_text('carbohydrates_label', user_language)}: {kbzhu.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
     
     return "\n".join(message_parts)
 
@@ -50,38 +93,32 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         telegram_user_id = message.from_user.id
         logger.info(f"Processing nutrition analysis for user {telegram_user_id}")
         
+        # Get user info first
+        user_data = await get_user_with_profile(telegram_user_id)
+        user = user_data['user']
+        user_language = user.get('language', 'en')
+        
         # Check photo size limit
         photo = message.photo[-1]  # Get highest resolution
         if photo.file_size and photo.file_size > 10 * 1024 * 1024:  # 10MB limit
             await message.answer(
-                "❌ **Photo too large!**\n\n"
-                "📏 Maximum photo size: 10MB\n"
-                "💡 Please compress your photo or take a new one.",
+                i18n.get_text('photo_too_large', user_language),
                 parse_mode="Markdown"
             )
             return
-        
-        # Get user info
-        user_data = await get_user_with_profile(telegram_user_id)
-        user = user_data['user']
         profile = user_data['profile']
         has_profile = user_data['has_profile']
         
         credits = user["credits_remaining"]
         if credits <= 0:
             await message.answer(
-                "❌ **No credits remaining!**\n\n"
-                "Please purchase more credits to continue.",
+                i18n.get_text('no_credits_remaining', user_language),
                 parse_mode="Markdown"
             )
             return
         
         # Send processing message
-        user_language = user.get('language', 'en')
-        if user_language == 'ru':
-            processing_msg = await message.answer("🔍 Анализирую фото...\n\nПожалуйста, подождите...")
-        else:
-            processing_msg = await message.answer("🔍 Analyzing photo...\n\nPlease wait...")
+        processing_msg = await message.answer(i18n.get_text('analyzing_photo', user_language))
         
         # Download and upload photo to R2
         photo = message.photo[-1]  # Get highest resolution photo
@@ -124,8 +161,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
             if response.status_code != 200:
                 logger.error(f"ML service error: {response.status_code} - {response.text}")
                 await processing_msg.edit_text(
-                    "❌ **Analysis failed**\n\n"
-                    "Sorry, we couldn't analyze your photo. Please try again.",
+                    i18n.get_text('analysis_failed', user_language),
                     parse_mode="Markdown"
                 )
                 return
@@ -142,10 +178,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
             daily_target = profile.get("daily_calories_target", 2000)
             remaining = daily_target - daily_consumed
             
-            if user_language == 'ru':
-                progress_text = f"\n📊 **Дневной прогресс:**\nПотреблено: {daily_consumed} ккал\nЦель: {daily_target} ккал\nОсталось: {remaining} ккал"
-            else:
-                progress_text = f"\n📊 **Daily Progress:**\nConsumed: {daily_consumed} cal\nTarget: {daily_target} cal\nRemaining: {remaining} cal"
+            progress_text = f"\n{i18n.get_text('daily_progress', user_language)}\n{i18n.get_text('consumed', user_language)}: {daily_consumed} {i18n.get_text('cal', user_language)}\n{i18n.get_text('target', user_language)}: {daily_target} {i18n.get_text('cal', user_language)}\n{i18n.get_text('remaining', user_language)}: {remaining} {i18n.get_text('cal', user_language)}"
             
             analysis_text += progress_text
         
@@ -161,10 +194,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Send result with main menu
         keyboard = create_main_menu_keyboard(user_language)
         
-        if user_language == 'ru':
-            final_text = f"✅ **Анализ завершен!**\n\n{analysis_text}\n\n💳 **Осталось кредитов:** {credits - 1}"
-        else:
-            final_text = f"✅ **Analysis complete!**\n\n{analysis_text}\n\n💳 **Credits remaining:** {credits - 1}"
+        final_text = f"{i18n.get_text('analysis_complete', user_language)}\n\n{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits - 1} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
         
         await processing_msg.edit_text(
             final_text,
@@ -175,8 +205,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
     except Exception as e:
         logger.error(f"Error in nutrition analysis for user {telegram_user_id}: {e}")
         await message.answer(
-            "❌ **Error**\n\n"
-            "Something went wrong during analysis. Please try again.",
+            i18n.get_text('error_analysis', user_language),
             parse_mode="Markdown"
         )
         # Clear state on error
@@ -205,10 +234,9 @@ async def photo_handler(message: types.Message, state: FSMContext):
         # Check photo size limit (Telegram max is 20MB, we'll set 10MB limit)
         photo = message.photo[-1]  # Get highest resolution
         if photo.file_size and photo.file_size > 10 * 1024 * 1024:  # 10MB limit
+            user_language = 'en'  # Default language for error case
             await message.answer(
-                "❌ **Photo too large!**\n\n"
-                "📏 Maximum photo size: 10MB\n"
-                "💡 Please compress your photo or take a new one.",
+                i18n.get_text('photo_too_large', user_language),
                 parse_mode="Markdown"
             )
             return
@@ -259,28 +287,16 @@ async def photo_handler(message: types.Message, state: FSMContext):
         # Default behavior: offer choice between food analysis and recipe generation
         user_language = user.get('language', 'en')
         
-        if user_language == 'ru':
-            choice_text = (
-                f"📸 **Фото получено!**\n\n"
-                f"Что вы хотите сделать с этим фото?\n\n"
-                f"🍕 **Анализ еды** - Получить детальную информацию о калориях и питательности\n"
-                f"🍽️ **Создать рецепт** - Сгенерировать персонализированный рецепт\n\n"
-                f"💳 **Осталось кредитов:** {credits}"
-            )
-            analyze_button_text = "🍕 Анализ еды"
-            recipe_button_text = "🍽️ Создать рецепт"
-            cancel_button_text = "❌ Отмена"
-        else:
-            choice_text = (
-                f"📸 **Photo received!**\n\n"
-                f"What would you like to do with this photo?\n\n"
-                f"🍕 **Analyze Food** - Get detailed calorie and nutrition information\n"
-                f"🍽️ **Generate Recipe** - Create a personalized recipe\n\n"
-                f"💳 **Credits remaining:** {credits}"
-            )
-            analyze_button_text = "🍕 Analyze Food"
-            recipe_button_text = "🍽️ Generate Recipe"
-            cancel_button_text = "❌ Cancel"
+        choice_text = (
+            f"{i18n.get_text('photo_received', user_language)}\n\n"
+            f"{i18n.get_text('what_to_do', user_language)}\n\n"
+            f"{i18n.get_text('analyze_food_option', user_language)}\n"
+            f"{i18n.get_text('generate_recipe_option', user_language)}\n\n"
+            f"{i18n.get_text('credits_remaining', user_language)} {credits} {i18n.get_text('credits', user_language)}! 🚀"
+        )
+        analyze_button_text = i18n.get_text('analyze_food_btn', user_language)
+        recipe_button_text = i18n.get_text('generate_recipe_btn', user_language)
+        cancel_button_text = i18n.get_text('cancel_btn', user_language)
         
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
             [
@@ -312,9 +328,9 @@ async def photo_handler(message: types.Message, state: FSMContext):
     
     except Exception as e:
         logger.error(f"Error in photo handler for user {telegram_user_id}: {e}")
+        user_language = 'en'  # Default language for error case
         await message.answer(
-            "❌ **Error**\n\n"
-            "Something went wrong. Please try again.",
+            i18n.get_text('error_generic', user_language),
             parse_mode="Markdown"
         )
 
@@ -322,7 +338,8 @@ async def photo_handler(message: types.Message, state: FSMContext):
 async def handle_successful_payment(message: types.Message):
     telegram_user_id = message.from_user.id
     logger.info(f"Payment received from user {telegram_user_id}")
-    await message.answer("Payment received! Credits will be added shortly.")
+    user_language = 'en'  # Default language for payment message
+    await message.answer(i18n.get_text('payment_received', user_language))
     
     # TODO: Integrate with actual payment processing
     # This is a placeholder for when payment webhooks are implemented 
