@@ -11,6 +11,7 @@ from loguru import logger
 from common.routes import Routes
 from shared.health import create_health_response
 from shared.auth import require_internal_auth
+from .config import get_model_config, validate_model_for_task
 
 app = FastAPI()
 
@@ -63,10 +64,15 @@ async def health_alias():
     """Health check alias endpoint"""
     return await health()
 
-async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en") -> dict:
+async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """
     Analyze food image using OpenAI Vision API
     Returns KBZHU data in expected format
+    
+    Args:
+        image_bytes: Image data to analyze
+        user_language: User language preference
+        use_premium_model: Whether to use premium model settings
     """
     if not openai_client:
         raise HTTPException(status_code=500, detail="OpenAI client not initialized")
@@ -74,6 +80,12 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
     try:
         # Encode image to base64
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        
+        # Get model configuration for analysis task
+        config = get_model_config("analysis", use_premium_model)
+        model = config["model"]
+        max_tokens = config["max_tokens"]
+        temperature = config["temperature"]
         
         # Create prompt for food analysis based on user language
         if user_language == "ru":
@@ -145,7 +157,7 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         
         # Call OpenAI Vision API
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=model,
             messages=[
                 {
                     "role": "user",
@@ -160,8 +172,8 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                     ]
                 }
             ],
-            max_tokens=300,
-            temperature=0.1
+            max_tokens=max_tokens,
+            temperature=temperature
         )
         
         # Parse response
