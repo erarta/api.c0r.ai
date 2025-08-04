@@ -38,8 +38,15 @@ TRANSLATIONS = {
     "left": "left",
     
     # Food analysis result headers
-    "food_items_detected": "🥘 Here's what I found in your meal:",
-    "total_nutrition": "🍽️ Your nutrition breakdown:",
+    "food_items_detected": "🥘 Detected food items:",
+    "total_nutrition": "🍽️ Total nutrition:",
+    
+    # Dish identification
+    "dish_detected": "Dish: {dish}",
+    
+    # Nutritional summary
+    "nutritional_summary": "Nutritional Analysis:",
+    "healthiness_rating": "Healthiness rating: {rating}/10",
     
     # Nutrition labels
     "calories_label": "Calories",

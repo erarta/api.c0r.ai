@@ -14,8 +14,8 @@ DEFAULT_RECIPE_MODEL = "gpt-4o"
 MODEL_CONFIGS = {
     "analysis": {
         "model": os.getenv("OPENAI_ANALYSIS_MODEL", DEFAULT_ANALYSIS_MODEL),
-        "max_tokens": int(os.getenv("OPENAI_ANALYSIS_MAX_TOKENS", "500")),
-        "temperature": float(os.getenv("OPENAI_ANALYSIS_TEMPERATURE", "0.1")),
+        "max_tokens": int(os.getenv("OPENAI_ANALYSIS_MAX_TOKENS", "1000")),  # Increased from 500 to 1000
+        "temperature": float(os.getenv("OPENAI_ANALYSIS_TEMPERATURE", "0.05")),  # Decreased from 0.1 to 0.05 for more precision
         "fallback_model": os.getenv("OPENAI_ANALYSIS_FALLBACK_MODEL", "gpt-4o-mini")
     },
     "recipe": {

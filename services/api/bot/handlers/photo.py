@@ -22,18 +22,22 @@ ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
 def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     message_parts = []
     
-    # Check if we have the new rich format from PromptBuilder
+    # We now expect the analysis format from ML service
     if "analysis" in result and isinstance(result["analysis"], dict):
         analysis = result["analysis"]
         
-        # Add motivation message if available (without "Мотивация:" label)
-        if "motivation_message" in analysis and analysis["motivation_message"]:
-            message_parts.append(f"💚 {analysis['motivation_message']}")
-            message_parts.append("")  # Empty line
+        # Add regional dish identification at the beginning
+        if "regional_analysis" in analysis:
+            regional_info = analysis["regional_analysis"]
+            dish_type = regional_info.get("dish_identification", "")
+            confidence = regional_info.get("regional_match_confidence", 0)
+            if dish_type and confidence > 0.5:
+                message_parts.append(f"🌍 **{i18n.get_text('dish_detected', user_language, dish=dish_type)}**")
+                message_parts.append("")  # Empty line
         
         # Add food items breakdown
         if "food_items" in analysis and analysis["food_items"]:
-            message_parts.append(f"🥘 *{i18n.get_text('food_items_detected', user_language)}*")
+            message_parts.append(f"🥘 {i18n.get_text('food_items_detected', user_language)}")
                 
             for item in analysis["food_items"]:
                 name = item.get("name", "Unknown")
@@ -58,36 +62,45 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
         # Add total nutrition
         if "total_nutrition" in analysis:
             nutrition = analysis["total_nutrition"]
-            message_parts.append(f"🍽️ *{i18n.get_text('total_nutrition', user_language)}*")
+            message_parts.append(f"🍽️ {i18n.get_text('total_nutrition', user_language)}")
             message_parts.append(f"{i18n.get_text('calories_label', user_language)}: {nutrition.get('calories', '?')} {i18n.get_text('cal', user_language)}")
             message_parts.append(f"{i18n.get_text('proteins_label', user_language)}: {nutrition.get('proteins', '?')} {i18n.get_text('g', user_language)}")
             message_parts.append(f"{i18n.get_text('fats_label', user_language)}: {nutrition.get('fats', '?')} {i18n.get_text('g', user_language)}")
             message_parts.append(f"{i18n.get_text('carbohydrates_label', user_language)}: {nutrition.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
         
-        # Add encouragement message if available (without "Поощрение:" label)
-        if "encouragement" in analysis and analysis["encouragement"]:
+        # Add nutritional summary if available
+        if "nutritional_summary" in analysis:
+            nutritional_summary = analysis["nutritional_summary"]
             message_parts.append("")  # Empty line
-            message_parts.append(f"✨ {analysis['encouragement']}")
+            message_parts.append(f"🧬 **{i18n.get_text('nutritional_summary', user_language)}**")
             
-    else:
-        # Fallback to old format for backward compatibility
-        # Add food items breakdown if available
-        if "food_items" in result and result["food_items"]:
-            message_parts.append(f"🥘 *{i18n.get_text('food_items_detected', user_language)}*")
-            for item in result["food_items"]:
-                name = item.get("name", "Unknown")
-                weight = item.get("weight", "Unknown")
-                calories = item.get("calories", 0)
-                message_parts.append(f"• {name} ({weight}) - {calories} {i18n.get_text('cal', user_language)}")
-            message_parts.append("")  # Empty line
+            healthiness_rating = nutritional_summary.get("healthiness_rating", 5)
+            message_parts.append(f"📊 {i18n.get_text('healthiness_rating', user_language, rating=healthiness_rating)}")
+            
+            # Add what's good about the meal
+            key_benefits = nutritional_summary.get("key_benefits", [])
+            if key_benefits:
+                message_parts.append("")
+                benefits_header = "💪 **Что хорошо в этом блюде:**" if user_language == "ru" else "💪 **What's great about this meal:**"
+                message_parts.append(benefits_header)
+                for benefit in key_benefits:
+                    message_parts.append(f"• {benefit}")
+            
+            # Add recommendations for improving the rating (NEW)
+            recommendations = nutritional_summary.get("recommendations", "")
+            if recommendations:
+                message_parts.append("")
+                improve_header = "💡 **Как улучшить это блюдо:**" if user_language == "ru" else "💡 **How to improve this meal:**"
+                message_parts.append(improve_header)
+                message_parts.append(f"• {recommendations}")
         
-        # Add total KBZHU
-        kbzhu = result.get("kbzhu", {})
-        message_parts.append(f"🍽️ *{i18n.get_text('total_nutrition', user_language)}*")
-        message_parts.append(f"{i18n.get_text('calories_label', user_language)}: {kbzhu.get('calories', '?')} {i18n.get_text('cal', user_language)}")
-        message_parts.append(f"{i18n.get_text('proteins_label', user_language)}: {kbzhu.get('proteins', '?')} {i18n.get_text('g', user_language)}")
-        message_parts.append(f"{i18n.get_text('fats_label', user_language)}: {kbzhu.get('fats', '?')} {i18n.get_text('g', user_language)}")
-        message_parts.append(f"{i18n.get_text('carbohydrates_label', user_language)}: {kbzhu.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
+        # Add motivation message if available
+        if "motivation_message" in analysis and analysis["motivation_message"]:
+            message_parts.append("")  # Empty line
+            message_parts.append(f"🌟 **{analysis['motivation_message']}**")
+    else:
+        # This should not happen anymore, but just in case
+        raise ValueError("Invalid ML service response format - missing 'analysis' key")
     
     return "\n".join(message_parts)
 
@@ -140,7 +153,17 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         async with httpx.AsyncClient() as client:
             # Download photo data for ML service
             photo_file = await message.bot.get_file(photo.file_id)
-            photo_bytes = await message.bot.download_file(photo_file.file_path)
+            photo_bytes_io = await message.bot.download_file(photo_file.file_path)
+            
+            # Convert BytesIO to bytes
+            if hasattr(photo_bytes_io, 'read'):
+                photo_bytes = photo_bytes_io.read()
+            elif hasattr(photo_bytes_io, 'getvalue'):
+                photo_bytes = photo_bytes_io.getvalue()
+            else:
+                photo_bytes = photo_bytes_io
+            
+            logger.info(f"🔍 Calling ML service for user {telegram_user_id}, photo size: {len(photo_bytes)} bytes")
             
             # Prepare form data for ML service
             files = {"photo": ("photo.jpg", photo_bytes, "image/jpeg")}
@@ -157,6 +180,8 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
             if 'Content-Type' in auth_headers:
                 del auth_headers['Content-Type']
             
+            logger.info(f"🚀 Sending request to ML service: {ML_SERVICE_URL}/api/v1/analyze")
+            
             response = await client.post(
                 f"{ML_SERVICE_URL}/api/v1/analyze",
                 files=files,
@@ -164,6 +189,8 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
                 headers=auth_headers,
                 timeout=60.0
             )
+            
+            logger.info(f"📨 ML service response: {response.status_code}")
             
             if response.status_code != 200:
                 logger.error(f"ML service error: {response.status_code} - {response.text}")
@@ -174,6 +201,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
                 return
             
             result = response.json()
+            logger.info(f"✅ ML service result received: {len(str(result))} chars")
         
         # Format and send result
         analysis_text = format_analysis_result(result, user_language)
@@ -196,8 +224,17 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Decrement credits
         await decrement_credits(telegram_user_id)
         
-        # Log action
-        await log_user_action(str(user["id"]), "nutrition_analysis")
+        # Log action with proper KBZHU data for daily tracking
+        kbzhu_data = {}
+        if "analysis" in result and "total_nutrition" in result["analysis"]:
+            kbzhu_data = result["analysis"]["total_nutrition"]
+        
+        await log_user_action(
+            user_id=str(user["id"]), 
+            action_type="photo_analysis",
+            kbzhu=kbzhu_data,
+            photo_url=photo_url
+        )
         
         # Clear the state
         await state.clear()
@@ -356,4 +393,6 @@ async def handle_successful_payment(message: types.Message):
     await message.answer(i18n.get_text('payment_received', user_language))
     
     # TODO: Integrate with actual payment processing
-    # This is a placeholder for when payment webhooks are implemented 
+    # This is a placeholder for when payment webhooks are implemented
+
+ 

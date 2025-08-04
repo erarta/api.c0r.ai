@@ -90,68 +90,124 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         # Create prompt for food analysis based on user language
         if user_language == "ru":
             prompt = """
-            Проанализируйте это изображение еды и предоставьте подробную информацию о питании.
+            Вы эксперт по пищевой ценности и распознаванию продуктов питания. Проанализируйте это изображение еды с максимальной точностью.
+
+            КРИТИЧЕСКИ ВАЖНО: Очень внимательно определите каждый продукт. Обращайте особое внимание на:
+            - Цвет (красный перец ≠ помидор, зеленый перец ≠ огурец)
+            - Форму (круглая, овальная, длинная)
+            - Текстуру (гладкая, шероховатая, блестящая)
+            - Размер и контекст
 
             ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
 
-            Пожалуйста, предоставьте:
-            1. Список отдельных продуктов питания, видимых на изображении (используйте русские названия)
-            2. Оцененный вес/размер порции для каждого продукта в граммах
-            3. Калории для каждого отдельного продукта
-            4. Общую сводку по питанию
+            Задачи анализа:
+            1. Точно определите ВСЕ продукты питания на изображении
+            2. Определите региональную принадлежность блюда
+            3. Рассчитайте вес каждого продукта в граммах
+            4. Вычислите точную пищевую ценность
+            5. Опишите КОНКРЕТНУЮ пользу каждого ингредиента
+            6. Дайте общую оценку полезности блюда
+            7. Предложите КОНКРЕТНЫЕ способы улучшения блюда
 
             Верните ТОЛЬКО этот JSON объект:
             {
-                "food_items": [
-                    {
-                        "name": "русское название продукта (например: гречка, куриная грудка, помидор)",
-                        "weight": "вес в граммах (например: 100г, 150г)",
-                        "calories": число_калорий
-                    }
-                ],
-                "total_nutrition": {
-                    "calories": общее_число_калорий,
-                    "proteins": граммы_белков,
-                    "fats": граммы_жиров,
-                    "carbohydrates": граммы_углеводов
+                "analysis": {
+                    "regional_analysis": {
+                        "detected_cuisine_type": "название региональной кухни (например: Русская, Азиатская, Средиземноморская)",
+                        "dish_identification": "название блюда (например: Бутерброд, Салат, Овощное рагу)",
+                        "regional_match_confidence": 0.8
+                    },
+                    "food_items": [
+                        {
+                            "name": "точное русское название продукта (например: красный болгарский перец, а НЕ помидор)",
+                            "weight_grams": число_граммов,
+                            "calories": число_калорий,
+                            "health_benefits": "КОНКРЕТНАЯ польза этого продукта (например: 'Красный перец богат витамином С (120% дневной нормы), бета-каротином для здоровья глаз и капсаицином для ускорения метаболизма')"
+                        }
+                    ],
+                    "total_nutrition": {
+                        "calories": общее_число_калорий,
+                        "proteins": граммы_белков,
+                        "fats": граммы_жиров,
+                        "carbohydrates": граммы_углеводов
+                    },
+                    "nutritional_summary": {
+                        "healthiness_rating": рейтинг_от_1_до_10,
+                        "key_benefits": [
+                            "КОНКРЕТНАЯ польза 1 (например: 'Высокое содержание белка (30г) поддерживает рост мышц')",
+                            "КОНКРЕТНАЯ польза 2 (например: 'Омега-3 из тунца улучшают работу мозга')",
+                            "КОНКРЕТНАЯ польза 3 (например: 'Клетчатка из салата улучшает пищеварение')"
+                        ],
+                        "recommendations": "КОНКРЕТНЫЕ способы улучшить блюдо для повышения рейтинга (например: 'Добавьте авокадо (+2 балла за полезные жиры), замените белый хлеб на цельнозерновой (+1 балл за клетчатку), добавьте помидоры черри (+1 балл за витамин К)')"
+                    },
+                    "motivation_message": "Позитивное мотивационное сообщение о правильном питании и отслеживании калорий"
                 }
             }
 
-            Примеры русских названий продуктов: рис, гречка, макароны, куриная грудка, говядина, лосось, картофель, морковь, капуста, яблоко, банан, хлеб, сыр, молоко, яйцо.
-            Оцените реалистичные порции. Все числовые значения должны быть числами без кавычек.
+            Примеры точных названий: красный болгарский перец, зеленый болгарский перец, помидор черри, обычный помидор, огурец, морковь, куриная грудка, говядина, лосось, картофель, рис, гречка, макароны, хлеб белый, хлеб черный, сыр твердый, сыр мягкий.
+            
+            ОБЯЗАТЕЛЬНО: Различайте похожие продукты по цвету, форме и текстуре!
             НЕ добавляйте никакого текста до или после JSON.
             """
         else:
             prompt = """
-            Analyze this food image and provide detailed nutritional information.
+            You are an expert in nutritional analysis and food recognition. Analyze this food image with maximum accuracy.
+
+            CRITICALLY IMPORTANT: Very carefully identify each food item. Pay special attention to:
+            - Color (red bell pepper ≠ tomato, green pepper ≠ cucumber)
+            - Shape (round, oval, elongated)
+            - Texture (smooth, rough, shiny)
+            - Size and context
 
             IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
 
-            Please provide:
-            1. List of individual food items visible in the image (use specific food names)
-            2. Estimated weight/portion size for each item in grams
-            3. Calories for each individual item
-            4. Total nutritional summary
+            Analysis tasks:
+            1. Accurately identify ALL food items in the image
+            2. Determine regional dish origin
+            3. Calculate weight of each item in grams
+            4. Compute precise nutritional values
+            5. Describe SPECIFIC health benefits of each ingredient
+            6. Provide overall healthiness assessment
+            7. Suggest SPECIFIC ways to improve the dish
 
             Return ONLY this JSON object:
             {
-                "food_items": [
-                    {
-                        "name": "specific food name (e.g., grilled chicken breast, brown rice, broccoli)",
-                        "weight": "weight in grams (e.g., 100g, 150g)",
-                        "calories": calorie_number
-                    }
-                ],
-                "total_nutrition": {
-                    "calories": total_calorie_number,
-                    "proteins": protein_grams,
-                    "fats": fat_grams,
-                    "carbohydrates": carb_grams
+                "analysis": {
+                    "regional_analysis": {
+                        "detected_cuisine_type": "cuisine type (e.g., Mediterranean, Asian, American)",
+                        "dish_identification": "dish name (e.g., Sandwich, Salad, Vegetable Stir-fry)",
+                        "regional_match_confidence": 0.8
+                    },
+                    "food_items": [
+                        {
+                            "name": "precise food name (e.g., red bell pepper, NOT tomato)",
+                            "weight_grams": weight_number,
+                            "calories": calorie_number,
+                            "health_benefits": "SPECIFIC health benefits of this product (e.g., 'Red bell pepper is rich in vitamin C (120% daily value), beta-carotene for eye health, and capsaicin to boost metabolism')"
+                        }
+                    ],
+                    "total_nutrition": {
+                        "calories": total_calorie_number,
+                        "proteins": protein_grams,
+                        "fats": fat_grams,
+                        "carbohydrates": carb_grams
+                    },
+                    "nutritional_summary": {
+                        "healthiness_rating": rating_from_1_to_10,
+                        "key_benefits": [
+                            "SPECIFIC benefit 1 (e.g., 'High protein content (30g) supports muscle growth')",
+                            "SPECIFIC benefit 2 (e.g., 'Omega-3 from tuna improves brain function')",
+                            "SPECIFIC benefit 3 (e.g., 'Fiber from lettuce aids digestion')"
+                        ],
+                        "recommendations": "SPECIFIC ways to improve the dish for higher rating (e.g., 'Add avocado (+2 points for healthy fats), replace white bread with whole grain (+1 point for fiber), add cherry tomatoes (+1 point for vitamin K)')"
+                    },
+                    "motivation_message": "Positive motivational message about healthy eating and calorie tracking"
                 }
             }
 
-            Examples of specific food names: rice, pasta, chicken breast, salmon, beef, potato, carrot, apple, bread, cheese, egg.
-            Estimate realistic portion sizes. All numeric values must be numbers without quotes.
+            Examples of precise names: red bell pepper, green bell pepper, cherry tomato, regular tomato, cucumber, carrot, chicken breast, salmon, beef, potato, white rice, brown rice, whole wheat pasta, white bread, sourdough bread, cheddar cheese, mozzarella cheese.
+            
+            MANDATORY: Distinguish similar foods by color, shape, and texture!
             DO NOT add any text before or after the JSON.
             """
         
@@ -199,31 +255,31 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
             
             response_data = json.loads(content)
             
-            # Extract total nutrition data
-            if "total_nutrition" in response_data:
-                kbzhu_data = response_data["total_nutrition"]
+            # Check if we have the new analysis format
+            if "analysis" in response_data:
+                # New format - return as is
+                return response_data
             else:
-                # Fallback to old format if present
-                kbzhu_data = response_data
-            
-            # Validate required fields
-            required_fields = ["calories", "proteins", "fats", "carbohydrates"]
-            for field in required_fields:
-                if field not in kbzhu_data:
-                    raise ValueError(f"Missing field: {field}")
-                # Ensure values are numbers
-                kbzhu_data[field] = float(kbzhu_data[field])
-            
-            # Return both detailed breakdown and KBZHU summary
-            result = {
-                "kbzhu": kbzhu_data
-            }
-            
-            # Add food items breakdown if available
-            if "food_items" in response_data:
-                result["food_items"] = response_data["food_items"]
-            
-            return result
+                # Old format fallback - convert to new structure
+                kbzhu_data = response_data.get("total_nutrition", response_data)
+                
+                # Validate required fields
+                required_fields = ["calories", "proteins", "fats", "carbohydrates"]
+                for field in required_fields:
+                    if field not in kbzhu_data:
+                        raise ValueError(f"Missing field: {field}")
+                    # Ensure values are numbers
+                    kbzhu_data[field] = float(kbzhu_data[field])
+                
+                # Convert old format to new format structure
+                result = {
+                    "analysis": {
+                        "food_items": response_data.get("food_items", []),
+                        "total_nutrition": kbzhu_data,
+                        "motivation_message": "Keep tracking your nutrition!"
+                    }
+                }
+                return result
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI response: {e}")

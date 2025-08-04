@@ -1154,6 +1154,11 @@ async def complete_profile_setup(callback: types.CallbackQuery, state: FSMContex
         else:
             allergies_text = i18n.get_text('profile_allergy_none', user_language)
         
+        # Format daily calories properly
+        daily_calories = profile.get('daily_calories_target', 'Not calculated' if user_language == 'en' else 'Не рассчитано')
+        if isinstance(daily_calories, (int, float)):
+            daily_calories = f"{daily_calories:,}"
+        
         success_text = (
             f"{i18n.get_text('profile_setup_complete', user_language)}\n\n"
             f"{i18n.get_text('profile_summary', user_language)}\n"
@@ -1165,7 +1170,7 @@ async def complete_profile_setup(callback: types.CallbackQuery, state: FSMContex
             f"{i18n.get_text('profile_goal', user_language, goal=goal_label)}\n"
             f"{i18n.get_text('profile_diet', user_language, diet=dietary_text)}\n"
             f"{i18n.get_text('profile_allergies', user_language, allergies=allergies_text)}\n\n"
-            f"{i18n.get_text('profile_calories', user_language, calories=profile.get('daily_calories_target', 'Вычисляется...'))}\n\n"
+            f"{i18n.get_text('profile_calories', user_language, calories=daily_calories)}\n\n"
             f"{i18n.get_text('profile_ready', user_language)}"
         )
         
