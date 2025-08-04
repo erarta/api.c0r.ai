@@ -35,28 +35,38 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
                 message_parts.append(f"🌍 **{i18n.get_text('dish_detected', user_language, dish=dish_type)}**")
                 message_parts.append("")  # Empty line
         
-        # Add food items breakdown
+        # Add food items breakdown - first show all items by calories, then benefits
         if "food_items" in analysis and analysis["food_items"]:
+            # Sort food items by calories (highest first)
+            sorted_items = sorted(analysis["food_items"], key=lambda x: x.get("calories", 0), reverse=True)
+            
             message_parts.append(f"🥘 {i18n.get_text('food_items_detected', user_language)}")
-                
-            for item in analysis["food_items"]:
+            
+            # First pass: show all items with their emojis and calories
+            for item in sorted_items:
                 name = item.get("name", "Unknown")
                 weight_grams = item.get("weight_grams", 0)
                 calories = item.get("calories", 0)
+                emoji = item.get("emoji", "🍽️")  # Default emoji if not provided
                 
-                # Add health benefits if available
+                # Use language-aware weight and calorie units
+                weight_unit = "г" if user_language == "ru" else "g"
+                calorie_unit = "ккал" if user_language == "ru" else "kcal"
+                message_parts.append(f"• {emoji} {name} ({weight_grams}{weight_unit}) - {calories} {calorie_unit}")
+            
+            message_parts.append("")  # Empty line
+            
+            # Second pass: show health benefits for each item
+            benefits_header = "💚 **Польза продуктов:**" if user_language == "ru" else "💚 **Health Benefits:**"
+            message_parts.append(benefits_header)
+            
+            for item in sorted_items:
+                name = item.get("name", "Unknown")
+                emoji = item.get("emoji", "🍽️")
                 health_benefits = item.get("health_benefits", "")
                 if health_benefits:
-                    # Use language-aware weight and calorie units
-                    weight_unit = "г" if user_language == "ru" else "g"
-                    calorie_unit = "ккал" if user_language == "ru" else "kcal"
-                    message_parts.append(f"• {name} ({weight_grams}{weight_unit}) - {calories} {calorie_unit}")
-                    message_parts.append(f"  💚 {health_benefits}")
-                else:
-                    # Use language-aware weight and calorie units
-                    weight_unit = "г" if user_language == "ru" else "g"
-                    calorie_unit = "ккал" if user_language == "ru" else "kcal"
-                    message_parts.append(f"• {name} ({weight_grams}{weight_unit}) - {calories} {calorie_unit}")
+                    message_parts.append(f"  {emoji} {name}: {health_benefits}")
+            
             message_parts.append("")  # Empty line
         
         # Add total nutrition

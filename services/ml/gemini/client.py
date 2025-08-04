@@ -21,32 +21,41 @@ async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en"
         # Create prompt for food analysis based on user language
         if user_language == "ru":
             prompt = """
-            Проанализируйте это изображение еды и предоставьте подробную информацию о питании с региональным анализом.
+            Вы эксперт по пищевой ценности и распознаванию продуктов питания. Проанализируйте это изображение еды с максимальной точностью.
+
+            КРИТИЧЕСКИ ВАЖНО: Очень внимательно определите каждый продукт. Обращайте особое внимание на:
+            - Цвет (красный перец ≠ помидор, зеленый перец ≠ огурец, яйцо ≠ сыр)
+            - Форму (круглая, овальная, длинная, сферическая)
+            - Текстуру (гладкая, шероховатая, блестящая, пористая)
+            - Размер и контекст
+            - Поверхность (гладкая скорлупа яйца ≠ пористый сыр)
 
             ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
 
-            Пожалуйста, предоставьте:
-            1. Региональное распознавание блюда и его происхождение
-            2. Список отдельных продуктов питания с их пользой
-            3. Оцененный вес/размер порции для каждого продукта в граммах
-            4. Калории для каждого отдельного продукта
-            5. Общую сводку по питанию
-            6. Анализ полезности и мотивационное сообщение
+            Задачи анализа:
+            1. Точно определите ВСЕ продукты питания на изображении
+            2. Определите региональную принадлежность блюда
+            3. Рассчитайте вес каждого продукта в граммах
+            4. Вычислите точную пищевую ценность
+            5. Опишите КОНКРЕТНУЮ пользу каждого ингредиента
+            6. Дайте общую оценку полезности блюда
+            7. Предложите КОНКРЕТНЫЕ способы улучшения блюда
 
             Верните ТОЛЬКО этот JSON объект:
             {
                 "analysis": {
                     "regional_analysis": {
                         "detected_cuisine_type": "название региональной кухни (например: Русская, Азиатская, Средиземноморская)",
-                        "dish_identification": "название блюда (например: Бутерброд, Салат, Овсяная каша)",
+                        "dish_identification": "название блюда (например: Бутерброд, Салат, Овощное рагу)",
                         "regional_match_confidence": 0.8
                     },
                     "food_items": [
                         {
-                            "name": "русское название продукта",
+                            "name": "точное русское название продукта (например: красный болгарский перец, а НЕ помидор)",
                             "weight_grams": число_граммов,
                             "calories": число_калорий,
-                            "health_benefits": "краткое описание пользы этого продукта"
+                            "emoji": "подходящий emoji для продукта (например: 🥚 для яйца, 🧀 для сыра, 🍅 для помидора)",
+                            "health_benefits": "КОНКРЕТНАЯ польза этого продукта (например: 'Красный перец богат витамином С (120% дневной нормы), бета-каротином для здоровья глаз и капсаицином для ускорения метаболизма')"
                         }
                     ],
                     "total_nutrition": {
@@ -57,45 +66,70 @@ async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en"
                     },
                     "nutritional_summary": {
                         "healthiness_rating": рейтинг_от_1_до_10,
-                        "key_benefits": ["польза 1", "польза 2", "польза 3"],
-                        "recommendations": "краткие рекомендации по питанию"
+                        "key_benefits": [
+                            "КОНКРЕТНАЯ польза 1 (например: 'Высокое содержание белка (30г) поддерживает рост мышц')",
+                            "КОНКРЕТНАЯ польза 2 (например: 'Омега-3 из тунца улучшают работу мозга')",
+                            "КОНКРЕТНАЯ польза 3 (например: 'Клетчатка из салата улучшает пищеварение')"
+                        ],
+                        "recommendations": "КОНКРЕТНЫЕ способы улучшить блюдо для повышения рейтинга (например: 'Добавьте авокадо (+2 балла за полезные жиры), замените белый хлеб на цельнозерновой (+1 балл за клетчатку), добавьте помидоры черри (+1 балл за витамин К)')"
                     },
                     "motivation_message": "Позитивное мотивационное сообщение о правильном питании и отслеживании калорий"
                 }
             }
 
-            Примеры русских названий продуктов: рис, гречка, макароны, куриная грудка, говядина, лосось, картофель, морковь, капуста, яблоко, банан, хлеб, сыр, молоко, яйцо.
-            Оцените реалистичные порции. Все числовые значения должны быть числами без кавычек.
+            Примеры точных названий и их отличий:
+            - 🥚 Яйцо: гладкая скорлупа, овальная форма, белый/коричневый цвет
+            - 🧀 Сыр: пористая текстура, может быть разных цветов, мягкая консистенция
+            - 🍅 Помидор: красный цвет, круглая форма, гладкая кожица
+            - 🌶️ Красный перец: красный цвет, вытянутая форма, гладкая кожица
+            - 🥒 Огурец: зеленый цвет, вытянутая форма, бугристая поверхность
+            - 🥕 Морковь: оранжевый цвет, вытянутая форма, гладкая поверхность
+            - 🥩 Куриная грудка: белое мясо, волокнистая текстура
+            - 🐟 Лосось: розовое мясо, жирная текстура
+            - 🍞 Хлеб: пористая текстура, может быть разных цветов
+            - 🍚 Рис: мелкие белые зерна
+            - 🥔 Картофель: коричневая кожица, белая мякоть
+            
+            ОБЯЗАТЕЛЬНО: Различайте похожие продукты по цвету, форме и текстуре!
             НЕ добавляйте никакого текста до или после JSON.
             """
         else:
             prompt = """
-            Analyze this food image and provide detailed nutritional information with regional analysis.
+            You are an expert in nutritional analysis and food recognition. Analyze this food image with maximum accuracy.
+
+            CRITICALLY IMPORTANT: Very carefully identify each food item. Pay special attention to:
+            - Color (red bell pepper ≠ tomato, green pepper ≠ cucumber, egg ≠ cheese)
+            - Shape (round, oval, elongated, spherical)
+            - Texture (smooth, rough, shiny, porous)
+            - Size and context
+            - Surface (smooth eggshell ≠ porous cheese)
 
             IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
 
-            Please provide:
-            1. Regional dish recognition and origin
-            2. List of individual food items with their health benefits
-            3. Estimated weight/portion size for each item in grams
-            4. Calories for each individual item
-            5. Total nutritional summary
-            6. Health analysis and motivational message
+            Analysis tasks:
+            1. Accurately identify ALL food items in the image
+            2. Determine regional dish origin
+            3. Calculate weight of each item in grams
+            4. Compute precise nutritional values
+            5. Describe SPECIFIC health benefits of each ingredient
+            6. Provide overall healthiness assessment
+            7. Suggest SPECIFIC ways to improve the dish
 
             Return ONLY this JSON object:
             {
                 "analysis": {
                     "regional_analysis": {
                         "detected_cuisine_type": "cuisine type (e.g., Mediterranean, Asian, American)",
-                        "dish_identification": "dish name (e.g., Sandwich, Salad, Oatmeal)",
+                        "dish_identification": "dish name (e.g., Sandwich, Salad, Vegetable Stir-fry)",
                         "regional_match_confidence": 0.8
                     },
                     "food_items": [
                         {
-                            "name": "specific food name",
+                            "name": "precise food name (e.g., red bell pepper, NOT tomato)",
                             "weight_grams": weight_number,
                             "calories": calorie_number,
-                            "health_benefits": "brief description of health benefits"
+                            "emoji": "appropriate emoji for the food item (e.g., 🥚 for egg, 🧀 for cheese, 🍅 for tomato)",
+                            "health_benefits": "SPECIFIC health benefits of this product (e.g., 'Red bell pepper is rich in vitamin C (120% daily value), beta-carotene for eye health, and capsaicin to boost metabolism')"
                         }
                     ],
                     "total_nutrition": {
@@ -106,15 +140,31 @@ async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en"
                     },
                     "nutritional_summary": {
                         "healthiness_rating": rating_from_1_to_10,
-                        "key_benefits": ["benefit 1", "benefit 2", "benefit 3"],
-                        "recommendations": "brief nutrition recommendations"
+                        "key_benefits": [
+                            "SPECIFIC benefit 1 (e.g., 'High protein content (30g) supports muscle growth')",
+                            "SPECIFIC benefit 2 (e.g., 'Omega-3 from tuna improves brain function')",
+                            "SPECIFIC benefit 3 (e.g., 'Fiber from lettuce aids digestion')"
+                        ],
+                        "recommendations": "SPECIFIC ways to improve the dish for higher rating (e.g., 'Add avocado (+2 points for healthy fats), replace white bread with whole grain (+1 point for fiber), add cherry tomatoes (+1 point for vitamin K)')"
                     },
                     "motivation_message": "Positive motivational message about healthy eating and calorie tracking"
                 }
             }
 
-            Examples of specific food names: rice, pasta, chicken breast, salmon, beef, potato, carrot, apple, bread, cheese, egg.
-            Estimate realistic portion sizes. All numeric values must be numbers without quotes.
+            Examples of precise names and their differences:
+            - 🥚 Egg: smooth shell, oval shape, white/brown color
+            - 🧀 Cheese: porous texture, can be different colors, soft consistency
+            - 🍅 Tomato: red color, round shape, smooth skin
+            - 🌶️ Red bell pepper: red color, elongated shape, smooth skin
+            - 🥒 Cucumber: green color, elongated shape, bumpy surface
+            - 🥕 Carrot: orange color, elongated shape, smooth surface
+            - 🥩 Chicken breast: white meat, fibrous texture
+            - 🐟 Salmon: pink meat, fatty texture
+            - 🍞 Bread: porous texture, can be different colors
+            - 🍚 Rice: small white grains
+            - 🥔 Potato: brown skin, white flesh
+
+            MANDATORY: Distinguish similar products by color, shape, and texture!
             DO NOT add any text before or after the JSON.
             """
         

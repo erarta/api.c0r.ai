@@ -93,10 +93,11 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
             Вы эксперт по пищевой ценности и распознаванию продуктов питания. Проанализируйте это изображение еды с максимальной точностью.
 
             КРИТИЧЕСКИ ВАЖНО: Очень внимательно определите каждый продукт. Обращайте особое внимание на:
-            - Цвет (красный перец ≠ помидор, зеленый перец ≠ огурец)
-            - Форму (круглая, овальная, длинная)
-            - Текстуру (гладкая, шероховатая, блестящая)
+            - Цвет (красный перец ≠ помидор, зеленый перец ≠ огурец, яйцо ≠ сыр)
+            - Форму (круглая, овальная, длинная, сферическая)
+            - Текстуру (гладкая, шероховатая, блестящая, пористая)
             - Размер и контекст
+            - Поверхность (гладкая скорлупа яйца ≠ пористый сыр)
 
             ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
 
@@ -122,6 +123,7 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                             "name": "точное русское название продукта (например: красный болгарский перец, а НЕ помидор)",
                             "weight_grams": число_граммов,
                             "calories": число_калорий,
+                            "emoji": "подходящий emoji для продукта (например: 🥚 для яйца, 🧀 для сыра, 🍅 для помидора)",
                             "health_benefits": "КОНКРЕТНАЯ польза этого продукта (например: 'Красный перец богат витамином С (120% дневной нормы), бета-каротином для здоровья глаз и капсаицином для ускорения метаболизма')"
                         }
                     ],
@@ -144,7 +146,18 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                 }
             }
 
-            Примеры точных названий: красный болгарский перец, зеленый болгарский перец, помидор черри, обычный помидор, огурец, морковь, куриная грудка, говядина, лосось, картофель, рис, гречка, макароны, хлеб белый, хлеб черный, сыр твердый, сыр мягкий.
+            Примеры точных названий и их отличий:
+            - 🥚 Яйцо: гладкая скорлупа, овальная форма, белый/коричневый цвет
+            - 🧀 Сыр: пористая текстура, может быть разных цветов, мягкая консистенция
+            - 🍅 Помидор: красный цвет, круглая форма, гладкая кожица
+            - 🌶️ Красный перец: красный цвет, вытянутая форма, гладкая кожица
+            - 🥒 Огурец: зеленый цвет, вытянутая форма, бугристая поверхность
+            - 🥕 Морковь: оранжевый цвет, вытянутая форма, гладкая поверхность
+            - 🥩 Куриная грудка: белое мясо, волокнистая текстура
+            - 🐟 Лосось: розовое мясо, жирная текстура
+            - 🍞 Хлеб: пористая текстура, может быть разных цветов
+            - 🍚 Рис: мелкие белые зерна
+            - 🥔 Картофель: коричневая кожица, белая мякоть
             
             ОБЯЗАТЕЛЬНО: Различайте похожие продукты по цвету, форме и текстуре!
             НЕ добавляйте никакого текста до или после JSON.
@@ -154,10 +167,11 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
             You are an expert in nutritional analysis and food recognition. Analyze this food image with maximum accuracy.
 
             CRITICALLY IMPORTANT: Very carefully identify each food item. Pay special attention to:
-            - Color (red bell pepper ≠ tomato, green pepper ≠ cucumber)
-            - Shape (round, oval, elongated)
-            - Texture (smooth, rough, shiny)
+            - Color (red bell pepper ≠ tomato, green pepper ≠ cucumber, egg ≠ cheese)
+            - Shape (round, oval, elongated, spherical)
+            - Texture (smooth, rough, shiny, porous)
             - Size and context
+            - Surface (smooth eggshell ≠ porous cheese)
 
             IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
 
@@ -183,6 +197,7 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                             "name": "precise food name (e.g., red bell pepper, NOT tomato)",
                             "weight_grams": weight_number,
                             "calories": calorie_number,
+                            "emoji": "appropriate emoji for the food item (e.g., 🥚 for egg, 🧀 for cheese, 🍅 for tomato)",
                             "health_benefits": "SPECIFIC health benefits of this product (e.g., 'Red bell pepper is rich in vitamin C (120% daily value), beta-carotene for eye health, and capsaicin to boost metabolism')"
                         }
                     ],
@@ -205,9 +220,20 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                 }
             }
 
-            Examples of precise names: red bell pepper, green bell pepper, cherry tomato, regular tomato, cucumber, carrot, chicken breast, salmon, beef, potato, white rice, brown rice, whole wheat pasta, white bread, sourdough bread, cheddar cheese, mozzarella cheese.
-            
-            MANDATORY: Distinguish similar foods by color, shape, and texture!
+            Examples of precise names and their differences:
+            - 🥚 Egg: smooth shell, oval shape, white/brown color
+            - 🧀 Cheese: porous texture, can be different colors, soft consistency
+            - 🍅 Tomato: red color, round shape, smooth skin
+            - 🌶️ Red bell pepper: red color, elongated shape, smooth skin
+            - 🥒 Cucumber: green color, elongated shape, bumpy surface
+            - 🥕 Carrot: orange color, elongated shape, smooth surface
+            - 🥩 Chicken breast: white meat, fibrous texture
+            - 🐟 Salmon: pink meat, fatty texture
+            - 🍞 Bread: porous texture, can be different colors
+            - 🍚 Rice: small white grains
+            - 🥔 Potato: brown skin, white flesh
+
+            MANDATORY: Distinguish similar products by color, shape, and texture!
             DO NOT add any text before or after the JSON.
             """
         
