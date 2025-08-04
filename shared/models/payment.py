@@ -50,7 +50,7 @@ class PaymentRequest(BaseModel):
     payment_id: str = Field(..., description="Payment ID from gateway")
     amount: float = Field(..., gt=0, description="Payment amount")
     currency: str = Field(default="RUB", description="Currency code")
-    gateway: str = Field(..., description="Payment gateway (yookassa, stripe)")
+    gateway: str = Field(..., pattern="^(yookassa|stripe)$", description="Payment gateway")
     status: str = Field(..., description="Payment status")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Payment metadata")
 
@@ -83,7 +83,7 @@ class StripeWebhook(WebhookPayload):
 class PaymentVerificationRequest(BaseModel):
     """Request model for payment verification"""
     payment_id: str = Field(..., description="Payment ID to verify")
-    gateway: str = Field(..., regex="^(yookassa|stripe)$", description="Payment gateway")
+    gateway: str = Field(..., pattern="^(yookassa|stripe)$", description="Payment gateway")
 
 
 class PaymentVerificationResponse(BaseResponse):

@@ -127,7 +127,7 @@ class TestHealthResponse:
 class TestDatabaseHealthCheck:
     """Test database health check functionality"""
     
-    @patch('shared.health.supabase')
+    @patch('common.supabase_client.supabase')
     @pytest.mark.asyncio
     async def test_database_health_check_success(self, mock_supabase):
         """Test successful database health check"""
@@ -143,7 +143,7 @@ class TestDatabaseHealthCheck:
         assert result.response_time is not None
         assert result.error is None
     
-    @patch('shared.health.supabase')
+    @patch('common.supabase_client.supabase')
     @pytest.mark.asyncio
     async def test_database_health_check_failure(self, mock_supabase):
         """Test failed database health check"""

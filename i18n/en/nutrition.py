@@ -14,7 +14,7 @@ TRANSLATIONS = {
     "analysis_failed": "❌ **Hmm, I had trouble with that one!**\n\nDon't worry, it happens sometimes. Let's try again - I'm here to help! 💪",
     "analysis_complete": "✅ **Amazing! I've got your results ready!**",
     "credits_remaining": "💳 **You have**",
-    "daily_progress": "📊 **Here's how you're doing today:**",
+    "nutrition_daily_progress": "📊 **Here's how you're doing today:**",
     "consumed": "You've had",
     "target": "Your goal is",
     "remaining": "You have",

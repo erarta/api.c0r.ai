@@ -13,7 +13,7 @@ from tests.mocks import setup_integration_mocks, MockYooKassaClient, MockSupabas
 # Ensure proper imports
 setup_test_imports()
 
-from common.payment_plans_config import PAYMENT_PLANS
+from common.config.payment_plans import PAYMENT_PLANS
 from common.supabase_client import supabase
 
 

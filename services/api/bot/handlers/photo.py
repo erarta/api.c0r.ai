@@ -13,6 +13,7 @@ from services.api.bot.utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
 from i18n.i18n import i18n
 from services.api.bot.config import PAYMENT_PLANS
+from .nutrition import sanitize_markdown_text
 
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
@@ -42,10 +43,16 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
                 # Add health benefits if available
                 health_benefits = item.get("health_benefits", "")
                 if health_benefits:
-                    message_parts.append(f"• {name} ({weight_grams}г) - {calories} ккал")
+                    # Use language-aware weight and calorie units
+                    weight_unit = "г" if user_language == "ru" else "g"
+                    calorie_unit = "ккал" if user_language == "ru" else "kcal"
+                    message_parts.append(f"• {name} ({weight_grams}{weight_unit}) - {calories} {calorie_unit}")
                     message_parts.append(f"  💚 {health_benefits}")
                 else:
-                    message_parts.append(f"• {name} ({weight_grams}г) - {calories} ккал")
+                    # Use language-aware weight and calorie units
+                    weight_unit = "г" if user_language == "ru" else "g"
+                    calorie_unit = "ккал" if user_language == "ru" else "kcal"
+                    message_parts.append(f"• {name} ({weight_grams}{weight_unit}) - {calories} {calorie_unit}")
             message_parts.append("")  # Empty line
         
         # Add total nutrition
@@ -172,13 +179,17 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         analysis_text = format_analysis_result(result, user_language)
         
         # Add daily progress if user has profile
-        if has_profile and profile:
+        if has_profile:
             daily_data = await get_daily_calories_consumed(str(user["id"]))
             daily_consumed = daily_data.get("total_calories", 0) if isinstance(daily_data, dict) else daily_data
             daily_target = profile.get("daily_calories_target", 2000)
             remaining = daily_target - daily_consumed
             
-            progress_text = f"\n{i18n.get_text('daily_progress', user_language)}\n{i18n.get_text('consumed', user_language)}: {daily_consumed} {i18n.get_text('cal', user_language)}\n{i18n.get_text('target', user_language)}: {daily_target} {i18n.get_text('cal', user_language)}\n{i18n.get_text('remaining', user_language)}: {remaining} {i18n.get_text('cal', user_language)}"
+            # Calculate progress percentage and create progress bar
+            progress_percent = min(100, (daily_consumed / daily_target * 100)) if daily_target > 0 else 0
+            progress_bars = "█" * int(progress_percent / 10) + "░" * (10 - int(progress_percent / 10))
+            
+            progress_text = f"\n\n{i18n.get_text('daily_progress_title', user_language)}\n{i18n.get_text('daily_progress_target', user_language, target=daily_target, calories=i18n.get_text('cal', user_language))}\n{i18n.get_text('daily_progress_consumed', user_language, consumed=daily_consumed, calories=i18n.get_text('cal', user_language), percent=int(progress_percent))}\n{i18n.get_text('daily_progress_remaining', user_language, remaining=remaining, calories=i18n.get_text('cal', user_language))}\n{i18n.get_text('daily_progress', user_language, progress_bar=progress_bars, percent=int(progress_percent))}"
             
             analysis_text += progress_text
         
@@ -196,8 +207,11 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         
         final_text = f"{i18n.get_text('analysis_complete', user_language)}\n\n{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits - 1} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
         
+        # Sanitize the final text to prevent Telegram markdown parsing errors
+        sanitized_final_text = sanitize_markdown_text(final_text)
+        
         await processing_msg.edit_text(
-            final_text,
+            sanitized_final_text,
             parse_mode="Markdown",
             reply_markup=keyboard
         )

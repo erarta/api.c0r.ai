@@ -12,7 +12,7 @@ class MLAnalysisRequest(BaseModel):
     """Request model for ML food analysis"""
     user_id: str = Field(..., description="User ID (telegram_id as string)")
     image_url: str = Field(..., description="URL of the food image to analyze")
-    provider: str = Field(default="openai", regex="^(openai|gemini)$", description="AI provider")
+    provider: str = Field(default="openai", pattern="^(openai|gemini)$", description="AI provider")
     user_language: str = Field(default="en", max_length=5, description="User language preference")
     
     @validator('image_url')

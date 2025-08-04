@@ -14,7 +14,7 @@ from typing import Dict, Any
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 from services.ml.core.models.managers.model_manager import ModelManager
-from services.ml.modules.location.detector import LocationDetector
+from services.ml.modules.location.detector import UserLocationDetector
 from services.ml.core.prompts.base.prompt_builder import PromptBuilder
 from services.ml.core.reliability.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from services.ml.core.reliability.fallback_manager import FallbackManager, FallbackStrategy
@@ -30,8 +30,8 @@ class TestMLServiceIntegration:
     
     @pytest.fixture
     def location_detector(self):
-        """Create LocationDetector for integration testing"""
-        return LocationDetector()
+        """Create UserLocationDetector for integration testing"""
+        return UserLocationDetector()
     
     @pytest.fixture
     def prompt_builder(self):

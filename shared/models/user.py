@@ -19,11 +19,11 @@ class UserProfile(BaseModel):
     
     # Profile data
     age: Optional[int] = Field(None, ge=13, le=120, description="User age")
-    gender: Optional[str] = Field(None, regex="^(male|female|other)$", description="User gender")
+    gender: Optional[str] = Field(None, pattern="^(male|female|other)$", description="User gender")
     height: Optional[float] = Field(None, gt=0, le=300, description="Height in cm")
     weight: Optional[float] = Field(None, gt=0, le=1000, description="Weight in kg")
-    activity_level: Optional[str] = Field(None, regex="^(sedentary|light|moderate|active|very_active)$")
-    goal: Optional[str] = Field(None, regex="^(lose_weight|maintain_weight|gain_weight)$")
+    activity_level: Optional[str] = Field(None, pattern="^(sedentary|light|moderate|active|very_active)$")
+    goal: Optional[str] = Field(None, pattern="^(lose_weight|maintain_weight|gain_weight)$")
     dietary_preferences: Optional[List[str]] = Field(default_factory=list, description="Dietary preferences")
     allergies: Optional[List[str]] = Field(default_factory=list, description="Food allergies")
     daily_calories_target: Optional[int] = Field(None, gt=0, le=10000, description="Daily calorie target")
