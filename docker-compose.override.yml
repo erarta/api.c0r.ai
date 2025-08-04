@@ -1,0 +1,36 @@
+# Docker Compose override for development
+# This file automatically extends docker-compose.yml when running docker-compose commands
+# It mounts local translation files and handlers as volumes for instant updates without rebuilds
+
+services:
+  api:
+    volumes:
+      # Mount translation files for instant updates
+      - ./i18n:/app/i18n:ro
+      # Mount handlers for code changes  
+      - ./services/api/bot/handlers:/app/handlers:ro
+      # Mount utils for our new motivational messages
+      - ./services/api/bot/utils:/app/utils:ro
+      # Mount shared modules
+      - ./shared:/app/shared:ro
+      # Mount common modules  
+      - ./common:/app/common:ro
+    environment:
+      # Add development environment variables if needed
+      - DEVELOPMENT=true
+    # Use the correct uvicorn command (same as Dockerfile but with reload for development)
+    command: python -m uvicorn services.api.bot.main:app --host 0.0.0.0 --port 8000 --reload
+    
+  ml:
+    volumes:
+      # Mount shared modules for ML service too
+      - ./shared:/app/shared:ro
+      # Mount i18n in case ML service needs translations
+      - ./i18n:/app/i18n:ro
+      
+  pay:
+    volumes:
+      # Mount shared modules for payment service
+      - ./shared:/app/shared:ro
+      # Mount i18n for payment service
+      - ./i18n:/app/i18n:ro 

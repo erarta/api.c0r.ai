@@ -14,6 +14,13 @@ from common.supabase_client import (
     get_or_create_user
 )
 from i18n.i18n import i18n
+from utils.motivational_messages import (
+    get_profile_step_message,
+    get_random_important_tip,
+    get_random_restart_tip,
+    get_random_dietary_tip,
+    get_random_allergies_tip
+)
 
 # FSM States for profile setup
 class ProfileStates(StatesGroup):
@@ -68,18 +75,18 @@ async def profile_command(message: types.Message, state: FSMContext):
 async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     """Show profile menu for existing profile"""
     user_language = user.get('language', 'en')
-    # Format profile data
-    age = profile.get('age', 'Not set')
-    gender_map = {
-        'male': '👨',
-        'female': '👩',
-        None: ''
-    }
-    gender = gender_map.get(profile.get('gender'), '')
-    gender_label = i18n.get_text('profile_gender', user_language, gender=gender + ' ' + (i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else ''))
-    height = i18n.get_text('profile_height', user_language, height=profile.get('height_cm', 'Not set')) if profile.get('height_cm') else i18n.get_text('profile_height', user_language, height='Not set')
-    weight = i18n.get_text('profile_weight', user_language, weight=profile.get('weight_kg', 'Not set')) if profile.get('weight_kg') else i18n.get_text('profile_weight', user_language, weight='Not set')
     
+    # Format profile data without emoji duplication
+    age = profile.get('age', 'Not set')
+    
+    # Gender - use translation that already has emojis
+    gender_label = i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else 'Not set'
+    
+    # Height and weight with proper formatting
+    height_value = f"{profile.get('height_cm')} см" if profile.get('height_cm') else 'Not set'
+    weight_value = f"{profile.get('weight_kg')} кг" if profile.get('weight_kg') else 'Not set'
+    
+    # Activity labels - translations already have emojis
     activity_labels = {
         'sedentary': i18n.get_text('activity_sedentary', user_language),
         'lightly_active': i18n.get_text('activity_lightly_active', user_language),
@@ -89,6 +96,7 @@ async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     }
     activity = i18n.get_text('profile_activity', user_language, activity=activity_labels.get(profile.get('activity_level'), i18n.get_text('activity_not_set', user_language)))
     
+    # Goal labels - translations already have emojis
     goal_labels = {
         'lose_weight': i18n.get_text('goal_lose_weight', user_language),
         'maintain_weight': i18n.get_text('goal_maintain_weight', user_language),
@@ -96,17 +104,70 @@ async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     }
     goal = i18n.get_text('profile_goal', user_language, goal=goal_labels.get(profile.get('goal'), i18n.get_text('goal_not_set', user_language)))
     
+    # Daily calories with proper formatting
     daily_calories = profile.get('daily_calories_target', 'Not calculated')
-    calories_label = i18n.get_text('profile_calories', user_language, calories=daily_calories if daily_calories != 'Not calculated' else i18n.get_text('calories_not_calculated', user_language))
+    if daily_calories != 'Not calculated':
+        daily_calories = f"{daily_calories:,} Калорий"
+    calories_label = i18n.get_text('profile_calories', user_language, calories=daily_calories)
+    
+    # Format dietary preferences
+    dietary_prefs = profile.get('dietary_preferences', [])
+    if dietary_prefs and dietary_prefs != ['none']:
+        dietary_items = []
+        for pref in dietary_prefs:
+            if pref != "none":
+                diet_translation_map = {
+                    "vegetarian": "profile_dietary_vegetarian",
+                    "vegan": "profile_dietary_vegan",
+                    "pescatarian": "profile_dietary_pescatarian",
+                    "keto": "profile_dietary_keto",
+                    "paleo": "profile_dietary_paleo",
+                    "mediterranean": "profile_dietary_mediterranean",
+                    "gluten_free": "profile_dietary_gluten_free",
+                    "dairy_free": "profile_dietary_dairy_free",
+                    "halal": "profile_dietary_halal",
+                    "kosher": "profile_dietary_kosher"
+                }
+                translation_key = diet_translation_map.get(pref, pref)
+                dietary_items.append(i18n.get_text(translation_key, user_language))
+        dietary_text = ", ".join(dietary_items) if dietary_items else i18n.get_text('profile_dietary_none', user_language)
+    else:
+        dietary_text = i18n.get_text('profile_dietary_none', user_language)
+    
+    # Format allergies
+    allergies = profile.get('allergies', [])
+    if allergies and allergies != ['none']:
+        allergy_items = []
+        for allergy in allergies:
+            if allergy != "none":
+                allergy_translation_map = {
+                    "nuts": "profile_allergy_nuts",
+                    "peanuts": "profile_allergy_peanuts",
+                    "shellfish": "profile_allergy_shellfish",
+                    "fish": "profile_allergy_fish",
+                    "eggs": "profile_allergy_eggs",
+                    "dairy": "profile_allergy_dairy",
+                    "soy": "profile_allergy_soy",
+                    "gluten": "profile_allergy_gluten",
+                    "sesame": "profile_allergy_sesame",
+                    "sulfites": "profile_allergy_sulfites"
+                }
+                translation_key = allergy_translation_map.get(allergy, allergy)
+                allergy_items.append(i18n.get_text(translation_key, user_language))
+        allergies_text = ", ".join(allergy_items) if allergy_items else i18n.get_text('profile_allergy_none', user_language)
+    else:
+        allergies_text = i18n.get_text('profile_allergy_none', user_language)
     
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
-        f"{gender_label}\n"
-        f"{height}\n"
-        f"{weight}\n"
+        f"{i18n.get_text('profile_gender', user_language, gender=gender_label)}\n"
+        f"{i18n.get_text('profile_height', user_language, height=height_value)}\n"
+        f"{i18n.get_text('profile_weight', user_language, weight=weight_value)}\n"
         f"{activity}\n"
-        f"{goal}\n\n"
+        f"{goal}\n"
+        f"{i18n.get_text('profile_diet', user_language, diet=dietary_text)}\n"
+        f"{i18n.get_text('profile_allergies', user_language, allergies=allergies_text)}\n\n"
         f"{calories_label}\n\n"
         f"{i18n.get_text('profile_what_next', user_language)}"
     )
@@ -216,9 +277,9 @@ async def start_profile_setup(message: types.Message, state: FSMContext, telegra
     # Show setup instructions with better guidance
     setup_text = (
         f"{i18n.get_text('profile_setup_age', user_language)}\n\n"
-        f"💡 {i18n.get_text('profile_setup_important', user_language)}\n"
-        f"📝 {i18n.get_text('profile_setup_restart', user_language)}\n"
-        f"🔄 {i18n.get_text('profile_setup_step', user_language, step=1, total=8)}"
+        f"💡 {get_random_important_tip(user_language)}\n"
+        f"📝 {get_random_restart_tip(user_language)}\n"
+        f"🔄 {get_profile_step_message(user_language, step=1, total=8)}"
     )
     
     await message.answer(
@@ -416,15 +477,13 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     """Show profile information for existing profile"""
     user_language = user.get('language', 'en')
     age = profile.get('age', 'Not set')
-    gender_map = {
-        'male': '👨',
-        'female': '👩',
-        None: ''
-    }
-    gender = gender_map.get(profile.get('gender'), '')
-    gender_label = i18n.get_text('profile_gender', user_language, gender=gender + ' ' + (i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else ''))
-    height = i18n.get_text('profile_height', user_language, height=profile.get('height_cm', 'Not set')) if profile.get('height_cm') else i18n.get_text('profile_height', user_language, height='Not set')
-    weight = i18n.get_text('profile_weight', user_language, weight=profile.get('weight_kg', 'Not set')) if profile.get('weight_kg') else i18n.get_text('profile_weight', user_language, weight='Not set')
+    
+    # Gender - use translation that already has emojis, no duplication
+    gender_label = i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else 'Not set'
+    
+    # Height and weight with proper formatting
+    height_value = f"{profile.get('height_cm')} см" if profile.get('height_cm') else 'Not set'
+    weight_value = f"{profile.get('weight_kg')} кг" if profile.get('weight_kg') else 'Not set'
     
     activity_labels = {
         'sedentary': i18n.get_text('activity_sedentary', user_language),
@@ -503,9 +562,9 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
-        f"{gender_label}\n"
-        f"{height}\n"
-        f"{weight}\n"
+        f"{i18n.get_text('profile_gender', user_language, gender=gender_label)}\n"
+        f"{i18n.get_text('profile_height', user_language, height=height_value)}\n"
+        f"{i18n.get_text('profile_weight', user_language, weight=weight_value)}\n"
         f"{activity}\n"
         f"{goal}\n"
         f"{i18n.get_text('profile_diet', user_language, diet=dietary_text)}\n"
@@ -560,7 +619,7 @@ async def process_age(message: types.Message, state: FSMContext):
         await message.answer(
             f"✅ {i18n.get_text('profile_setup_age_success', user_language, age=age)}\n\n"
             f"{i18n.get_text('profile_setup_gender', user_language)}\n\n"
-            f"🔄 {i18n.get_text('profile_setup_step', user_language, step=2, total=8)}",
+            f"🔄 {get_profile_step_message(user_language, step=2, total=8)}",
             reply_markup=keyboard
         )
         
@@ -594,7 +653,7 @@ async def process_gender(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
         f"✅ {i18n.get_text('profile_setup_gender_success', user_language, gender=gender_label)}\n\n"
         f"{i18n.get_text('profile_setup_height', user_language)}\n\n"
-        f"🔄 {i18n.get_text('profile_setup_step', user_language, step=3, total=8)}"
+        f"🔄 {get_profile_step_message(user_language, step=3, total=8)}"
     )
 
 async def process_height(message: types.Message, state: FSMContext):
@@ -625,7 +684,7 @@ async def process_height(message: types.Message, state: FSMContext):
         await message.answer(
             f"✅ {i18n.get_text('profile_setup_height_success', user_language, height=height)}\n\n"
             f"{i18n.get_text('profile_setup_weight', user_language)}\n\n"
-            f"🔄 {i18n.get_text('profile_setup_step', user_language, step=4, total=8)}"
+            f"🔄 {get_profile_step_message(user_language, step=4, total=8)}"
         )
         
     except ValueError:
@@ -669,7 +728,8 @@ async def process_weight(message: types.Message, state: FSMContext):
         
         await message.answer(
             f"✅ {i18n.get_text('profile_setup_weight_success', user_language, weight=weight)}\n\n"
-            f"🔄 {i18n.get_text('profile_setup_step', user_language, step=5, total=8)}",
+            f"{i18n.get_text('profile_setup_activity', user_language)}\n\n"
+            f"🔄 {get_profile_step_message(user_language, step=5, total=8)}",
             reply_markup=keyboard
         )
         
@@ -711,7 +771,7 @@ async def process_activity(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
         f"✅ {i18n.get_text('profile_setup_activity_success', user_language, activity=activity_label)}\n\n"
         f"{i18n.get_text('profile_setup_goal', user_language)}\n\n"
-        f"🔄 {i18n.get_text('profile_setup_step', user_language, step=6, total=8)}",
+        f"🔄 {get_profile_step_message(user_language, step=6, total=8)}",
         reply_markup=keyboard
     )
 
@@ -762,7 +822,7 @@ async def process_goal(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
         f"✅ {i18n.get_text('profile_setup_goal_success', user_language, goal=goal_label)}\n\n"
         f"{i18n.get_text('profile_setup_dietary', user_language)}\n\n"
-        f"💡 {i18n.get_text('profile_setup_dietary_tip', user_language)}",
+        f"💡 {get_random_dietary_tip(user_language)}",
         parse_mode="Markdown",
         reply_markup=keyboard
     )
@@ -806,7 +866,7 @@ async def process_dietary_preferences(callback: types.CallbackQuery, state: FSMC
         await callback.message.answer(
             f"✅ {i18n.get_text('profile_setup_dietary_success', user_language, preferences=selected_text)}\n\n"
             f"{i18n.get_text('profile_setup_allergies', user_language)}\n\n"
-            f"💡 {i18n.get_text('profile_setup_allergies_tip', user_language)}",
+            f"💡 {get_random_allergies_tip(user_language)}",
             reply_markup=keyboard
         )
         return
