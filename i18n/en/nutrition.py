@@ -12,7 +12,22 @@ TRANSLATIONS = {
     "no_credits_remaining": "❌ **Oops, looks like you're out of credits!**\n\nLet's get you some more so I can keep helping you on your health journey!",
     "analyzing_photo": "🔍 I'm analyzing your photo right now...\n\nThis is exciting! Give me just a moment to work my magic! ✨",
     "analysis_failed": "❌ **Hmm, I had trouble with that one!**\n\nDon't worry, it happens sometimes. Let's try again - I'm here to help! 💪",
-    "analysis_complete": "✅ **Amazing! I've got your results ready!**",
+    # Creative success headers - random selection for variety
+    "analysis_complete_headers": [
+        "✅ **Amazing! I've got your results ready!**",
+        "🎉 **Hooray! Analysis complete!**",
+        "🌟 **Fantastic! Here's what we found!**",
+        "🚀 **Done! Check out these results!**",
+        "💫 **Magic complete! See what we discovered!**",
+        "🏆 **Excellent! Your data is here!**",
+        "🎯 **Bullseye! Analysis ready!**",
+        "⚡ **Lightning fast! Results are in!**",
+        "🔥 **Hot! Fresh results served!**",
+        "💎 **Precious insights ready!**",
+        "🎨 **Masterpiece analysis complete!**",
+        "🌈 **Colorful results await you!**"
+    ],
+    "analysis_complete": "✅ **Amazing! I've got your results ready!**",  # fallback
     "credits_remaining": "💳 **You have**",
     "nutrition_daily_progress": "📊 **Here's how you're doing today:**",
     "consumed": "You've had",
@@ -38,8 +53,8 @@ TRANSLATIONS = {
     "left": "left",
     
     # Food analysis result headers
-    "food_items_detected": "🥘 Detected food items:",
-    "total_nutrition": "🍽️ Total nutrition:",
+            "food_items_detected": "Detected food items:",
+            "total_nutrition": "Total nutrition:",
     
     # Dish identification
     "dish_detected": "Dish: {dish}",
@@ -83,6 +98,10 @@ TRANSLATIONS = {
     
     # Additional nutrition terms
     "bmi_based": "BMI-based",
+    
+    # Food facts and waiting phrases
+    "food_facts_title": "💡 Did you know?",
+    "waiting_phrase_title": "🔍 Now analyzing your photo...",
     "broca_formula": "Broca formula",
     
     # BMI categories and motivations

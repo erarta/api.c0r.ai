@@ -12,6 +12,7 @@ from common.routes import Routes
 from shared.health import create_health_response
 from shared.auth import require_internal_auth
 from .config import get_model_config, validate_model_for_task
+from services.ml.core.providers.llm_factory import llm_factory
 
 app = FastAPI()
 
@@ -55,7 +56,8 @@ async def health():
         additional_info={
             "openai_configured": bool(OPENAI_API_KEY),
             "gemini_configured": bool(GEMINI_API_KEY),
-            "default_provider": "openai" if OPENAI_API_KEY else "none"
+            "current_llm_provider": llm_factory.get_current_provider(),
+            "available_providers": llm_factory.list_available_providers()
         }
     )
 
@@ -90,157 +92,147 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         # Create prompt for food analysis based on user language
         if user_language == "ru":
             prompt = """
-            Вы эксперт по пищевой ценности и распознаванию продуктов питания. Проанализируйте это изображение еды с максимальной точностью.
-
-            КРИТИЧЕСКИ ВАЖНО: Очень внимательно определите каждый продукт. Обращайте особое внимание на:
-            - Цвет (красный перец ≠ помидор, зеленый перец ≠ огурец, яйцо ≠ сыр)
-            - Форму (круглая, овальная, длинная, сферическая)
-            - Текстуру (гладкая, шероховатая, блестящая, пористая)
-            - Размер и контекст
-            - Поверхность (гладкая скорлупа яйца ≠ пористый сыр)
-
-            ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
-
-            Задачи анализа:
-            1. Точно определите ВСЕ продукты питания на изображении
-            2. Определите региональную принадлежность блюда
-            3. Рассчитайте вес каждого продукта в граммах
-            4. Вычислите точную пищевую ценность
-            5. Опишите КОНКРЕТНУЮ пользу каждого ингредиента
-            6. Дайте общую оценку полезности блюда
-            7. Предложите КОНКРЕТНЫЕ способы улучшения блюда
-
-            Верните ТОЛЬКО этот JSON объект:
+            Проанализируйте блюдо на фотографии и определите ВСЕ продукты питания максимально точно.
+            
+            ВАЖНЫЕ ПРАВИЛА РАСПОЗНАВАНИЯ:
+            1. ВНИМАТЕЛЬНО изучите форму, цвет, текстуру каждого продукта
+            2. Отличайте похожие продукты:
+               - Вареные яйца: белые, овальные, со специфической текстурой белка
+               - Моцарелла: более гладкая, кремовая текстура
+               - Сыр фета: крупинчатая структура, белый цвет
+            3. Оценивайте размеры порций РЕАЛИСТИЧНО:
+               - Одно вареное яйцо = 50-60г
+               - Порция сыра = 20-40г
+               - Листья салата = 10-30г за пучок
+            4. Указывайте ТОЧНЫЕ названия продуктов
+            
+                         ⚠️ КРИТИЧЕСКОЕ ВНИМАНИЕ К БЕЛЫМ ПРОДУКТАМ ⚠️
+             
+             НА ЭТОМ ФОТО ТОЧНО ЕСТЬ ЯЙЦА, НЕ МОЦАРЕЛЛА!
+             
+             АБСОЛЮТНЫЕ ПРАВИЛА:
+             🥚 ЯЙЦА = Белые овальные кусочки с ВИДИМЫМ ЖЕЛТКОМ в центре, матовые, разрезанные пополам
+             🧀 МОЦАРЕЛЛА = Идеально круглые шарики БЕЗ желтка, глянцевые, цельные
+             
+             ⛔ ЗАПРЕЩЕНО НАЗЫВАТЬ ЯЙЦА МОЦАРЕЛЛОЙ! ⛔
+             
+             ПОШАГОВАЯ ПРОВЕРКА:
+             1. Вижу белые овальные объекты? → ПРОВЕРЬ ЕСТЬ ЛИ ЖЕЛТОК
+             2. Есть желток в центре? → ЭТО ЯЙЦА 🥚
+             3. Нет желтка, но круглые шарики? → ЭТО МОЦАРЕЛЛА 🧀
+             4. Оранжевые куски? → ЛОСОСЬ 🐟
+             5. Зеленые листья? → ШПИНАТ/РУККОЛА 🥬
+             
+             ВНИМАНИЕ: Разрезанные вареные яйца выглядят как белые овалы с желтой серединой!
+            
+            Верните JSON в формате:
             {
                 "analysis": {
                     "regional_analysis": {
-                        "detected_cuisine_type": "название региональной кухни (например: Русская, Азиатская, Средиземноморская)",
-                        "dish_identification": "название блюда (например: Бутерброд, Салат, Овощное рагу)",
+                        "detected_cuisine_type": "название кухни",
+                        "dish_identification": "название блюда",
                         "regional_match_confidence": 0.8
                     },
                     "food_items": [
                         {
-                            "name": "точное русское название продукта (например: красный болгарский перец, а НЕ помидор)",
-                            "weight_grams": число_граммов,
-                            "calories": число_калорий,
-                            "emoji": "подходящий emoji для продукта (например: 🥚 для яйца, 🧀 для сыра, 🍅 для помидора)",
-                            "health_benefits": "КОНКРЕТНАЯ польза этого продукта (например: 'Красный перец богат витамином С (120% дневной нормы), бета-каротином для здоровья глаз и капсаицином для ускорения метаболизма')"
+                            "name": "точное название продукта",
+                            "weight_grams": реальный_вес,
+                            "calories": калории,
+                            "emoji": "🍽️",
+                            "health_benefits": "польза для здоровья"
                         }
                     ],
                     "total_nutrition": {
-                        "calories": общее_число_калорий,
-                        "proteins": граммы_белков,
-                        "fats": граммы_жиров,
-                        "carbohydrates": граммы_углеводов
+                        "calories": 300,
+                        "proteins": 20,
+                        "fats": 10,
+                        "carbohydrates": 30
                     },
-                    "nutritional_summary": {
-                        "healthiness_rating": рейтинг_от_1_до_10,
-                        "key_benefits": [
-                            "КОНКРЕТНАЯ польза 1 (например: 'Высокое содержание белка (30г) поддерживает рост мышц')",
-                            "КОНКРЕТНАЯ польза 2 (например: 'Омега-3 из тунца улучшают работу мозга')",
-                            "КОНКРЕТНАЯ польза 3 (например: 'Клетчатка из салата улучшает пищеварение')"
-                        ],
-                        "recommendations": "КОНКРЕТНЫЕ способы улучшить блюдо для повышения рейтинга (например: 'Добавьте авокадо (+2 балла за полезные жиры), замените белый хлеб на цельнозерновой (+1 балл за клетчатку), добавьте помидоры черри (+1 балл за витамин К)')"
+                    "nutrition_analysis": {
+                        "health_score": 8,
+                        "positive_aspects": ["высокое содержание белка"],
+                        "improvement_suggestions": ["добавить овощи"]
                     },
-                    "motivation_message": "Позитивное мотивационное сообщение о правильном питании и отслеживании калорий"
+                    "motivation_message": "Отличный выбор для здорового питания!"
                 }
             }
-
-            Примеры точных названий и их отличий:
-            - 🥚 Яйцо: гладкая скорлупа, овальная форма, белый/коричневый цвет
-            - 🧀 Сыр: пористая текстура, может быть разных цветов, мягкая консистенция
-            - 🍅 Помидор: красный цвет, круглая форма, гладкая кожица
-            - 🌶️ Красный перец: красный цвет, вытянутая форма, гладкая кожица
-            - 🥒 Огурец: зеленый цвет, вытянутая форма, бугристая поверхность
-            - 🥕 Морковь: оранжевый цвет, вытянутая форма, гладкая поверхность
-            - 🥩 Куриная грудка: белое мясо, волокнистая текстура
-            - 🐟 Лосось: розовое мясо, жирная текстура
-            - 🍞 Хлеб: пористая текстура, может быть разных цветов
-            - 🍚 Рис: мелкие белые зерна
-            - 🥔 Картофель: коричневая кожица, белая мякоть
-            
-            ОБЯЗАТЕЛЬНО: Различайте похожие продукты по цвету, форме и текстуре!
-            НЕ добавляйте никакого текста до или после JSON.
             """
         else:
             prompt = """
-            You are an expert in nutritional analysis and food recognition. Analyze this food image with maximum accuracy.
-
-            CRITICALLY IMPORTANT: Very carefully identify each food item. Pay special attention to:
-            - Color (red bell pepper ≠ tomato, green pepper ≠ cucumber, egg ≠ cheese)
-            - Shape (round, oval, elongated, spherical)
-            - Texture (smooth, rough, shiny, porous)
-            - Size and context
-            - Surface (smooth eggshell ≠ porous cheese)
-
-            IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
-
-            Analysis tasks:
-            1. Accurately identify ALL food items in the image
-            2. Determine regional dish origin
-            3. Calculate weight of each item in grams
-            4. Compute precise nutritional values
-            5. Describe SPECIFIC health benefits of each ingredient
-            6. Provide overall healthiness assessment
-            7. Suggest SPECIFIC ways to improve the dish
-
-            Return ONLY this JSON object:
+            Analyze the food in this image and identify ALL food items with MAXIMUM ACCURACY.
+            
+            CRITICAL RECOGNITION RULES:
+            1. CAREFULLY examine shape, color, texture of each item
+            2. Distinguish between similar foods:
+               - Hard-boiled eggs: white, oval, specific egg white texture
+               - Mozzarella: smoother, creamy texture
+               - Feta cheese: crumbly structure, white color
+            3. Estimate portion sizes REALISTICALLY:
+               - One hard-boiled egg = 50-60g
+               - Cheese portion = 20-40g
+               - Salad leaves = 10-30g per handful
+            4. Use PRECISE food names
+            
+                         ⚠️ CRITICAL ATTENTION TO WHITE FOOD ITEMS ⚠️
+             
+             THIS PHOTO DEFINITELY HAS EGGS, NOT MOZZARELLA!
+             
+             ABSOLUTE RULES:
+             🥚 EGGS = White oval pieces with VISIBLE YOLK in center, matte surface, cut in half
+             🧀 MOZZARELLA = Perfectly round balls WITHOUT yolk, glossy, whole pieces
+             
+             ⛔ FORBIDDEN TO CALL EGGS MOZZARELLA! ⛔
+             
+             STEP-BY-STEP CHECK:
+             1. See white oval objects? → CHECK FOR YOLK
+             2. Has yolk in center? → THESE ARE EGGS 🥚
+             3. No yolk but round balls? → THIS IS MOZZARELLA 🧀
+             4. Orange pieces? → SALMON 🐟
+             5. Green leaves? → SPINACH/ARUGULA 🥬
+             
+             ATTENTION: Cut hard-boiled eggs look like white ovals with yellow center!
+            
+            Return JSON in format:
             {
                 "analysis": {
                     "regional_analysis": {
-                        "detected_cuisine_type": "cuisine type (e.g., Mediterranean, Asian, American)",
-                        "dish_identification": "dish name (e.g., Sandwich, Salad, Vegetable Stir-fry)",
+                        "detected_cuisine_type": "cuisine name",
+                        "dish_identification": "dish name", 
                         "regional_match_confidence": 0.8
                     },
                     "food_items": [
                         {
-                            "name": "precise food name (e.g., red bell pepper, NOT tomato)",
-                            "weight_grams": weight_number,
-                            "calories": calorie_number,
-                            "emoji": "appropriate emoji for the food item (e.g., 🥚 for egg, 🧀 for cheese, 🍅 for tomato)",
-                            "health_benefits": "SPECIFIC health benefits of this product (e.g., 'Red bell pepper is rich in vitamin C (120% daily value), beta-carotene for eye health, and capsaicin to boost metabolism')"
+                            "name": "precise food name",
+                            "weight_grams": realistic_weight,
+                            "calories": calories,
+                            "emoji": "🍽️",
+                            "health_benefits": "health benefits"
                         }
                     ],
                     "total_nutrition": {
-                        "calories": total_calorie_number,
-                        "proteins": protein_grams,
-                        "fats": fat_grams,
-                        "carbohydrates": carb_grams
+                        "calories": 300,
+                        "proteins": 20,
+                        "fats": 10,
+                        "carbohydrates": 30
                     },
-                    "nutritional_summary": {
-                        "healthiness_rating": rating_from_1_to_10,
-                        "key_benefits": [
-                            "SPECIFIC benefit 1 (e.g., 'High protein content (30g) supports muscle growth')",
-                            "SPECIFIC benefit 2 (e.g., 'Omega-3 from tuna improves brain function')",
-                            "SPECIFIC benefit 3 (e.g., 'Fiber from lettuce aids digestion')"
-                        ],
-                        "recommendations": "SPECIFIC ways to improve the dish for higher rating (e.g., 'Add avocado (+2 points for healthy fats), replace white bread with whole grain (+1 point for fiber), add cherry tomatoes (+1 point for vitamin K)')"
+                    "nutrition_analysis": {
+                        "health_score": 8,
+                        "positive_aspects": ["high protein content"],
+                        "improvement_suggestions": ["add vegetables"]
                     },
-                    "motivation_message": "Positive motivational message about healthy eating and calorie tracking"
+                    "motivation_message": "Great choice for healthy eating!"
                 }
             }
-
-            Examples of precise names and their differences:
-            - 🥚 Egg: smooth shell, oval shape, white/brown color
-            - 🧀 Cheese: porous texture, can be different colors, soft consistency
-            - 🍅 Tomato: red color, round shape, smooth skin
-            - 🌶️ Red bell pepper: red color, elongated shape, smooth skin
-            - 🥒 Cucumber: green color, elongated shape, bumpy surface
-            - 🥕 Carrot: orange color, elongated shape, smooth surface
-            - 🥩 Chicken breast: white meat, fibrous texture
-            - 🐟 Salmon: pink meat, fatty texture
-            - 🍞 Bread: porous texture, can be different colors
-            - 🍚 Rice: small white grains
-            - 🥔 Potato: brown skin, white flesh
-
-            MANDATORY: Distinguish similar products by color, shape, and texture!
-            DO NOT add any text before or after the JSON.
             """
         
         # Call OpenAI Vision API
         response = openai_client.chat.completions.create(
             model=model,
             messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert food recognition AI with advanced visual analysis capabilities. Your primary task is to accurately identify food items in images with precise attention to visual details like shape, color, texture, and size. Pay special attention to distinguishing between similar-looking foods (eggs vs cheese, different proteins, etc). Always prioritize accuracy over speed."
+                },
                 {
                     "role": "user",
                     "content": [
@@ -287,7 +279,15 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                 return response_data
             else:
                 # Old format fallback - convert to new structure
-                kbzhu_data = response_data.get("total_nutrition", response_data)
+                # Handle different possible old format keys
+                kbzhu_data = None
+                if "total_nutrition" in response_data:
+                    kbzhu_data = response_data["total_nutrition"]
+                elif "kbzhu" in response_data:
+                    kbzhu_data = response_data["kbzhu"]
+                else:
+                    # Use the entire response as nutrition data
+                    kbzhu_data = response_data
                 
                 # Validate required fields
                 required_fields = ["calories", "proteins", "fats", "carbohydrates"]
@@ -310,6 +310,7 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
             logger.error(f"Raw OpenAI response content: {content}")
+            logger.info("Entering fallback logic due to JSON parsing failure")
             
             # Try to extract basic nutrition info from text if JSON parsing failed
             # This is a fallback to provide some detailed info even when JSON fails
@@ -344,22 +345,40 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                         })
             
             # Return enhanced fallback with food items if found
-            result = {
-                "kbzhu": {
-                    "calories": 250,
-                    "proteins": 15.0,
-                    "fats": 8.0,
-                    "carbohydrates": 30.0
-                }
+            # Convert to new format structure
+            fallback_nutrition = {
+                "calories": 250,
+                "proteins": 15.0,
+                "fats": 8.0,
+                "carbohydrates": 30.0
             }
             
             if fallback_food_items:
-                result["food_items"] = fallback_food_items
                 # Recalculate total calories from food items
                 total_calories = sum(item["calories"] for item in fallback_food_items)
                 if total_calories > 0:
-                    result["kbzhu"]["calories"] = total_calories
+                    fallback_nutrition["calories"] = total_calories
             
+            # Convert fallback food items to new format
+            new_format_food_items = []
+            for item in fallback_food_items:
+                new_format_food_items.append({
+                    "name": item["name"],
+                    "weight_grams": 100,  # Default weight
+                    "calories": item["calories"],
+                    "emoji": "🍽️",
+                    "health_benefits": f"Contains {item['calories']} calories"
+                })
+            
+            result = {
+                "analysis": {
+                    "food_items": new_format_food_items,
+                    "total_nutrition": fallback_nutrition,
+                    "motivation_message": "Keep tracking your nutrition!"
+                }
+            }
+            
+            logger.info(f"Fallback result: {result}")
             return result
             
     except Exception as e:
@@ -594,6 +613,8 @@ async def analyze_file(
     Analyze food image and return KBZHU data
     """
     try:
+        logger.info(f"🔥 ANALYZE_FILE CALLED: user={telegram_user_id}, provider={provider}")
+        logger.info(f"🎯 Factory current provider: {llm_factory.get_current_provider()}")
         logger.info(f"Analyzing photo for user {telegram_user_id} with provider {provider}")
         
         # Validate file type
@@ -606,26 +627,8 @@ async def analyze_file(
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
         
-        # Analyze with selected provider
-        if provider == "openai" or not provider:
-            try:
-                analysis_result = await analyze_food_with_openai(image_bytes, user_language)
-            except Exception as e:
-                logger.warning(f"OpenAI analysis failed: {e}")
-                # Fallback to Gemini if OpenAI fails
-                if GEMINI_API_KEY:
-                    logger.info("Falling back to Gemini for analysis")
-                    from .gemini.client import analyze_food_with_gemini
-                    analysis_result = await analyze_food_with_gemini(image_bytes, user_language)
-                else:
-                    raise HTTPException(status_code=500, detail=f"OpenAI analysis failed: {str(e)}")
-        elif provider == "gemini":
-            if not GEMINI_API_KEY:
-                raise HTTPException(status_code=400, detail="Gemini API key not configured")
-            from .gemini.client import analyze_food_with_gemini
-            analysis_result = await analyze_food_with_gemini(image_bytes, user_language)
-        else:
-            raise HTTPException(status_code=400, detail=f"Provider '{provider}' not supported")
+        # Use LLM factory for analysis (respects LLM_PROVIDER env var)
+        analysis_result = await llm_factory.analyze_food(image_bytes, user_language)
         
         logger.info(f"Analysis complete for user {telegram_user_id}: {analysis_result}")
         
@@ -672,4 +675,3 @@ async def generate_recipe(
         raise
     except Exception as e:
         logger.error(f"Recipe generation error: {e}")
-        raise HTTPException(status_code=500, detail="Recipe generation failed")

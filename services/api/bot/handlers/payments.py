@@ -11,7 +11,7 @@ from services.api.bot.config import PAYMENT_PLANS
 from common.config.payment_plans import get_payment_plans_for_user_language
 import traceback
 import json
-from i18n import i18n
+from i18n.i18n import i18n
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")

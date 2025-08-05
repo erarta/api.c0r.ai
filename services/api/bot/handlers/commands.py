@@ -50,12 +50,14 @@ async def start_command(message: types.Message):
         # Create interactive welcome message using i18n
         welcome_text = (
             f"{i18n.get_text('welcome_title', user_language)}\n\n"
-            f"{i18n.get_text('welcome_greeting', user_language, name=message.from_user.first_name)}\n"
+            f"{i18n.get_text('welcome_subtitle', user_language)}\n\n"
+            f"{i18n.get_text('welcome_description', user_language)}\n"
+            f"• {i18n.get_text('welcome_feature_1', user_language)}\n"
+            f"• {i18n.get_text('welcome_feature_2', user_language)}\n"
+            f"• {i18n.get_text('welcome_feature_3', user_language)}\n\n"
             f"{i18n.get_text('welcome_credits', user_language, credits=user['credits_remaining'])}\n\n"
-            f"{i18n.get_text('welcome_features', user_language)}\n"
-            f"{i18n.get_text('welcome_feature_1', user_language)}\n"
-            f"{i18n.get_text('welcome_feature_2', user_language)}\n"
-            f"{i18n.get_text('welcome_feature_3', user_language)}\n\n"
+            f"{i18n.get_text('welcome_warning', user_language)}\n\n"
+            f"{i18n.get_text('welcome_terms', user_language)}\n\n"
             f"{i18n.get_text('welcome_ready', user_language)}"
         )
         

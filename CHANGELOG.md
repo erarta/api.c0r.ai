@@ -5,11 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-01-30
+## [Unreleased] - 2025-08-05
 
 ### 🔧 Bug Fixes
+- **Async/Await Error Fix**: Fixed "object dict can't be used in 'await' expression" error in photo analysis by removing incorrect `await` calls from synchronous functions `add_calories_from_analysis` and `get_daily_calories`
+- **Calories Tracking System**: Fixed "relation 'public.daily_calories' does not exist" error by implementing proper table creation and management
+- **ML Service Response Format**: Fixed "Invalid ML service response format - missing 'analysis' key" error by updating fallback logic
+- **Database Connection Issues**: Fixed import errors and connection problems with Supabase client
+- **Table Structure Issues**: Migrated from daily_calories_tracking view to daily_calories table for better data management and write operations
 - **Telegram Entity Parsing Error**: Fixed "Missing format parameter 'progress_bar' for key 'daily_progress' in language ru" error by resolving translation key conflicts between `daily_progress` and `nutrition_daily_progress` keys
 - **Language-Aware Formatting**: Replaced hardcoded Russian characters ("г", "ккал") with i18n calls in `format_analysis_result` to ensure language-aware formatting
+- **OpenAI Response Parsing**: Fixed JSON parsing errors by simplifying ML service prompts to avoid content filtering issues and improve response reliability
+- **Prompt Simplification**: Reduced complex prompts to simple, direct instructions to avoid OpenAI content filtering and improve response reliability
+- **Temperature Adjustment**: Changed OpenAI model temperature from 0.1 to 0.3 for better response creativity and reduced content filtering
+- **Complete System Rebuild**: Performed full Docker rebuild with --no-cache to ensure all configuration changes are properly applied
+- **Full Clean Rebuild**: Performed complete system rebuild with docker-compose down, docker system prune, and fresh --no-cache build to ensure all changes are properly applied and cached issues are resolved
+- **Creative Success Headers**: Replaced duplicate static "Amazing! Your results are ready!" headers with 12 creative randomized headers for both English and Russian to provide variety and better user experience
+- **Random Header System**: Added get_random_header() function to i18n manager for selecting creative headers from arrays, enhancing user engagement with diverse messaging
+- **Enhanced Food Recognition Accuracy**: Improved prompts with detailed visual recognition rules to distinguish eggs from cheese and other similar food items
+- **Precise Weight Estimations**: Added realistic portion size guidelines (egg=50-60g, cheese=20-40g) to improve calorie calculation accuracy
+- **Advanced Visual Analysis**: Enhanced system prompt for expert-level food identification with focus on shape, color, texture, and size details
+- **Temperature Optimization**: Increased model temperature from 0.3 to 0.4 for better food recognition flexibility while maintaining accuracy
+- **Hot-Reload Development Setup**: Implemented docker-compose.override.yml with volume mounting for instant code changes without container rebuilds  
+- **Development Mode Script**: Added scripts/dev-mode.sh for fast development workflow with automatic service health checks
+- **Critical Recognition Rules**: Enhanced prompts with explicit egg vs cheese distinction and mandatory visual checks to prevent misidentification
+- **Import Path Fix**: Corrected relative imports in profile.py and main.py for utils modules to use full package paths for proper module resolution
+- **Aggressive Egg Recognition**: Increased temperature to 0.7 and implemented highly aggressive prompts with explicit warnings against calling eggs mozzarella  
+- **Ultra-Specific Visual Rules**: Added step-by-step food identification process with emphasis on yolk detection for proper egg vs cheese classification
+- **Multi-LLM Provider Support**: Implemented LLM provider factory with support for OpenAI, Perplexity, and Gemini via LLM_PROVIDER environment variable
+- **Shared Prompts System**: Extracted food analysis prompts to shared module for consistent behavior across all LLM providers 
+- **Perplexity Integration**: Added Perplexity API client using llama-3.1-sonar-large-128k-online model for potentially better food recognition
+- **LLM Debug Output**: Added llm_provider and model_used fields to analysis output for debugging and transparency
+- **Clean Prompts**: Removed aggressive hints and leading prompts for fair comparison between LLM providers
+- **LLM Provider in Header**: Added LLM provider display in analysis header (e.g., "🤖 Анализ: Perplexity Llama-3.1")
+- **Perplexity Vision Support**: Fixed Perplexity model to use 'sonar' and 'sonar-pro' which DO support vision analysis (not sonar-deep-research)
+- **Gemini Shared Prompts**: Updated Gemini client to use shared prompts and added debug information
+- **Food Facts System**: Added 300+ interesting food facts in Russian and English, shown randomly during analysis
+- **Creative Waiting Phrases**: Added 50 creative and fun waiting phrases for analysis process
+- **Perplexity Precision Tuning**: Optimized Perplexity API parameters (temperature=0.2, top_p=0.5) for better food recognition accuracy
+- **Detailed Analysis Restoration**: Restored comprehensive food analysis formatting with regional dish identification, detailed nutrition breakdown, health scores, and improvement suggestions
+- **Daily Progress Fix**: Fixed daily calories tracking to display progress AFTER adding new calories, and corrected progress bar formatting key from 'daily_progress' to 'daily_progress_bar'
+- **Payment System Fix**: Fixed payment button functionality by correcting i18n import in payments handler from 'from i18n import i18n' to 'from i18n.i18n import i18n' and performing full container restart to clear cache
 - **Translation Key Separation**: Created separate `nutrition_daily_progress` key for nutrition analysis to avoid conflicts with daily progress tracking
 - **Pydantic v2 Compatibility**: Updated all models to use `pattern` instead of `regex` in Field definitions for Pydantic v2 compatibility
 - **Test Infrastructure Fixes**: Fixed import paths, mocking strategies, and assertion updates for comprehensive test coverage
@@ -17,6 +53,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Import Path Corrections**: Updated import paths to reflect current project structure
 - **Test Mocking**: Corrected mock targets and parameters for external dependencies
 - **Validation Error Handling**: Updated test expectations for Pydantic v2 validation errors
+
+### ✨ New Features
+- **CaloriesService Module**: Created dedicated module for calorie tracking with automatic table creation
+- **Comprehensive Unit Tests**: Added 15+ unit tests for calories management system
+- **Enhanced Error Handling**: Improved error messages and logging throughout the system
+- **Database Schema Management**: Added SQL scripts for table creation and migration
+- **Data Migration System**: Added script to migrate data from daily_calories_tracking view to daily_calories table
 
 ### ⚠️ Deployment Note
 - **Production Deployment Required**: The Telegram entity parsing error fix requires deployment to production environment. The local code changes are correct, but the production environment may still be running the old code causing the "Missing format parameter 'progress_bar' for key 'daily_progress' in language ru" error.

@@ -14,7 +14,7 @@ from common.supabase_client import (
     get_or_create_user
 )
 from i18n.i18n import i18n
-from utils.motivational_messages import (
+from services.api.bot.utils.motivational_messages import (
     get_profile_step_message,
     get_random_important_tip,
     get_random_restart_tip,

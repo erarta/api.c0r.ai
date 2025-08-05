@@ -8,7 +8,8 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from loguru import logger
 from common.routes import Routes
-from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action, get_daily_calories_consumed
+from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action
+from common.calories_manager import add_calories_from_analysis, get_daily_calories
 from services.api.bot.utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
 from i18n.i18n import i18n
@@ -22,6 +23,30 @@ ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
 def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     message_parts = []
     
+    # Start with random creative success message with LLM provider
+    creative_header = i18n.get_random_header("analysis_complete_headers", user_language)
+    
+    # Add LLM provider info to header
+    llm_provider = result.get("analysis", {}).get("llm_provider", "unknown")
+    model_used = result.get("analysis", {}).get("model_used", "")
+    
+    if llm_provider and llm_provider != "unknown":
+        provider_display = {
+            "openai": "OpenAI GPT-4o",
+            "perplexity": "Perplexity Sonar", 
+            "gemini": "Google Gemini"
+        }.get(llm_provider, llm_provider)
+        
+        if user_language == "ru":
+            header_with_provider = f"{creative_header} 🤖 Анализ: {provider_display}"
+        else:
+            header_with_provider = f"{creative_header} 🤖 Analysis by: {provider_display}"
+    else:
+        header_with_provider = creative_header
+    
+    message_parts.append(header_with_provider)
+    message_parts.append("")  # Empty line
+    
     # We now expect the analysis format from ML service
     if "analysis" in result and isinstance(result["analysis"], dict):
         analysis = result["analysis"]
@@ -32,7 +57,10 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
             dish_type = regional_info.get("dish_identification", "")
             confidence = regional_info.get("regional_match_confidence", 0)
             if dish_type and confidence > 0.5:
-                message_parts.append(f"🌍 **{i18n.get_text('dish_detected', user_language, dish=dish_type)}**")
+                if user_language == "ru":
+                    message_parts.append(f"🌍 Блюдо: {dish_type}")
+                else:
+                    message_parts.append(f"🌍 Dish: {dish_type}")
                 message_parts.append("")  # Empty line
         
         # Add food items breakdown - first show all items by calories, then benefits
@@ -40,7 +68,10 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
             # Sort food items by calories (highest first)
             sorted_items = sorted(analysis["food_items"], key=lambda x: x.get("calories", 0), reverse=True)
             
-            message_parts.append(f"🥘 {i18n.get_text('food_items_detected', user_language)}")
+            if user_language == "ru":
+                message_parts.append("🥘 Обнаруженные продукты:")
+            else:
+                message_parts.append("🥘 Detected food items:")
             
             # First pass: show all items with their emojis and calories
             for item in sorted_items:
@@ -57,8 +88,10 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
             message_parts.append("")  # Empty line
             
             # Second pass: show health benefits for each item
-            benefits_header = "💚 **Польза продуктов:**" if user_language == "ru" else "💚 **Health Benefits:**"
-            message_parts.append(benefits_header)
+            if user_language == "ru":
+                message_parts.append("💚 Польза продуктов:")
+            else:
+                message_parts.append("💚 Health Benefits:")
             
             for item in sorted_items:
                 name = item.get("name", "Unknown")
@@ -72,42 +105,81 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
         # Add total nutrition
         if "total_nutrition" in analysis:
             nutrition = analysis["total_nutrition"]
-            message_parts.append(f"🍽️ {i18n.get_text('total_nutrition', user_language)}")
-            message_parts.append(f"{i18n.get_text('calories_label', user_language)}: {nutrition.get('calories', '?')} {i18n.get_text('cal', user_language)}")
-            message_parts.append(f"{i18n.get_text('proteins_label', user_language)}: {nutrition.get('proteins', '?')} {i18n.get_text('g', user_language)}")
-            message_parts.append(f"{i18n.get_text('fats_label', user_language)}: {nutrition.get('fats', '?')} {i18n.get_text('g', user_language)}")
-            message_parts.append(f"{i18n.get_text('carbohydrates_label', user_language)}: {nutrition.get('carbohydrates', '?')} {i18n.get_text('g', user_language)}")
+            if user_language == "ru":
+                message_parts.append("🍽️ Общая питательность:")
+                message_parts.append(f"Калории: {nutrition.get('calories', '?')} ккал")
+                message_parts.append(f"Белки: {nutrition.get('proteins', '?')} г")
+                message_parts.append(f"Жиры: {nutrition.get('fats', '?')} г")
+                message_parts.append(f"Углеводы: {nutrition.get('carbohydrates', '?')} г")
+            else:
+                message_parts.append("🍽️ Total nutrition:")
+                message_parts.append(f"Calories: {nutrition.get('calories', '?')} kcal")
+                message_parts.append(f"Proteins: {nutrition.get('proteins', '?')} g")
+                message_parts.append(f"Fats: {nutrition.get('fats', '?')} g")
+                message_parts.append(f"Carbohydrates: {nutrition.get('carbohydrates', '?')} g")
         
-        # Add nutritional summary if available
-        if "nutritional_summary" in analysis:
-            nutritional_summary = analysis["nutritional_summary"]
-            message_parts.append("")  # Empty line
-            message_parts.append(f"🧬 **{i18n.get_text('nutritional_summary', user_language)}**")
+        message_parts.append("")  # Empty line
+        
+        # Add nutrition analysis if available
+        if "nutrition_analysis" in analysis:
+            nutrition_analysis = analysis["nutrition_analysis"]
             
-            healthiness_rating = nutritional_summary.get("healthiness_rating", 5)
-            message_parts.append(f"📊 {i18n.get_text('healthiness_rating', user_language, rating=healthiness_rating)}")
+            if user_language == "ru":
+                message_parts.append("🧬 Анализ питательности:")
+            else:
+                message_parts.append("🧬 Nutrition Analysis:")
+            
+            health_score = nutrition_analysis.get("health_score", 5)
+            if user_language == "ru":
+                message_parts.append(f"📊 Рейтинг здоровости: {health_score}/10")
+            else:
+                message_parts.append(f"📊 Health Rating: {health_score}/10")
+            
+            message_parts.append("")  # Empty line
             
             # Add what's good about the meal
-            key_benefits = nutritional_summary.get("key_benefits", [])
-            if key_benefits:
-                message_parts.append("")
-                benefits_header = "💪 **Что хорошо в этом блюде:**" if user_language == "ru" else "💪 **What's great about this meal:**"
-                message_parts.append(benefits_header)
-                for benefit in key_benefits:
-                    message_parts.append(f"• {benefit}")
+            positive_aspects = nutrition_analysis.get("positive_aspects", [])
+            if positive_aspects:
+                if user_language == "ru":
+                    message_parts.append("💪 Что хорошо в этом блюде:")
+                else:
+                    message_parts.append("💪 What's great about this meal:")
+                
+                # Handle both string and list formats
+                if isinstance(positive_aspects, str):
+                    # If it's a string, split by commas or use as single item
+                    aspects = [aspect.strip() for aspect in positive_aspects.split(',') if aspect.strip()]
+                else:
+                    # If it's already a list
+                    aspects = positive_aspects
+                
+                for aspect in aspects:
+                    message_parts.append(f"• {aspect}")
             
-            # Add recommendations for improving the rating (NEW)
-            recommendations = nutritional_summary.get("recommendations", "")
-            if recommendations:
+            # Add recommendations for improving
+            improvement_suggestions = nutrition_analysis.get("improvement_suggestions", [])
+            if improvement_suggestions:
                 message_parts.append("")
-                improve_header = "💡 **Как улучшить это блюдо:**" if user_language == "ru" else "💡 **How to improve this meal:**"
-                message_parts.append(improve_header)
-                message_parts.append(f"• {recommendations}")
+                if user_language == "ru":
+                    message_parts.append("💡 Как улучшить это блюдо:")
+                else:
+                    message_parts.append("💡 How to improve this meal:")
+                
+                # Handle both string and list formats
+                if isinstance(improvement_suggestions, str):
+                    # If it's a string, split by commas or use as single item
+                    suggestions = [suggestion.strip() for suggestion in improvement_suggestions.split(',') if suggestion.strip()]
+                else:
+                    # If it's already a list
+                    suggestions = improvement_suggestions
+                
+                suggestions_text = ", ".join(suggestions)
+                message_parts.append(f"• {suggestions_text}")
         
         # Add motivation message if available
         if "motivation_message" in analysis and analysis["motivation_message"]:
             message_parts.append("")  # Empty line
-            message_parts.append(f"🌟 **{analysis['motivation_message']}**")
+            message_parts.append(f"🌟 {analysis['motivation_message']}")
     else:
         # This should not happen anymore, but just in case
         raise ValueError("Invalid ML service response format - missing 'analysis' key")
@@ -147,8 +219,13 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
             )
             return
         
-        # Send processing message
-        processing_msg = await message.answer(i18n.get_text('analyzing_photo', user_language))
+        # Send processing message with random waiting phrase and food fact
+        waiting_phrase = i18n.get_random_waiting_phrase(user_language)
+        food_fact = i18n.get_random_fact(user_language)
+        
+        processing_text = f"{i18n.get_text('waiting_phrase_title', user_language)}\n\n{waiting_phrase}\n\n{i18n.get_text('food_facts_title', user_language)}\n{food_fact}"
+        
+        processing_msg = await message.answer(processing_text)
         
         # Download and upload photo to R2
         photo = message.photo[-1]  # Get highest resolution photo
@@ -212,39 +289,41 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
             
             result = response.json()
             logger.info(f"✅ ML service result received: {len(str(result))} chars")
+            logger.info(f"🔍 ML service result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            logger.info(f"🔍 ML service result content: {result}")
         
         # Format and send result
         analysis_text = format_analysis_result(result, user_language)
         
-        # Add daily progress if user has profile
+        # Decrement credits
+        await decrement_credits(telegram_user_id)
+        
+        # Add calories to daily consumption using new calories manager
+        daily_summary = add_calories_from_analysis(
+            user_id=str(user["id"]),
+            analysis_data=result,
+            photo_url=photo_url
+        )
+        
+        if not daily_summary:
+            logger.error(f"Failed to add calories for user {user['id']}")
+            daily_summary = get_daily_calories(str(user["id"]))
+
+        # Add daily progress if user has profile (AFTER adding calories)
         if has_profile:
-            daily_data = await get_daily_calories_consumed(str(user["id"]))
+            # Get updated daily data after adding calories
+            daily_data = get_daily_calories(str(user["id"]))
             daily_consumed = daily_data.get("total_calories", 0) if isinstance(daily_data, dict) else daily_data
             daily_target = profile.get("daily_calories_target", 2000)
-            remaining = daily_target - daily_consumed
+            remaining = max(0, daily_target - daily_consumed)
             
             # Calculate progress percentage and create progress bar
             progress_percent = min(100, (daily_consumed / daily_target * 100)) if daily_target > 0 else 0
             progress_bars = "█" * int(progress_percent / 10) + "░" * (10 - int(progress_percent / 10))
             
-            progress_text = f"\n\n{i18n.get_text('daily_progress_title', user_language)}\n{i18n.get_text('daily_progress_target', user_language, target=daily_target, calories=i18n.get_text('cal', user_language))}\n{i18n.get_text('daily_progress_consumed', user_language, consumed=daily_consumed, calories=i18n.get_text('cal', user_language), percent=int(progress_percent))}\n{i18n.get_text('daily_progress_remaining', user_language, remaining=remaining, calories=i18n.get_text('cal', user_language))}\n{i18n.get_text('daily_progress', user_language, progress_bar=progress_bars, percent=int(progress_percent))}"
+            progress_text = f"\n\n{i18n.get_text('daily_progress_title', user_language)}\n{i18n.get_text('daily_progress_target', user_language, target=daily_target, calories=i18n.get_text('cal', user_language))}\n{i18n.get_text('daily_progress_consumed', user_language, consumed=daily_consumed, calories=i18n.get_text('cal', user_language), percent=int(progress_percent))}\n{i18n.get_text('daily_progress_remaining', user_language, remaining=remaining, calories=i18n.get_text('cal', user_language))}\n{i18n.get_text('daily_progress_bar', user_language, bar=progress_bars, percent=int(progress_percent))}"
             
             analysis_text += progress_text
-        
-        # Decrement credits
-        await decrement_credits(telegram_user_id)
-        
-        # Log action with proper KBZHU data for daily tracking
-        kbzhu_data = {}
-        if "analysis" in result and "total_nutrition" in result["analysis"]:
-            kbzhu_data = result["analysis"]["total_nutrition"]
-        
-        await log_user_action(
-            user_id=str(user["id"]), 
-            action_type="photo_analysis",
-            kbzhu=kbzhu_data,
-            photo_url=photo_url
-        )
         
         # Clear the state
         await state.clear()
@@ -252,7 +331,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Send result with main menu
         keyboard = create_main_menu_keyboard(user_language)
         
-        final_text = f"{i18n.get_text('analysis_complete', user_language)}\n\n{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits - 1} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
+        final_text = f"{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits - 1} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
         
         # Sanitize the final text to prevent Telegram markdown parsing errors
         sanitized_final_text = sanitize_markdown_text(final_text)

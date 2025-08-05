@@ -1,36 +1,46 @@
-# Docker Compose override for development
-# This file automatically extends docker-compose.yml when running docker-compose commands
-# It mounts local translation files and handlers as volumes for instant updates without rebuilds
+# Development overrides for fast hot-reload without cache rebuilds
 
 services:
   api:
     volumes:
-      # Mount translation files for instant updates
-      - ./i18n:/app/i18n:ro
-      # Mount handlers for code changes  
-      - ./services/api/bot/handlers:/app/handlers:ro
-      # Mount utils for our new motivational messages
-      - ./services/api/bot/utils:/app/utils:ro
-      # Mount shared modules
+      # Mount source code for hot-reload
+      - ./services/api:/app/services/api:ro
       - ./shared:/app/shared:ro
-      # Mount common modules  
       - ./common:/app/common:ro
+      - ./i18n:/app/i18n:ro
     environment:
-      # Add development environment variables if needed
-      - DEVELOPMENT=true
-    # Use the correct uvicorn command (same as Dockerfile but with reload for development)
-    command: python -m uvicorn services.api.bot.main:app --host 0.0.0.0 --port 8000 --reload
-    
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+    command: python -m uvicorn services.api.bot.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/services/api --reload-dir /app/shared --reload-dir /app/common --reload-dir /app/i18n
+
   ml:
     volumes:
-      # Mount shared modules for ML service too
+      # Mount source code for hot-reload
+      - ./services/ml:/app/services/ml:ro
       - ./shared:/app/shared:ro
-      # Mount i18n in case ML service needs translations
-      - ./i18n:/app/i18n:ro
-      
+      - ./common:/app/common:ro
+    environment:
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
+    command: python -m uvicorn services.ml.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir /app/services/ml --reload-dir /app/shared --reload-dir /app/common
+
   pay:
     volumes:
-      # Mount shared modules for payment service
+      # Mount source code for hot-reload
+      - ./services/pay:/app/services/pay:ro
       - ./shared:/app/shared:ro
-      # Mount i18n for payment service
-      - ./i18n:/app/i18n:ro 
+      - ./common:/app/common:ro
+    environment:
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+    command: python -m uvicorn services.pay.main:app --host 0.0.0.0 --port 8002 --reload --reload-dir /app/services/pay --reload-dir /app/shared --reload-dir /app/common
+
+  redis:
+    # Redis doesn't need hot-reload, keep as is
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - c0r-network 

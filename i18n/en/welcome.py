@@ -1,14 +1,17 @@
 # English translations - Welcome and main menu
 TRANSLATIONS = {
     # Welcome messages
-    "welcome_title": "🎉 **Welcome to c0r.ai - I'm So Excited to Meet You!**",
+    "welcome_title": "🟢 Welcome to C0R AI (Nutrition Bot)",
     "welcome_greeting": "👋 Hello there, {name}!",
-    "welcome_credits": "💳 You have **{credits} credits** remaining - let's put them to great use!",
-    "welcome_features": "🍎 **Here's what I can do for you:**",
-    "welcome_feature_1": "🍽️ **Create amazing recipes from your photos** - show me ingredients and I'll whip up something delicious just for you!",
-    "welcome_feature_2": "📊 **Analyze food from your photos** - discover calories, protein, fats, carbs and so much more!",
-    "welcome_feature_3": "🎯 **Personalize everything** - I'll consider your goals, diet, and allergies to give you the perfect advice!",
-    "welcome_ready": "🚀 **Ready to start this amazing journey together?** Choose what you'd like to do:",
+    "welcome_subtitle": "This is a private environment for testing the next generation of AI-powered nutrition tools 🍎🤖",
+    "welcome_description": "Here you can:",
+    "welcome_feature_1": "🧪 **Analyze food photos** - Get instant nutrition insights",
+    "welcome_feature_2": "🧠 **AI Nutrition Assistant** - Personalized dietary advice",
+    "welcome_feature_3": "💬 **Smart meal tracking** - Monitor your daily nutrition",
+    "welcome_credits": "💳 You have **{credits} credits** remaining",
+    "welcome_warning": "⚠️ This is a test version and may behave unexpectedly. Your feedback helps us make it better.",
+    "welcome_terms": "By continuing, you accept you agree to the Test Terms & License",
+    "welcome_ready": "🚀 **Ready to start your nutrition journey?** Choose what you'd like to do:",
 
     # Menu buttons
     "btn_analyze_food": "🍕 Analyze Food from My Photo",
