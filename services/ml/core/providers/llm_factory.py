@@ -100,9 +100,9 @@ class LLMProviderFactory:
                 try:
                     result = await analyze_food_with_openai(image_bytes, user_language, use_premium_model)
                     if "analysis" in result:
-                        result["analysis"]["llm_provider"] = f"{self.current_provider.value} (fallback: openai)"
+                        result["analysis"]["llm_provider"] = self.current_provider.value
                     else:
-                        result["llm_provider"] = f"{self.current_provider.value} (fallback: openai)"
+                        result["llm_provider"] = self.current_provider.value
                     return result
                 except Exception as fallback_error:
                     logger.error(f"Fallback to OpenAI also failed: {str(fallback_error)}")

@@ -30,19 +30,8 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
     llm_provider = result.get("analysis", {}).get("llm_provider", "unknown")
     model_used = result.get("analysis", {}).get("model_used", "")
     
-    if llm_provider and llm_provider != "unknown":
-        provider_display = {
-            "openai": "OpenAI GPT-4o",
-            "perplexity": "Perplexity Sonar", 
-            "gemini": "Google Gemini"
-        }.get(llm_provider, llm_provider)
-        
-        if user_language == "ru":
-            header_with_provider = f"{creative_header} 🤖 Анализ: {provider_display}"
-        else:
-            header_with_provider = f"{creative_header} 🤖 Analysis by: {provider_display}"
-    else:
-        header_with_provider = creative_header
+    # Just use the creative header without provider information
+    header_with_provider = creative_header
     
     message_parts.append(header_with_provider)
     message_parts.append("")  # Empty line
@@ -56,12 +45,25 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
             regional_info = analysis["regional_analysis"]
             dish_type = regional_info.get("dish_identification", "")
             confidence = regional_info.get("regional_match_confidence", 0)
-            if dish_type and confidence > 0.5:
+            
+            # Always show dish name, even with low confidence
+            if dish_type and dish_type != "Analyzed Dish":
                 if user_language == "ru":
                     message_parts.append(f"🌍 Блюдо: {dish_type}")
                 else:
                     message_parts.append(f"🌍 Dish: {dish_type}")
-                message_parts.append("")  # Empty line
+            else:
+                # Generate dish name from food items if dish_identification is empty or generic
+                if "food_items" in analysis and analysis["food_items"]:
+                    food_names = [item.get("name", "").lower() for item in analysis["food_items"][:3] if item.get("name")]
+                    if food_names:
+                        if user_language == "ru":
+                            dish_name = f"салат с {', '.join(food_names)}"
+                        else:
+                            dish_name = f"salad with {', '.join(food_names)}"
+                        message_parts.append(f"🌍 {'Блюдо' if user_language == 'ru' else 'Dish'}: {dish_name}")
+            
+            message_parts.append("")  # Empty line
         
         # Add food items breakdown - first show all items by calories, then benefits
         if "food_items" in analysis and analysis["food_items"]:
