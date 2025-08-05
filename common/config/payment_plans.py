@@ -4,6 +4,10 @@ Centralized configuration for all payment plans across all services.
 """
 import os
 from typing import Dict, Any, Optional
+from i18n.i18n import I18nManager
+
+# Create i18n instance
+i18n = I18nManager()
 
 # Environment-based configuration
 def get_environment() -> str:
@@ -18,7 +22,53 @@ def is_test_mode() -> bool:
     """Check if running in test mode (for Telegram minimum amounts)"""
     return os.getenv("TEST_MODE", "false").lower() == "true"
 
-# Base payment plans configuration
+def get_payment_plans_for_language(language: str = "en") -> Dict[str, Dict[str, Any]]:
+    """
+    Get payment plans with translated titles and descriptions for specific language.
+    
+    Args:
+        language: Language code ('en' or 'ru')
+        
+    Returns:
+        Dict containing payment plans with translated content
+    """
+    # Get base plans with translated content
+    base_plans = {
+        "basic": {
+            "title": i18n.get_text("plan_basic_title", language),
+            "description": i18n.get_text("plan_basic_description", language),
+            "credits": 20,
+            "currency": "RUB",
+            "recurring": False
+        },
+        "pro": {
+            "title": i18n.get_text("plan_pro_title", language),
+            "description": i18n.get_text("plan_pro_description", language),
+            "credits": 100,
+            "currency": "RUB",
+            "recurring": True,
+            "interval": "month"
+        }
+    }
+    
+    # Get prices for current environment
+    env = get_environment()
+    if is_test_mode():
+        env = "test"
+    
+    prices = PRICE_CONFIG.get(env, PRICE_CONFIG["production"])
+    
+    # Build payment plans with appropriate prices
+    payment_plans = {}
+    for plan_id, base_plan in base_plans.items():
+        payment_plans[plan_id] = {
+            **base_plan,
+            "price": prices[plan_id]
+        }
+    
+    return payment_plans
+
+# Base payment plans configuration (for backward compatibility)
 BASE_PAYMENT_PLANS = {
     "basic": {
         "title": "Basic Plan",
@@ -60,47 +110,37 @@ PRICE_CONFIG = {
 def get_payment_plans() -> Dict[str, Dict[str, Any]]:
     """
     Get payment plans with environment-appropriate pricing.
+    Defaults to English language for backward compatibility.
     
     Returns:
         Dict containing payment plans with correct prices for current environment
     """
-    env = get_environment()
-    
-    # Use test prices if TEST_MODE is enabled, regardless of environment
-    if is_test_mode():
-        env = "test"
-    
-    # Get prices for current environment
-    prices = PRICE_CONFIG.get(env, PRICE_CONFIG["production"])  # Default to production prices
-    
-    # Build payment plans with appropriate prices
-    payment_plans = {}
-    for plan_id, base_plan in BASE_PAYMENT_PLANS.items():
-        payment_plans[plan_id] = {
-            **base_plan,
-            "price": prices[plan_id]
-        }
-    
-    # Log configuration for debugging
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Payment plans loaded - Environment: {env}, Test mode: {is_test_mode()}")
-    for plan_id, plan in payment_plans.items():
-        logger.info(f"  {plan_id}: {plan['price']} kopecks ({plan['price']/100} RUB) - {plan['credits']} credits")
-    
-    return payment_plans
+    return get_payment_plans_for_language("en")
 
-def get_plan_by_id(plan_id: str) -> Optional[Dict[str, Any]]:
+def get_payment_plans_for_user_language(user_language: str = "en") -> Dict[str, Dict[str, Any]]:
     """
-    Get specific payment plan by ID.
+    Get payment plans with user's language.
+    
+    Args:
+        user_language: User's language preference
+        
+    Returns:
+        Dict containing payment plans with translated content
+    """
+    return get_payment_plans_for_language(user_language)
+
+def get_plan_by_id(plan_id: str, language: str = "en") -> Optional[Dict[str, Any]]:
+    """
+    Get specific payment plan by ID with language support.
     
     Args:
         plan_id: Plan identifier ('basic' or 'pro')
+        language: Language code ('en' or 'ru')
         
     Returns:
         Payment plan dictionary or None if not found
     """
-    plans = get_payment_plans()
+    plans = get_payment_plans_for_language(language)
     return plans.get(plan_id)
 
 def get_plan_price(plan_id: str) -> Optional[int]:
@@ -174,9 +214,13 @@ if __name__ == "__main__":
     print("Current environment:", get_environment())
     print("Is production:", is_production())
     print("Is test mode:", is_test_mode())
-    print("\nPayment plans:")
+    print("\nPayment plans (English):")
     
-    for plan_id, plan in get_payment_plans().items():
+    for plan_id, plan in get_payment_plans_for_language("en").items():
+        print(f"  {plan_id}: {plan['price']} kopecks ({plan['price']/100} RUB) - {plan['credits']} credits")
+    
+    print("\nPayment plans (Russian):")
+    for plan_id, plan in get_payment_plans_for_language("ru").items():
         print(f"  {plan_id}: {plan['price']} kopecks ({plan['price']/100} RUB) - {plan['credits']} credits")
     
     print("\nValidation:", "PASSED" if validate_payment_plans() else "FAILED")

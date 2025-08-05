@@ -1,0 +1,46 @@
+# Development overrides for fast hot-reload without cache rebuilds
+
+services:
+  api:
+    volumes:
+      # Mount source code for hot-reload
+      - ./services/api:/app/services/api:ro
+      - ./shared:/app/shared:ro
+      - ./common:/app/common:ro
+      - ./i18n:/app/i18n:ro
+    environment:
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+    command: python -m uvicorn services.api.bot.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/services/api --reload-dir /app/shared --reload-dir /app/common --reload-dir /app/i18n
+
+  ml:
+    volumes:
+      # Mount source code for hot-reload
+      - ./services/ml:/app/services/ml:ro
+      - ./shared:/app/shared:ro
+      - ./common:/app/common:ro
+    environment:
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
+    command: python -m uvicorn services.ml.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir /app/services/ml --reload-dir /app/shared --reload-dir /app/common
+
+  pay:
+    volumes:
+      # Mount source code for hot-reload
+      - ./services/pay:/app/services/pay:ro
+      - ./shared:/app/shared:ro
+      - ./common:/app/common:ro
+    environment:
+      - PYTHONPATH=/app
+      - UVICORN_RELOAD=true
+    command: python -m uvicorn services.pay.main:app --host 0.0.0.0 --port 8002 --reload --reload-dir /app/services/pay --reload-dir /app/shared --reload-dir /app/common
+
+  redis:
+    # Redis doesn't need hot-reload, keep as is
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - c0r-network 

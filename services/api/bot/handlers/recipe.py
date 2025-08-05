@@ -809,18 +809,109 @@ async def send_recipe_response(message: types.Message, recipe_data: dict, user: 
         )
 
 def format_recipe_text(recipe_data: dict, language: str = 'en') -> str:
-    """Format recipe data into readable text"""
+    """Format recipe data into readable text with rich information from PromptBuilder"""
     try:
+        # Check if we have the new rich format from PromptBuilder
+        if "recipes" in recipe_data and isinstance(recipe_data["recipes"], dict):
+            recipes_data = recipe_data["recipes"]
+            
+            # Add motivation message if available (without "Мотивация:" label)
+            text_parts = []
+            if "motivation_message" in recipes_data and recipes_data["motivation_message"]:
+                text_parts.append(f"💚 {sanitize_markdown_text(recipes_data['motivation_message'])}")
+                text_parts.append("")  # Empty line
+            
+            # Get the first (best) recipe from the triple generation
+            if "recipes" in recipes_data and recipes_data["recipes"]:
+                recipe = recipes_data["recipes"][0]  # Take the first (highest ranked) recipe
+                
+                recipe_name = recipe.get('name', 'Delicious Recipe')
+                description = recipe.get('description', '')
+                prep_time = recipe.get('prep_time', 'N/A')
+                cook_time = recipe.get('cook_time', 'N/A')
+                servings = recipe.get('servings', 'N/A')
+                
+                ingredients = recipe.get('ingredients', [])
+                instructions = recipe.get('instructions', [])
+                nutrition = recipe.get('nutrition_per_serving', {})
+                
+                # Add personalization notes if available
+                personalization_notes = recipe.get('personalization_notes', '')
+                health_benefits = recipe.get('health_benefits', '')
+                
+                # Sanitize Markdown characters in recipe data
+                recipe_name = sanitize_markdown_text(recipe_name)
+                description = sanitize_markdown_text(description)
+                
+                # Build recipe text
+                text_parts.append(f"🍽️ **{recipe_name}**")
+                text_parts.append("")
+                
+                if description:
+                    text_parts.append(f"📝 {sanitize_markdown_text(description)}")
+                    text_parts.append("")
+                
+                # Add personalization info if available
+                if personalization_notes:
+                    text_parts.append(f"🎯 {sanitize_markdown_text(personalization_notes)}")
+                    text_parts.append("")
+                
+                # Recipe details
+                text_parts.append(f"⏱️ Время подготовки: {prep_time}" if language == 'ru' else f"⏱️ Prep time: {prep_time}")
+                text_parts.append(f"🔥 Время готовки: {cook_time}" if language == 'ru' else f"🔥 Cook time: {cook_time}")
+                text_parts.append(f"👥 Порций: {servings}" if language == 'ru' else f"👥 Servings: {servings}")
+                text_parts.append("")
+                
+                # Ingredients
+                if ingredients:
+                    text_parts.append("🛒 Ингредиенты:" if language == 'ru' else "🛒 Ingredients:")
+                    for ingredient in ingredients:
+                        if isinstance(ingredient, dict):
+                            item = ingredient.get('item', '')
+                            amount = ingredient.get('amount', '')
+                            text_parts.append(f"• {amount} {item}")
+                        else:
+                            text_parts.append(f"• {sanitize_markdown_text(str(ingredient))}")
+                    text_parts.append("")
+                
+                # Instructions
+                if instructions:
+                    text_parts.append("👨‍🍳 Инструкции:" if language == 'ru' else "👨‍🍳 Instructions:")
+                    for i, instruction in enumerate(instructions, 1):
+                        text_parts.append(f"{i}. {sanitize_markdown_text(str(instruction))}")
+                    text_parts.append("")
+                
+                # Nutrition
+                if nutrition:
+                    text_parts.append("📊 Питательность (на порцию):" if language == 'ru' else "📊 Nutrition (per serving):")
+                    text_parts.append(f"🔥 Калории: {nutrition.get('calories', 'N/A')}" if language == 'ru' else f"🔥 Calories: {nutrition.get('calories', 'N/A')}")
+                    text_parts.append(f"🥩 Белок: {nutrition.get('protein', 'N/A')}г" if language == 'ru' else f"🥩 Protein: {nutrition.get('protein', 'N/A')}g")
+                    text_parts.append(f"🍞 Углеводы: {nutrition.get('carbs', 'N/A')}г" if language == 'ru' else f"🍞 Carbs: {nutrition.get('carbs', 'N/A')}g")
+                    text_parts.append(f"🥑 Жиры: {nutrition.get('fat', 'N/A')}г" if language == 'ru' else f"🥑 Fats: {nutrition.get('fat', 'N/A')}g")
+                    text_parts.append("")
+                
+                # Health benefits if available
+                if health_benefits:
+                    text_parts.append(f"💚 {sanitize_markdown_text(health_benefits)}")
+                    text_parts.append("")
+                
+                # Add encouragement message if available
+                if "encouragement" in recipes_data and recipes_data["encouragement"]:
+                    text_parts.append(f"✨ {sanitize_markdown_text(recipes_data['encouragement'])}")
+                
+                return "\n".join(text_parts)
+            
+        # Fallback to old format for backward compatibility
         recipe_name = recipe_data.get('name', 'Delicious Recipe')
         description = recipe_data.get('description', '')
         prep_time = recipe_data.get('prep_time', 'N/A')
         cook_time = recipe_data.get('cook_time', 'N/A')
         servings = recipe_data.get('servings', 'N/A')
-        
+
         ingredients = recipe_data.get('ingredients', [])
         instructions = recipe_data.get('instructions', [])
         nutrition = recipe_data.get('nutrition', {})
-        
+
         # Sanitize Markdown characters in recipe data
         recipe_name = sanitize_markdown_text(recipe_name)
         description = sanitize_markdown_text(description)

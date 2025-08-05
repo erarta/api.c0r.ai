@@ -137,7 +137,7 @@ async def add_credits_api(request: Request):
 @app.get("/debug/r2")
 async def debug_r2():
     """Debug R2 configuration and status"""
-    from utils.r2 import R2_ENABLED, R2_ACCOUNT_ID, R2_BUCKET_NAME, test_r2_connection
+    from services.api.bot.utils.r2 import R2_ENABLED, R2_ACCOUNT_ID, R2_BUCKET_NAME, test_r2_connection
     
     r2_config = {
         "r2_enabled": R2_ENABLED,

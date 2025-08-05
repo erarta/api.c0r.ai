@@ -50,12 +50,14 @@ async def start_command(message: types.Message):
         # Create interactive welcome message using i18n
         welcome_text = (
             f"{i18n.get_text('welcome_title', user_language)}\n\n"
-            f"{i18n.get_text('welcome_greeting', user_language, name=message.from_user.first_name)}\n"
+            f"{i18n.get_text('welcome_subtitle', user_language)}\n\n"
+            f"{i18n.get_text('welcome_description', user_language)}\n"
+            f"• {i18n.get_text('welcome_feature_1', user_language)}\n"
+            f"• {i18n.get_text('welcome_feature_2', user_language)}\n"
+            f"• {i18n.get_text('welcome_feature_3', user_language)}\n\n"
             f"{i18n.get_text('welcome_credits', user_language, credits=user['credits_remaining'])}\n\n"
-            f"{i18n.get_text('welcome_features', user_language)}\n"
-            f"{i18n.get_text('welcome_feature_1', user_language)}\n"
-            f"{i18n.get_text('welcome_feature_2', user_language)}\n"
-            f"{i18n.get_text('welcome_feature_3', user_language)}\n\n"
+            f"{i18n.get_text('welcome_warning', user_language)}\n\n"
+            f"{i18n.get_text('welcome_terms', user_language)}\n\n"
             f"{i18n.get_text('welcome_ready', user_language)}"
         )
         
@@ -520,40 +522,98 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     # Get user's language
     user_language = user.get('language', 'en')
     
-    # Format profile data
+    # Format profile data without duplicate emojis
     age = profile.get('age', 'Not set')
-    gender = "👨 " + i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else "👩 " + i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else 'Not set'
-    height = f"{profile.get('height_cm', 'Not set')} {i18n.get_text('cm', user_language)}" if profile.get('height_cm') else 'Not set'
-    weight = f"{profile.get('weight_kg', 'Not set')} {i18n.get_text('kg', user_language)}" if profile.get('weight_kg') else 'Not set'
     
+    # Gender - translations already have emojis
+    gender_label = i18n.get_text('gender_male', user_language) if profile.get('gender') == 'male' else i18n.get_text('gender_female', user_language) if profile.get('gender') == 'female' else 'Not set'
+    
+    # Height and weight with proper units
+    height = f"{profile.get('height_cm', 'Not set')} см" if profile.get('height_cm') else 'Not set'
+    weight = f"{profile.get('weight_kg', 'Not set')} кг" if profile.get('weight_kg') else 'Not set'
+    
+    # Activity - translations already have emojis
     activity_labels = {
-        'sedentary': '😴 ' + i18n.get_text('activity_sedentary', user_language),
-        'lightly_active': '🚶 ' + i18n.get_text('activity_lightly_active', user_language),
-        'moderately_active': '🏃 ' + i18n.get_text('activity_moderately_active', user_language),
-        'very_active': '💪 ' + i18n.get_text('activity_very_active', user_language),
-        'extremely_active': '🏋️ ' + i18n.get_text('activity_extremely_active', user_language)
+        'sedentary': i18n.get_text('activity_sedentary', user_language),
+        'lightly_active': i18n.get_text('activity_lightly_active', user_language),
+        'moderately_active': i18n.get_text('activity_moderately_active', user_language),
+        'very_active': i18n.get_text('activity_very_active', user_language),
+        'extremely_active': i18n.get_text('activity_extremely_active', user_language)
     }
     activity = activity_labels.get(profile.get('activity_level'), 'Not set')
     
+    # Goals - translations already have emojis
     goal_labels = {
-        'lose_weight': '📉 ' + i18n.get_text('goal_lose_weight', user_language),
-        'maintain_weight': '⚖️ ' + i18n.get_text('goal_maintain_weight', user_language),
-        'gain_weight': '📈 ' + i18n.get_text('goal_gain_weight', user_language)
+        'lose_weight': i18n.get_text('goal_lose_weight', user_language),
+        'maintain_weight': i18n.get_text('goal_maintain_weight', user_language),
+        'gain_weight': i18n.get_text('goal_gain_weight', user_language)
     }
     goal = goal_labels.get(profile.get('goal'), 'Not set')
     
+    # Daily calories with proper formatting
     daily_calories = profile.get('daily_calories_target', 'Not calculated')
     if daily_calories != 'Not calculated':
-        daily_calories = f"{daily_calories:,} {i18n.get_text('calories', user_language)}"
+        daily_calories = f"{daily_calories:,} Калорий"
     
+    # Format dietary preferences
+    dietary_prefs = profile.get('dietary_preferences', [])
+    if dietary_prefs and dietary_prefs != ['none']:
+        dietary_items = []
+        for pref in dietary_prefs:
+            if pref != "none":
+                diet_translation_map = {
+                    "vegetarian": "profile_dietary_vegetarian",
+                    "vegan": "profile_dietary_vegan", 
+                    "pescatarian": "profile_dietary_pescatarian",
+                    "keto": "profile_dietary_keto",
+                    "paleo": "profile_dietary_paleo",
+                    "mediterranean": "profile_dietary_mediterranean",
+                    "gluten_free": "profile_dietary_gluten_free",
+                    "dairy_free": "profile_dietary_dairy_free",
+                    "halal": "profile_dietary_halal",
+                    "kosher": "profile_dietary_kosher"
+                }
+                translation_key = diet_translation_map.get(pref, pref)
+                dietary_items.append(i18n.get_text(translation_key, user_language))
+        dietary_text = ", ".join(dietary_items) if dietary_items else i18n.get_text('profile_dietary_none', user_language)
+    else:
+        dietary_text = i18n.get_text('profile_dietary_none', user_language)
+    
+    # Format allergies
+    allergies = profile.get('allergies', [])
+    if allergies and allergies != ['none']:
+        allergy_items = []
+        for allergy in allergies:
+            if allergy != "none":
+                allergy_translation_map = {
+                    "nuts": "profile_allergy_nuts",
+                    "peanuts": "profile_allergy_peanuts",
+                    "shellfish": "profile_allergy_shellfish",
+                    "fish": "profile_allergy_fish",
+                    "eggs": "profile_allergy_eggs",
+                    "dairy": "profile_allergy_dairy",
+                    "soy": "profile_allergy_soy",
+                    "gluten": "profile_allergy_gluten",
+                    "sesame": "profile_allergy_sesame",
+                    "sulfites": "profile_allergy_sulfites"
+                }
+                translation_key = allergy_translation_map.get(allergy, allergy)
+                allergy_items.append(i18n.get_text(translation_key, user_language))
+        allergies_text = ", ".join(allergy_items) if allergy_items else i18n.get_text('profile_allergy_none', user_language)
+    else:
+        allergies_text = i18n.get_text('profile_allergy_none', user_language)
+    
+    # Build clean profile text without emoji duplication
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
-        f"{i18n.get_text('profile_gender', user_language, gender=gender)}\n"
+        f"{i18n.get_text('profile_gender', user_language, gender=gender_label)}\n"
         f"{i18n.get_text('profile_height', user_language, height=height)}\n"
         f"{i18n.get_text('profile_weight', user_language, weight=weight)}\n"
         f"{i18n.get_text('profile_activity', user_language, activity=activity)}\n"
-        f"{i18n.get_text('profile_goal', user_language, goal=goal)}\n\n"
+        f"{i18n.get_text('profile_goal', user_language, goal=goal)}\n"
+        f"{i18n.get_text('profile_diet', user_language, diet=dietary_text)}\n"
+        f"{i18n.get_text('profile_allergies', user_language, allergies=allergies_text)}\n\n"
         f"{i18n.get_text('profile_calories', user_language, calories=daily_calories)}"
     )
     

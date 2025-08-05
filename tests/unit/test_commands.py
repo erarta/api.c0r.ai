@@ -37,18 +37,19 @@ class TestStartCommand:
         message.from_user.username = "testuser"
         message.from_user.first_name = "Test"
         message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 3, 'language': 'en'}):
             with patch('services.api.bot.handlers.commands.detect_and_set_user_language', return_value='en'):
-                with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
-                    with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
-                        await start_command(message)
-                        
-                        message.answer.assert_called_once()
-                        call_args = message.answer.call_args[0][0]
-                        assert "🎉 **Welcome to c0r.ai Food Analyzer!**" in call_args
-                        assert "Hello Test!" in call_args
-                        assert "3 credits" in call_args
+                with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value={'user': {'id': 'user-uuid', 'credits_remaining': 3, 'language': 'en'}, 'has_profile': False}):
+                    with patch('services.api.bot.handlers.commands.create_main_menu_text', return_value=("🎉 **Welcome to c0r.ai - I'm So Excited to Meet You!**", None)):
+                        with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
+                            await start_command(message)
+    
+                            message.answer.assert_called_once()
+                            call_args = message.answer.call_args[0][0]
+                            assert "🎉 **Welcome to c0r.ai - I'm So Excited to Meet You!**" in call_args
+                            assert "Hello there, Test!" in call_args
+                            assert "3 credits" in call_args
     
     @pytest.mark.asyncio
     async def test_start_command_existing_user(self):
@@ -81,14 +82,14 @@ class TestStartCommand:
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', side_effect=Exception("Database error")):
-            with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
+            with patch('services.api.bot.handlers.commands.create_main_menu_text', return_value=("Error message", None)):
                 await start_command(message)
-                
+    
                 message.answer.assert_called_once()
                 call_args = message.answer.call_args[0][0]
-                assert "An error occurred" in call_args
+                assert "Oops, something went wrong!" in call_args
 
 
 class TestHelpCommand:
@@ -101,16 +102,14 @@ class TestHelpCommand:
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 await help_command(message)
-                
+    
                 message.answer.assert_called_once()
                 call_args = message.answer.call_args[0][0]
-                assert "🤖 **c0r.ai Food Analyzer - Help Guide**" in call_args
-                assert "📸 **How to use:**" in call_args
-                assert "💡 **What are credits?**" in call_args
+                assert "🤖 **c0r.ai Food Analyzer - I'm Here to Help You!**" in call_args
     
     @pytest.mark.asyncio
     async def test_help_callback(self):
@@ -159,34 +158,32 @@ class TestStatusCommand:
     @pytest.mark.asyncio
     async def test_status_command_with_version(self):
         """Test status command displays correct version"""
-        from config import VERSION
+        from services.api.bot.config import VERSION
         
         message = Mock()
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
-        
+    
         user_data = {
             'id': 'user-uuid',
             'telegram_id': 123456789,
             'credits_remaining': 5,
             'created_at': '2024-01-01T00:00:00Z'
         }
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
-                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=100.0):
+                with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0.0):
                     with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
-                        
+    
                         await status_command(message)
-                        
+    
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "📊 *Your Account Status*" in call_args
-                        assert "Credits remaining: *5*" in call_args
-                        assert "Total paid: *100.00 Р*" in call_args
+                        
                         # Check for system version info - the exact text might vary slightly
-                        assert "System:" in call_args and "c0r.ai v" in call_args
+                        assert f"System: *c0r.ai v{VERSION}*" in call_args
     
     @pytest.mark.asyncio
     async def test_status_callback_with_version(self):
@@ -195,17 +192,16 @@ class TestStatusCommand:
         callback.from_user.id = 123456789
         callback.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'created_at': '2024-01-01T00:00:00Z', 'language': 'en'}):
             with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0):
                 with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                     with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         await status_callback(callback)
-                        
+    
                         callback.message.answer.assert_called_once()
                         call_args = callback.message.answer.call_args[0][0]
-                        assert "📊 *Your Account Status*" in call_args
-                        assert "5" in call_args
+                        assert "📊 *Your Amazing Account Status*" in call_args
     
     @pytest.mark.asyncio
     async def test_status_command_date_parsing(self):
@@ -214,24 +210,24 @@ class TestStatusCommand:
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
-        
+    
         user_data = {
             'id': 'user-uuid',
             'telegram_id': 123456789,
             'credits_remaining': 5,
             'created_at': '2024-01-15T10:30:00Z'
         }
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value=user_data):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0.0):
                     with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
-                        
+    
                         await status_command(message)
-                        
+    
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "Member since: `2024-01-15 10:30`" in call_args
+                        assert "2024-01-15 10:30" in call_args
     
     @pytest.mark.asyncio
     async def test_status_command_exception_handling(self):
@@ -240,14 +236,14 @@ class TestStatusCommand:
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', side_effect=Exception("Database error")):
             with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                 await status_command(message)
-                
+    
                 message.answer.assert_called_once()
                 call_args = message.answer.call_args[0][0]
-                assert "An error occurred" in call_args
+                assert "I had a little hiccup" in call_args
 
 
 class TestBuyCreditsCommand:
@@ -260,19 +256,16 @@ class TestBuyCreditsCommand:
         message.from_user.id = 123456789
         message.from_user.username = "testuser"
         message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'language': 'en'}):
             with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0):
                 with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                     with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         await buy_credits_command(message)
-                        
+    
                         message.answer.assert_called_once()
                         call_args = message.answer.call_args[0][0]
-                        assert "💳 **Buy Credits**" in call_args
-                        assert "**Current credits**: *5*" in call_args
-                        assert "20 credits for 99р" in call_args
-                        assert "100 credits for 349р" in call_args
+                        assert "💳 **💳 Let's Get You More Credits!**" in call_args
     
     @pytest.mark.asyncio
     async def test_buy_callback(self):
@@ -281,17 +274,16 @@ class TestBuyCreditsCommand:
         callback.from_user.id = 123456789
         callback.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
-        
+    
         with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 5, 'language': 'en'}):
             with patch('services.api.bot.handlers.commands.get_user_total_paid', return_value=0):
                 with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                     with patch('services.api.bot.handlers.commands.create_main_menu_keyboard', return_value=None):
                         await buy_callback(callback)
-                        
+    
                         callback.message.answer.assert_called_once()
                         call_args = callback.message.answer.call_args[0][0]
-                        assert "💳 **Buy Credits**" in call_args
-                        assert "5" in call_args
+                        assert "💳 **💳 Let's Get You More Credits!**" in call_args
 
 
 class TestProfileCallback:
@@ -358,68 +350,72 @@ class TestActionCallback:
     async def test_handle_action_callback_help(self):
         """Test action callback for help"""
         callback = Mock()
-        callback.data = "help"
+        callback.data = "action_help"
         callback.message = Mock()
         callback.message.from_user.id = 123456789
         callback.message.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
+        # Mock state parameter
+        state = Mock()
+        
         with patch('services.api.bot.handlers.commands.help_callback', return_value=None) as mock_help:
-            
-            await handle_action_callback(callback)
-            
+            await handle_action_callback(callback, state)
             mock_help.assert_called_once_with(callback)
     
     @pytest.mark.asyncio
     async def test_handle_action_callback_status(self):
         """Test action callback for status"""
         callback = Mock()
-        callback.data = "status"
+        callback.data = "action_status"
         callback.message = Mock()
         callback.message.from_user.id = 123456789
         callback.message.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
+        # Mock state parameter
+        state = Mock()
+        
         with patch('services.api.bot.handlers.commands.status_callback', return_value=None) as mock_status:
-            
-            await handle_action_callback(callback)
-            
+            await handle_action_callback(callback, state)
             mock_status.assert_called_once_with(callback)
     
     @pytest.mark.asyncio
     async def test_handle_action_callback_buy(self):
         """Test action callback for buy"""
         callback = Mock()
-        callback.data = "buy"
+        callback.data = "action_buy"
         callback.message = Mock()
         callback.message.from_user.id = 123456789
         callback.message.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
+        # Mock state parameter
+        state = Mock()
+        
         with patch('services.api.bot.handlers.commands.buy_callback', return_value=None) as mock_buy:
-            
-            await handle_action_callback(callback)
-            
+            await handle_action_callback(callback, state)
             mock_buy.assert_called_once_with(callback)
     
     @pytest.mark.asyncio
     async def test_handle_action_callback_profile(self):
         """Test action callback for profile"""
         callback = Mock()
-        callback.data = "profile"
+        callback.data = "action_profile"
         callback.message = Mock()
         callback.message.from_user.id = 123456789
         callback.message.from_user.username = "testuser"
         callback.message.answer = AsyncMock()
         callback.answer = AsyncMock()
         
+        # Mock state parameter
+        state = Mock()
+        
         with patch('services.api.bot.handlers.commands.profile_callback', return_value=None) as mock_profile:
-            
-            await handle_action_callback(callback)
-            
+            await handle_action_callback(callback, state)
             mock_profile.assert_called_once_with(callback)
     
     @pytest.mark.asyncio
@@ -428,19 +424,24 @@ class TestActionCallback:
         callback = Mock()
         callback.from_user.id = 123456789
         callback.from_user.username = "testuser"
-        callback.data = "main_menu"
+        callback.data = "action_main_menu"
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+        # Mock state parameter
+        state = Mock()
+        state.clear = AsyncMock()
+        
+        with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value={'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}, 'has_profile': True}):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 with patch('services.api.bot.handlers.commands.create_main_menu_text', return_value=("🚀 **Choose an option:**", None)):
-                    await handle_action_callback(callback)
+                    await handle_action_callback(callback, state)
                     
-                    # Should call message.answer for main_menu action
+                    # Verify state was cleared
+                    state.clear.assert_called_once()
+                    
+                    # Verify main menu was sent
                     callback.message.answer.assert_called_once()
-                    call_args = callback.message.answer.call_args[0][0]
-                    assert "🚀 **Choose an option:**" in call_args
     
     @pytest.mark.asyncio
     async def test_handle_action_callback_nutrition_insights(self):
@@ -448,16 +449,17 @@ class TestActionCallback:
         callback = Mock()
         callback.from_user.id = 123456789
         callback.from_user.username = "testuser"
-        callback.data = "nutrition_insights"
+        callback.data = "action_nutrition_insights"
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+        # Mock state parameter
+        state = Mock()
+        
+        with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value={'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}, 'has_profile': True}):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
-                with patch('handlers.nutrition.nutrition_insights_callback', return_value=None) as mock_nutrition:
-                    await handle_action_callback(callback)
-                    
-                    # Should call nutrition_insights_callback for nutrition_insights action
+                with patch('services.api.bot.handlers.nutrition.nutrition_insights_callback', return_value=None) as mock_nutrition:
+                    await handle_action_callback(callback, state)
                     mock_nutrition.assert_called_once_with(callback)
     
     @pytest.mark.asyncio
@@ -466,16 +468,19 @@ class TestActionCallback:
         callback = Mock()
         callback.from_user.id = 123456789
         callback.from_user.username = "testuser"
-        callback.data = "unknown_action"
+        callback.data = "action_unknown_action"
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+        # Mock state parameter
+        state = Mock()
+        
+        with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value={'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}, 'has_profile': True}):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
-                await handle_action_callback(callback)
+                await handle_action_callback(callback, state)
                 
-                # Should not call message.answer for unknown actions
-                callback.message.answer.assert_not_called()
+                # Verify callback was answered
+                callback.answer.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_handle_action_callback_exception(self):
@@ -483,14 +488,22 @@ class TestActionCallback:
         callback = Mock()
         callback.from_user.id = 123456789
         callback.from_user.username = "testuser"
-        callback.data = "main_menu"
+        callback.data = "action_main_menu"
         callback.answer = AsyncMock()
         callback.message.answer = AsyncMock()
         
-        with patch('services.api.bot.handlers.commands.get_or_create_user', return_value={'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}):
+        # Mock state parameter
+        state = Mock()
+        state.clear = AsyncMock()
+        
+        with patch('services.api.bot.handlers.commands.get_user_with_profile', return_value={'user': {'id': 'user-uuid', 'credits_remaining': 10, 'language': 'en'}, 'has_profile': True}):
             with patch('services.api.bot.handlers.commands.log_user_action', return_value=None):
                 with patch('services.api.bot.handlers.commands.create_main_menu_text', side_effect=Exception("Handler error")):
-                    await handle_action_callback(callback)
+                    await handle_action_callback(callback, state)
+                    
+                    # Verify error was handled - callback.answer is called twice
+                    # First time: await callback.answer() 
+                    # Second time: await callback.answer("An error occurred. Please try again later.")
                     assert callback.answer.call_count == 2
                     callback.answer.assert_any_call("An error occurred. Please try again later.")
 

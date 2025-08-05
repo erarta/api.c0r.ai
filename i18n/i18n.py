@@ -137,6 +137,82 @@ class I18nManager:
             Language.RUSSIAN.value: "Русский"
         }
         return language_names.get(language_code, "Unknown")
+    
+    def get_random_header(self, header_key: str, language: str = Language.ENGLISH.value) -> str:
+        """Get a random header from an array of creative headers"""
+        import random
+        
+        headers_array = self.translations.get(language, {}).get(header_key, [])
+        
+        if isinstance(headers_array, list) and headers_array:
+            return random.choice(headers_array)
+        
+        # Fallback to regular key without '_headers' suffix
+        fallback_key = header_key.replace('_headers', '')
+        return self.get_text(fallback_key, language)
+
+    def get_random_fact(self, language: str = Language.ENGLISH.value) -> str:
+        """
+        Get a random interesting food fact
+        
+        Args:
+            language: Language code
+            
+        Returns:
+            Random food fact string
+        """
+        try:
+            from i18n.food_facts import FOOD_FACTS
+            
+            facts = FOOD_FACTS.get(language, FOOD_FACTS.get("en", []))
+            if facts:
+                import random
+                return random.choice(facts)
+        except ImportError:
+            pass
+        return "🍎 Food is amazing!"
+
+    def get_random_waiting_phrase(self, language: str = Language.ENGLISH.value) -> str:
+        """
+        Get a random waiting phrase for analysis
+        
+        Args:
+            language: Language code
+            
+        Returns:
+            Random waiting phrase string
+        """
+        try:
+            from i18n.food_facts import WAITING_PHRASES
+            
+            phrases = WAITING_PHRASES.get(language, WAITING_PHRASES.get("en", []))
+            if phrases:
+                import random
+                return random.choice(phrases)
+        except ImportError:
+            pass
+        return "Analyzing your food... ⏳"
+
+    def get_random_waiting_phrase(self, language: str = Language.ENGLISH.value) -> str:
+        """
+        Get a random waiting phrase for analysis
+        
+        Args:
+            language: Language code
+            
+        Returns:
+            Random waiting phrase string
+        """
+        try:
+            from i18n.food_facts import WAITING_PHRASES
+            
+            phrases = WAITING_PHRASES.get(language, WAITING_PHRASES.get("en", []))
+            if phrases:
+                import random
+                return random.choice(phrases)
+        except ImportError:
+            pass
+        return "Analyzing your food... ⏳"
 
 
 # Global instance

@@ -8,8 +8,10 @@ from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
 from services.api.bot.config import PAYMENT_PLANS
+from common.config.payment_plans import get_payment_plans_for_user_language
 import traceback
 import json
+from i18n.i18n import i18n
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -40,10 +42,18 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             await message.answer("❌ Payment system is not configured. Please contact support.", reply_markup=create_main_menu_keyboard())
             return
 
-        plan = PAYMENT_PLANS.get(plan_id)
+        # Get user's language preference
+        user = await get_or_create_user(user_id, username)
+        user_language = user.get('language', 'en')
+        
+        # Get payment plans for user's language
+        payment_plans = get_payment_plans_for_user_language(user_language)
+        plan = payment_plans.get(plan_id)
+        
         if not plan:
             logger.error(f"Invalid payment plan selected: {plan_id}")
-            await message.answer("❌ Invalid payment plan selected.", reply_markup=create_main_menu_keyboard())
+            error_message = i18n.get_text("invoice_invalid_plan", user_language)
+            await message.answer(error_message, reply_markup=create_main_menu_keyboard())
             return
 
         logger.info(f"[Telegram] Creating invoice: title={plan['title']}, price={plan['price']}, user_id={user_id}, provider_token={YOOKASSA_PROVIDER_TOKEN[:12]}..., payload=credits_{plan_id}_{user_id}")
@@ -68,7 +78,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             }
         })
 
-        # Create invoice
+        # Create invoice with translated content
         await message.answer_invoice(
             title=plan["title"],
             description=plan["description"],
@@ -77,7 +87,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             currency=plan["currency"],
             prices=[
                 types.LabeledPrice(
-                    label=f"{plan['credits']} credits",
+                    label=i18n.get_text("invoice_credits_label", user_language, credits=plan['credits']),
                     amount=plan["price"]
                 )
             ],
@@ -93,12 +103,22 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             is_flexible=False
         )
         
-        logger.info(f"Created invoice for user {user_id}, plan {plan_id}")
+        success_message = i18n.get_text("invoice_created", user_language, user_id=user_id, plan_id=plan_id)
+        logger.info(success_message)
         
     except Exception as e:
         logger.error(f"[Telegram] Failed to create invoice: {e!r}")
         logger.error(traceback.format_exc())
-        await message.answer("❌ Failed to create payment. Please try again later.", reply_markup=create_main_menu_keyboard())
+        
+        # Get user's language for error message
+        try:
+            user = await get_or_create_user(user_id or message.from_user.id, message.from_user.username)
+            user_language = user.get('language', 'en')
+        except:
+            user_language = 'en'
+        
+        error_message = i18n.get_text("invoice_failed", user_language, error=str(e))
+        await message.answer(error_message, reply_markup=create_main_menu_keyboard())
 
 async def handle_buy_callback(callback: types.CallbackQuery):
     """
@@ -122,7 +142,15 @@ async def handle_buy_callback(callback: types.CallbackQuery):
         
     except Exception as e:
         logger.error(f"Failed to handle buy callback: {e}")
-        await callback.answer("❌ Failed to create payment. Please try again later.")
+        # Get user's language for error message
+        try:
+            user = await get_or_create_user(callback.from_user.id, callback.from_user.username)
+            user_language = user.get('language', 'en')
+        except:
+            user_language = 'en'
+        
+        error_message = i18n.get_text("payment_error_message", user_language)
+        await callback.answer(error_message)
 
 async def handle_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
     """
@@ -152,14 +180,19 @@ async def handle_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
         plan_id = parts[1]
         user_id = int(parts[2])
         
+        # Get user's language for error messages
+        user = await get_or_create_user(user_id)
+        user_language = user.get('language', 'en') if user else 'en'
+        
         # Validate plan exists
-        plan = PAYMENT_PLANS.get(plan_id)
+        payment_plans = get_payment_plans_for_user_language(user_language)
+        plan = payment_plans.get(plan_id)
         if not plan:
-            await pre_checkout_query.answer(ok=False, error_message="Invalid payment plan")
+            error_message = i18n.get_text("invoice_invalid_plan", user_language)
+            await pre_checkout_query.answer(ok=False, error_message=error_message)
             return
 
         # Validate user exists
-        user = await get_or_create_user(user_id)
         if not user:
             await pre_checkout_query.answer(ok=False, error_message="User not found")
             return
@@ -211,8 +244,13 @@ async def handle_successful_payment(message: types.Message):
         
         logger.info(f"Payment details - plan: {plan_id}, user_id: {user_id}, telegram_user_id: {telegram_user_id}")
         
-        # Get plan details
-        plan = PAYMENT_PLANS.get(plan_id)
+        # Get user's language preference
+        user = await get_or_create_user(user_id)
+        user_language = user.get('language', 'en') if user else 'en'
+        
+        # Get plan details with user's language
+        payment_plans = get_payment_plans_for_user_language(user_language)
+        plan = payment_plans.get(plan_id)
         if not plan:
             logger.error(f"Invalid plan in payment for user {telegram_user_id}: {plan_id}")
             return
@@ -250,14 +288,25 @@ async def handle_successful_payment(message: types.Message):
             }
         )
         
-        # Send confirmation message
+        # Send confirmation message with translations
+        success_title = i18n.get_text("payment_success_title", user_language)
+        plan_title = plan['title']
+        credits_added = i18n.get_text("payment_success_credits_added", user_language, credits=plan['credits'])
+        amount_paid = f"{payment.total_amount/100:.2f} {payment.currency}"
+        total_credits = i18n.get_text("payment_success_total_credits", user_language, total_credits=updated_user['credits_remaining'])
+        continue_message = i18n.get_text("payment_success_continue", user_language)
+        
+        confirmation_message = (
+            f"{success_title}\n\n"
+            f"💳 **{plan_title}**\n"
+            f"⚡ **{credits_added}**\n"
+            f"💰 **Amount Paid**: {amount_paid}\n"
+            f"🔋 **{total_credits}**\n\n"
+            f"{continue_message}"
+        )
+        
         await message.answer(
-            f"✅ **Payment Successful!**\n\n"
-            f"💳 **Plan**: {plan['title']}\n"
-            f"⚡ **Credits Added**: {plan['credits']}\n"
-            f"💰 **Amount Paid**: {payment.total_amount/100:.2f} {payment.currency}\n"
-            f"🔋 **Total Credits**: {updated_user['credits_remaining']}\n\n"
-            f"You can now continue analyzing your food photos!",
+            confirmation_message,
             parse_mode="Markdown",
             reply_markup=create_payment_success_keyboard()
         )
@@ -268,4 +317,13 @@ async def handle_successful_payment(message: types.Message):
         logger.error(f"Failed to process successful payment for user {telegram_user_id}: {e}")
         import traceback
         logger.error(f"Payment error traceback: {traceback.format_exc()}")
-        await message.answer("❌ Payment was successful but there was an error adding credits. Please contact support.") 
+        
+        # Get user's language for error message
+        try:
+            user = await get_or_create_user(telegram_user_id, message.from_user.username)
+            user_language = user.get('language', 'en')
+        except:
+            user_language = 'en'
+        
+        error_message = i18n.get_text("payment_error_message", user_language)
+        await message.answer(error_message) 

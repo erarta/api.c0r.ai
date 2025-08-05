@@ -16,6 +16,7 @@ from shared.models.user import UserProfile, UserRequest, UserCreditsRequest
 from shared.models.nutrition import NutritionData, FoodItem, AnalysisRequest
 from shared.models.payment import InvoiceRequest, PaymentRequest
 from shared.models.ml import MLAnalysisRequest, RecipeRequest, RecipeGenerationContext
+from pydantic import ValidationError
 
 
 class TestCommonModels:
@@ -86,9 +87,9 @@ class TestUserModels:
         # Test invalid telegram_id
         with pytest.raises(ValueError, match="Telegram ID must be positive"):
             UserProfile(telegram_id=-1)
-        
-        # Test invalid country code
-        with pytest.raises(ValueError, match="Country code must be 2 characters"):
+    
+        # Test invalid country code - Pydantic v2 validation
+        with pytest.raises(ValidationError):
             UserProfile(telegram_id=123456789, country="USA")
         
         # Test invalid age
@@ -199,8 +200,8 @@ class TestPaymentModels:
     
     def test_invoice_request_validation(self):
         """Test InvoiceRequest validation"""
-        # Test invalid amount
-        with pytest.raises(ValueError, match="Amount must be positive"):
+        # Test invalid amount - Pydantic v2 validation
+        with pytest.raises(ValidationError):
             InvoiceRequest(
                 user_id="123456789",
                 amount=-10.0,

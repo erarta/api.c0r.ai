@@ -4,9 +4,11 @@ import json
 import httpx
 from loguru import logger
 
+from shared.prompts.food_analysis import get_food_analysis_prompt, get_system_prompt
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en") -> dict:
+async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """
     Analyze food image using Google Gemini Vision API
     Returns KBZHU data in expected format
@@ -18,73 +20,8 @@ async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en"
         # Encode image to base64
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
-        # Create prompt for food analysis based on user language
-        if user_language == "ru":
-            prompt = """
-            Проанализируйте это изображение еды и предоставьте подробную информацию о питании.
-
-            ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
-
-            Пожалуйста, предоставьте:
-            1. Список отдельных продуктов питания, видимых на изображении (используйте русские названия)
-            2. Оцененный вес/размер порции для каждого продукта в граммах
-            3. Калории для каждого отдельного продукта
-            4. Общую сводку по питанию
-
-            Верните ТОЛЬКО этот JSON объект:
-            {
-                "food_items": [
-                    {
-                        "name": "русское название продукта (например: гречка, куриная грудка, помидор)",
-                        "weight": "вес в граммах (например: 100г, 150г)",
-                        "calories": число_калорий
-                    }
-                ],
-                "total_nutrition": {
-                    "calories": общее_число_калорий,
-                    "proteins": граммы_белков,
-                    "fats": граммы_жиров,
-                    "carbohydrates": граммы_углеводов
-                }
-            }
-
-            Примеры русских названий продуктов: рис, гречка, макароны, куриная грудка, говядина, лосось, картофель, морковь, капуста, яблоко, банан, хлеб, сыр, молоко, яйцо.
-            Оцените реалистичные порции. Все числовые значения должны быть числами без кавычек.
-            НЕ добавляйте никакого текста до или после JSON.
-            """
-        else:
-            prompt = """
-            Analyze this food image and provide detailed nutritional information.
-
-            IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
-
-            Please provide:
-            1. List of individual food items visible in the image (use specific food names)
-            2. Estimated weight/portion size for each item in grams
-            3. Calories for each individual item
-            4. Total nutritional summary
-
-            Return ONLY this JSON object:
-            {
-                "food_items": [
-                    {
-                        "name": "specific food name (e.g., grilled chicken breast, brown rice, broccoli)",
-                        "weight": "weight in grams (e.g., 100g, 150g)",
-                        "calories": calorie_number
-                    }
-                ],
-                "total_nutrition": {
-                    "calories": total_calorie_number,
-                    "proteins": protein_grams,
-                    "fats": fat_grams,
-                    "carbohydrates": carb_grams
-                }
-            }
-
-            Examples of specific food names: rice, pasta, chicken breast, salmon, beef, potato, carrot, apple, bread, cheese, egg.
-            Estimate realistic portion sizes. All numeric values must be numbers without quotes.
-            DO NOT add any text before or after the JSON.
-            """
+        # Get shared prompts
+        prompt = get_food_analysis_prompt(user_language)
         
         # Prepare request payload for Gemini
         payload = {
@@ -127,9 +64,42 @@ async def analyze_food_with_gemini(image_bytes: bytes, user_language: str = "en"
             
             # Parse JSON response
             try:
-                analysis_result = json.loads(content)
-                logger.info(f"Gemini analysis successful: {analysis_result}")
-                return analysis_result
+                response_data = json.loads(content)
+                logger.info(f"Gemini analysis successful: {response_data}")
+                
+                # Add provider info for debugging
+                model_name = "gemini-pro-vision"  # Gemini vision model
+                
+                # Check if we have the new analysis format
+                if "analysis" in response_data:
+                    # New format - add debug info and return
+                    response_data["analysis"]["llm_provider"] = "gemini"
+                    response_data["analysis"]["model_used"] = model_name
+                    return response_data
+                else:
+                    # Old format fallback - convert to new structure
+                    kbzhu_data = response_data.get("total_nutrition", response_data)
+                    
+                    # Validate required fields
+                    required_fields = ["calories", "proteins", "fats", "carbohydrates"]
+                    for field in required_fields:
+                        if field not in kbzhu_data:
+                            raise ValueError(f"Missing field: {field}")
+                        # Ensure values are numbers
+                        kbzhu_data[field] = float(kbzhu_data[field])
+                    
+                    # Convert old format to new format structure
+                    result = {
+                        "analysis": {
+                            "llm_provider": "gemini",
+                            "model_used": model_name,
+                            "food_items": response_data.get("food_items", []),
+                            "total_nutrition": kbzhu_data,
+                            "motivation_message": "Keep tracking your nutrition!"
+                        }
+                    }
+                    return result
+                    
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse Gemini response as JSON: {content}")
                 raise Exception(f"Invalid JSON response from Gemini: {e}")

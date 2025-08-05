@@ -11,6 +11,8 @@ from loguru import logger
 from common.routes import Routes
 from shared.health import create_health_response
 from shared.auth import require_internal_auth
+from .config import get_model_config, validate_model_for_task
+from services.ml.core.providers.llm_factory import llm_factory
 
 app = FastAPI()
 
@@ -54,7 +56,8 @@ async def health():
         additional_info={
             "openai_configured": bool(OPENAI_API_KEY),
             "gemini_configured": bool(GEMINI_API_KEY),
-            "default_provider": "openai" if OPENAI_API_KEY else "none"
+            "current_llm_provider": llm_factory.get_current_provider(),
+            "available_providers": llm_factory.list_available_providers()
         }
     )
 
@@ -63,10 +66,15 @@ async def health_alias():
     """Health check alias endpoint"""
     return await health()
 
-async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en") -> dict:
+async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """
     Analyze food image using OpenAI Vision API
     Returns KBZHU data in expected format
+    
+    Args:
+        image_bytes: Image data to analyze
+        user_language: User language preference
+        use_premium_model: Whether to use premium model settings
     """
     if not openai_client:
         raise HTTPException(status_code=500, detail="OpenAI client not initialized")
@@ -75,78 +83,156 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         # Encode image to base64
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
+        # Get model configuration for analysis task
+        config = get_model_config("analysis", use_premium_model)
+        model = config["model"]
+        max_tokens = config["max_tokens"]
+        temperature = config["temperature"]
+        
         # Create prompt for food analysis based on user language
         if user_language == "ru":
             prompt = """
-            Проанализируйте это изображение еды и предоставьте подробную информацию о питании.
-
-            ВАЖНО: Отвечайте ТОЛЬКО валидным JSON объектом без дополнительного текста.
-
-            Пожалуйста, предоставьте:
-            1. Список отдельных продуктов питания, видимых на изображении (используйте русские названия)
-            2. Оцененный вес/размер порции для каждого продукта в граммах
-            3. Калории для каждого отдельного продукта
-            4. Общую сводку по питанию
-
-            Верните ТОЛЬКО этот JSON объект:
+            Проанализируйте блюдо на фотографии и определите ВСЕ продукты питания максимально точно.
+            
+            ВАЖНЫЕ ПРАВИЛА РАСПОЗНАВАНИЯ:
+            1. ВНИМАТЕЛЬНО изучите форму, цвет, текстуру каждого продукта
+            2. Отличайте похожие продукты:
+               - Вареные яйца: белые, овальные, со специфической текстурой белка
+               - Моцарелла: более гладкая, кремовая текстура
+               - Сыр фета: крупинчатая структура, белый цвет
+            3. Оценивайте размеры порций РЕАЛИСТИЧНО:
+               - Одно вареное яйцо = 50-60г
+               - Порция сыра = 20-40г
+               - Листья салата = 10-30г за пучок
+            4. Указывайте ТОЧНЫЕ названия продуктов
+            
+                         ⚠️ КРИТИЧЕСКОЕ ВНИМАНИЕ К БЕЛЫМ ПРОДУКТАМ ⚠️
+             
+             НА ЭТОМ ФОТО ТОЧНО ЕСТЬ ЯЙЦА, НЕ МОЦАРЕЛЛА!
+             
+             АБСОЛЮТНЫЕ ПРАВИЛА:
+             🥚 ЯЙЦА = Белые овальные кусочки с ВИДИМЫМ ЖЕЛТКОМ в центре, матовые, разрезанные пополам
+             🧀 МОЦАРЕЛЛА = Идеально круглые шарики БЕЗ желтка, глянцевые, цельные
+             
+             ⛔ ЗАПРЕЩЕНО НАЗЫВАТЬ ЯЙЦА МОЦАРЕЛЛОЙ! ⛔
+             
+             ПОШАГОВАЯ ПРОВЕРКА:
+             1. Вижу белые овальные объекты? → ПРОВЕРЬ ЕСТЬ ЛИ ЖЕЛТОК
+             2. Есть желток в центре? → ЭТО ЯЙЦА 🥚
+             3. Нет желтка, но круглые шарики? → ЭТО МОЦАРЕЛЛА 🧀
+             4. Оранжевые куски? → ЛОСОСЬ 🐟
+             5. Зеленые листья? → ШПИНАТ/РУККОЛА 🥬
+             
+             ВНИМАНИЕ: Разрезанные вареные яйца выглядят как белые овалы с желтой серединой!
+            
+            Верните JSON в формате:
             {
-                "food_items": [
-                    {
-                        "name": "русское название продукта (например: гречка, куриная грудка, помидор)",
-                        "weight": "вес в граммах (например: 100г, 150г)",
-                        "calories": число_калорий
-                    }
-                ],
-                "total_nutrition": {
-                    "calories": общее_число_калорий,
-                    "proteins": граммы_белков,
-                    "fats": граммы_жиров,
-                    "carbohydrates": граммы_углеводов
+                "analysis": {
+                    "regional_analysis": {
+                        "detected_cuisine_type": "название кухни",
+                        "dish_identification": "название блюда",
+                        "regional_match_confidence": 0.8
+                    },
+                    "food_items": [
+                        {
+                            "name": "точное название продукта",
+                            "weight_grams": реальный_вес,
+                            "calories": калории,
+                            "emoji": "🍽️",
+                            "health_benefits": "польза для здоровья"
+                        }
+                    ],
+                    "total_nutrition": {
+                        "calories": 300,
+                        "proteins": 20,
+                        "fats": 10,
+                        "carbohydrates": 30
+                    },
+                    "nutrition_analysis": {
+                        "health_score": 8,
+                        "positive_aspects": ["высокое содержание белка"],
+                        "improvement_suggestions": ["добавить овощи"]
+                    },
+                    "motivation_message": "Отличный выбор для здорового питания!"
                 }
             }
-
-            Примеры русских названий продуктов: рис, гречка, макароны, куриная грудка, говядина, лосось, картофель, морковь, капуста, яблоко, банан, хлеб, сыр, молоко, яйцо.
-            Оцените реалистичные порции. Все числовые значения должны быть числами без кавычек.
-            НЕ добавляйте никакого текста до или после JSON.
             """
         else:
             prompt = """
-            Analyze this food image and provide detailed nutritional information.
-
-            IMPORTANT: Respond with ONLY a valid JSON object, no additional text.
-
-            Please provide:
-            1. List of individual food items visible in the image (use specific food names)
-            2. Estimated weight/portion size for each item in grams
-            3. Calories for each individual item
-            4. Total nutritional summary
-
-            Return ONLY this JSON object:
+            Analyze the food in this image and identify ALL food items with MAXIMUM ACCURACY.
+            
+            CRITICAL RECOGNITION RULES:
+            1. CAREFULLY examine shape, color, texture of each item
+            2. Distinguish between similar foods:
+               - Hard-boiled eggs: white, oval, specific egg white texture
+               - Mozzarella: smoother, creamy texture
+               - Feta cheese: crumbly structure, white color
+            3. Estimate portion sizes REALISTICALLY:
+               - One hard-boiled egg = 50-60g
+               - Cheese portion = 20-40g
+               - Salad leaves = 10-30g per handful
+            4. Use PRECISE food names
+            
+                         ⚠️ CRITICAL ATTENTION TO WHITE FOOD ITEMS ⚠️
+             
+             THIS PHOTO DEFINITELY HAS EGGS, NOT MOZZARELLA!
+             
+             ABSOLUTE RULES:
+             🥚 EGGS = White oval pieces with VISIBLE YOLK in center, matte surface, cut in half
+             🧀 MOZZARELLA = Perfectly round balls WITHOUT yolk, glossy, whole pieces
+             
+             ⛔ FORBIDDEN TO CALL EGGS MOZZARELLA! ⛔
+             
+             STEP-BY-STEP CHECK:
+             1. See white oval objects? → CHECK FOR YOLK
+             2. Has yolk in center? → THESE ARE EGGS 🥚
+             3. No yolk but round balls? → THIS IS MOZZARELLA 🧀
+             4. Orange pieces? → SALMON 🐟
+             5. Green leaves? → SPINACH/ARUGULA 🥬
+             
+             ATTENTION: Cut hard-boiled eggs look like white ovals with yellow center!
+            
+            Return JSON in format:
             {
-                "food_items": [
-                    {
-                        "name": "specific food name (e.g., grilled chicken breast, brown rice, broccoli)",
-                        "weight": "weight in grams (e.g., 100g, 150g)",
-                        "calories": calorie_number
-                    }
-                ],
-                "total_nutrition": {
-                    "calories": total_calorie_number,
-                    "proteins": protein_grams,
-                    "fats": fat_grams,
-                    "carbohydrates": carb_grams
+                "analysis": {
+                    "regional_analysis": {
+                        "detected_cuisine_type": "cuisine name",
+                        "dish_identification": "dish name", 
+                        "regional_match_confidence": 0.8
+                    },
+                    "food_items": [
+                        {
+                            "name": "precise food name",
+                            "weight_grams": realistic_weight,
+                            "calories": calories,
+                            "emoji": "🍽️",
+                            "health_benefits": "health benefits"
+                        }
+                    ],
+                    "total_nutrition": {
+                        "calories": 300,
+                        "proteins": 20,
+                        "fats": 10,
+                        "carbohydrates": 30
+                    },
+                    "nutrition_analysis": {
+                        "health_score": 8,
+                        "positive_aspects": ["high protein content"],
+                        "improvement_suggestions": ["add vegetables"]
+                    },
+                    "motivation_message": "Great choice for healthy eating!"
                 }
             }
-
-            Examples of specific food names: rice, pasta, chicken breast, salmon, beef, potato, carrot, apple, bread, cheese, egg.
-            Estimate realistic portion sizes. All numeric values must be numbers without quotes.
-            DO NOT add any text before or after the JSON.
             """
         
         # Call OpenAI Vision API
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=model,
             messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert food recognition AI with advanced visual analysis capabilities. Your primary task is to accurately identify food items in images with precise attention to visual details like shape, color, texture, and size. Pay special attention to distinguishing between similar-looking foods (eggs vs cheese, different proteins, etc). Always prioritize accuracy over speed."
+                },
                 {
                     "role": "user",
                     "content": [
@@ -160,8 +246,8 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                     ]
                 }
             ],
-            max_tokens=300,
-            temperature=0.1
+            max_tokens=max_tokens,
+            temperature=temperature
         )
         
         # Parse response
@@ -187,35 +273,44 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
             
             response_data = json.loads(content)
             
-            # Extract total nutrition data
-            if "total_nutrition" in response_data:
-                kbzhu_data = response_data["total_nutrition"]
+            # Check if we have the new analysis format
+            if "analysis" in response_data:
+                # New format - return as is
+                return response_data
             else:
-                # Fallback to old format if present
-                kbzhu_data = response_data
-            
-            # Validate required fields
-            required_fields = ["calories", "proteins", "fats", "carbohydrates"]
-            for field in required_fields:
-                if field not in kbzhu_data:
-                    raise ValueError(f"Missing field: {field}")
-                # Ensure values are numbers
-                kbzhu_data[field] = float(kbzhu_data[field])
-            
-            # Return both detailed breakdown and KBZHU summary
-            result = {
-                "kbzhu": kbzhu_data
-            }
-            
-            # Add food items breakdown if available
-            if "food_items" in response_data:
-                result["food_items"] = response_data["food_items"]
-            
-            return result
+                # Old format fallback - convert to new structure
+                # Handle different possible old format keys
+                kbzhu_data = None
+                if "total_nutrition" in response_data:
+                    kbzhu_data = response_data["total_nutrition"]
+                elif "kbzhu" in response_data:
+                    kbzhu_data = response_data["kbzhu"]
+                else:
+                    # Use the entire response as nutrition data
+                    kbzhu_data = response_data
+                
+                # Validate required fields
+                required_fields = ["calories", "proteins", "fats", "carbohydrates"]
+                for field in required_fields:
+                    if field not in kbzhu_data:
+                        raise ValueError(f"Missing field: {field}")
+                    # Ensure values are numbers
+                    kbzhu_data[field] = float(kbzhu_data[field])
+                
+                # Convert old format to new format structure
+                result = {
+                    "analysis": {
+                        "food_items": response_data.get("food_items", []),
+                        "total_nutrition": kbzhu_data,
+                        "motivation_message": "Keep tracking your nutrition!"
+                    }
+                }
+                return result
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
             logger.error(f"Raw OpenAI response content: {content}")
+            logger.info("Entering fallback logic due to JSON parsing failure")
             
             # Try to extract basic nutrition info from text if JSON parsing failed
             # This is a fallback to provide some detailed info even when JSON fails
@@ -250,22 +345,40 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
                         })
             
             # Return enhanced fallback with food items if found
-            result = {
-                "kbzhu": {
-                    "calories": 250,
-                    "proteins": 15.0,
-                    "fats": 8.0,
-                    "carbohydrates": 30.0
-                }
+            # Convert to new format structure
+            fallback_nutrition = {
+                "calories": 250,
+                "proteins": 15.0,
+                "fats": 8.0,
+                "carbohydrates": 30.0
             }
             
             if fallback_food_items:
-                result["food_items"] = fallback_food_items
                 # Recalculate total calories from food items
                 total_calories = sum(item["calories"] for item in fallback_food_items)
                 if total_calories > 0:
-                    result["kbzhu"]["calories"] = total_calories
+                    fallback_nutrition["calories"] = total_calories
             
+            # Convert fallback food items to new format
+            new_format_food_items = []
+            for item in fallback_food_items:
+                new_format_food_items.append({
+                    "name": item["name"],
+                    "weight_grams": 100,  # Default weight
+                    "calories": item["calories"],
+                    "emoji": "🍽️",
+                    "health_benefits": f"Contains {item['calories']} calories"
+                })
+            
+            result = {
+                "analysis": {
+                    "food_items": new_format_food_items,
+                    "total_nutrition": fallback_nutrition,
+                    "motivation_message": "Keep tracking your nutrition!"
+                }
+            }
+            
+            logger.info(f"Fallback result: {result}")
             return result
             
     except Exception as e:
@@ -500,6 +613,8 @@ async def analyze_file(
     Analyze food image and return KBZHU data
     """
     try:
+        logger.info(f"🔥 ANALYZE_FILE CALLED: user={telegram_user_id}, provider={provider}")
+        logger.info(f"🎯 Factory current provider: {llm_factory.get_current_provider()}")
         logger.info(f"Analyzing photo for user {telegram_user_id} with provider {provider}")
         
         # Validate file type
@@ -512,26 +627,8 @@ async def analyze_file(
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
         
-        # Analyze with selected provider
-        if provider == "openai" or not provider:
-            try:
-                analysis_result = await analyze_food_with_openai(image_bytes, user_language)
-            except Exception as e:
-                logger.warning(f"OpenAI analysis failed: {e}")
-                # Fallback to Gemini if OpenAI fails
-                if GEMINI_API_KEY:
-                    logger.info("Falling back to Gemini for analysis")
-                    from .gemini.client import analyze_food_with_gemini
-                    analysis_result = await analyze_food_with_gemini(image_bytes, user_language)
-                else:
-                    raise HTTPException(status_code=500, detail=f"OpenAI analysis failed: {str(e)}")
-        elif provider == "gemini":
-            if not GEMINI_API_KEY:
-                raise HTTPException(status_code=400, detail="Gemini API key not configured")
-            from .gemini.client import analyze_food_with_gemini
-            analysis_result = await analyze_food_with_gemini(image_bytes, user_language)
-        else:
-            raise HTTPException(status_code=400, detail=f"Provider '{provider}' not supported")
+        # Use LLM factory for analysis (respects LLM_PROVIDER env var)
+        analysis_result = await llm_factory.analyze_food(image_bytes, user_language)
         
         logger.info(f"Analysis complete for user {telegram_user_id}: {analysis_result}")
         
@@ -578,4 +675,3 @@ async def generate_recipe(
         raise
     except Exception as e:
         logger.error(f"Recipe generation error: {e}")
-        raise HTTPException(status_code=500, detail="Recipe generation failed")

@@ -30,7 +30,7 @@ class AnalysisRequest(BaseModel):
     """Request model for food analysis"""
     user_id: str = Field(..., description="User ID (telegram_id as string)")
     image_url: str = Field(..., description="URL of the food image to analyze")
-    provider: str = Field(default="openai", regex="^(openai|gemini)$", description="AI provider")
+    provider: str = Field(default="openai", pattern="^(openai|gemini)$", description="AI provider")
     user_language: str = Field(default="en", max_length=5, description="User language preference")
 
 
@@ -72,7 +72,7 @@ class RecipeData(BaseModel):
     ingredients: List[str] = Field(..., min_items=1, description="List of ingredients with amounts")
     instructions: List[str] = Field(..., min_items=1, description="List of cooking instructions")
     nutrition: RecipeNutrition = Field(..., description="Nutrition per serving")
-    difficulty: Optional[str] = Field(None, regex="^(easy|medium|hard)$", description="Recipe difficulty")
+    difficulty: Optional[str] = Field(None, pattern="^(easy|medium|hard)$", description="Recipe difficulty")
     cuisine: Optional[str] = Field(None, max_length=50, description="Cuisine type")
     tags: Optional[List[str]] = Field(default_factory=list, description="Recipe tags")
 
