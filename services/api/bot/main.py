@@ -58,7 +58,16 @@ async def health_alias():
 @app.on_event("startup")
 async def launch_bot():
     logger.info("FastAPI startup - launching bot...")
-    asyncio.create_task(start_bot())
+    
+    async def start_bot_with_error_handling():
+        try:
+            await start_bot()
+        except Exception as e:
+            logger.error(f"Bot startup failed: {e}")
+            logger.exception("Bot startup exception details:")
+            raise
+    
+    asyncio.create_task(start_bot_with_error_handling())
 
 @app.post("/register")
 async def register(request: Request):
