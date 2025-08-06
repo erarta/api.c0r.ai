@@ -7,10 +7,12 @@ from .client import supabase
 from .users import (
     get_or_create_user,
     get_user_by_telegram_id,
-    decrement_credits,
-    add_credits,
     update_user_language,
     update_user_country_and_phone
+)
+from .credits import (
+    add_credits,
+    decrement_credits
 )
 from .profiles import (
     get_user_profile,

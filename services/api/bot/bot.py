@@ -238,13 +238,18 @@ async def start_bot():
         logger.info("Starting Telegram bot...")
         
         # Clear webhook to ensure polling mode
+        logger.info("Clearing webhook...")
         await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Webhook cleared successfully")
         
         # Start polling
+        logger.info("Starting polling...")
+        logger.info("Bot is now ready to receive messages!")
         await dp.start_polling(bot, skip_updates=True)
         
     except Exception as e:
         logger.error(f"Error starting bot: {e}")
+        logger.exception("Bot startup exception details:")
         raise
 
 if __name__ == "__main__":
