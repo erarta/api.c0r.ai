@@ -98,7 +98,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             need_email=True,
             send_email_to_provider=True,
             provider_data=provider_data,
-            need_phone_number=False,
+            need_phone_number=False,  # Not used anymore
             need_shipping_address=False,
             is_flexible=False
         )

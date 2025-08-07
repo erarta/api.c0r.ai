@@ -11,7 +11,7 @@ from loguru import logger
 
 from .core.models.managers.model_manager import ModelManager
 from .core.models.config.sota_config import ModelTier, TaskType
-from .modules.location.detector import UserLocationDetector
+# Location detector removed - using language-based region detection instead
 from .core.prompts.base.prompt_builder import PromptBuilder
 from .core.reliability.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from .core.reliability.fallback_manager import FallbackManager, FallbackStrategy
@@ -36,7 +36,7 @@ class MLService:
         
         # Initialize core components
         self.model_manager = ModelManager()
-        self.location_detector = UserLocationDetector()
+        # Location detector removed - using language-based region detection
         self.prompt_builder = PromptBuilder()
         
         # Initialize reliability components
@@ -53,7 +53,6 @@ class MLService:
             "failed_requests": 0,
             "food_analyses": 0,
             "recipe_generations": 0,
-            "location_detections": 0,
             "fallback_uses": 0
         }
         
@@ -87,17 +86,9 @@ class MLService:
         logger.info(f"🍽️ Starting food analysis for user {user_id} in {user_language}")
         
         try:
-            # Step 1: Detect user location and regional context
-            location_result = None
-            if user_id:
-                location_result = await self.location_detector.detect_user_location(
-                    telegram_user_id=str(user_id),
-                    user_language=user_language,
-                    telegram_user=telegram_user
-                )
-                if location_result:
-                    self.stats["location_detections"] += 1
-                    logger.debug(f"📍 Location detected: {location_result.location.country_code}")
+            # Step 1: Use language-based region detection
+            # Location detection removed - using language_code for region determination
+            logger.debug(f"🌐 Using language-based region detection: {user_language}")
             
             # Step 2: Build regional prompt
             regional_context = location_result.regional_context if location_result else None
@@ -210,19 +201,12 @@ class MLService:
         logger.info(f"👨‍🍳 Starting recipe generation for user {user_id} in {user_language}")
         
         try:
-            # Step 1: Detect location if needed
-            location_result = None
-            if user_id:
-                location_result = await self.location_detector.detect_user_location(
-                    telegram_user_id=str(user_id),
-                    user_language=user_language,
-                    telegram_user=telegram_user
-                )
-                if location_result:
-                    self.stats["location_detections"] += 1
+            # Step 1: Use language-based region detection
+            # Location detection removed - using language_code for region determination
+            logger.debug(f"🌐 Using language-based region detection: {user_language}")
             
             # Step 2: Use fallback manager for recipe generation
-            regional_context = location_result.regional_context if location_result else None
+            regional_context = None  # No location detection needed
             
             recipe_result = await self.recipe_generation_fallback.execute(
                 image_data=image_data,
@@ -268,10 +252,10 @@ class MLService:
                     "response_time": model_response.response_time
                 },
                 "location_info": {
-                    "detected": location_result is not None,
-                    "country_code": location_result.location.country_code if location_result else None,
-                    "region_code": location_result.regional_context.region_code if location_result else None,
-                    "confidence": location_result.location.confidence if location_result else 0.0
+                    "detected": False,
+                    "country_code": None,
+                    "region_code": None,
+                    "confidence": 0.0
                 },
                 "execution_time": time.time() - start_time,
                 "metadata": {
@@ -353,7 +337,7 @@ class MLService:
         return {
             "service_stats": self.stats.copy(),
             "model_manager_stats": self.model_manager.get_health_status(),
-            "location_detector_stats": self.location_detector.get_cache_stats(),
+            "location_detector_stats": {"status": "removed"},
             "fallback_stats": {
                 "food_analysis": self.food_analysis_fallback.get_stats(),
                 "recipe_generation": self.recipe_generation_fallback.get_stats()
@@ -516,36 +500,15 @@ class MLService:
             )
     
     def _check_location_detector_health(self):
-        """Health check for location detector"""
+        """Location detector removed - using language-based region detection"""
         from .core.reliability.health_monitor import HealthCheckResult, HealthStatus
         
-        try:
-            stats = self.location_detector.get_cache_stats()
-            
-            # Simple health check based on cache hit rate
-            cache_hit_rate = stats.get("cache_hit_rate", 0)
-            
-            if cache_hit_rate > 0.5:
-                status = HealthStatus.HEALTHY
-                message = f"Location detector healthy (cache hit rate: {cache_hit_rate:.2f})"
-            else:
-                status = HealthStatus.DEGRADED
-                message = f"Location detector degraded (low cache hit rate: {cache_hit_rate:.2f})"
-            
-            return HealthCheckResult(
-                name="location_detector",
-                status=status,
-                message=message,
-                details=stats
-            )
-            
-        except Exception as e:
-            return HealthCheckResult(
-                name="location_detector",
-                status=HealthStatus.UNHEALTHY,
-                message=f"Location detector health check failed: {e}",
-                error=e
-            )
+        return HealthCheckResult(
+            name="location_detector",
+            status=HealthStatus.HEALTHY,
+            message="Location detector removed - using language-based region detection",
+            details={"status": "removed", "method": "language_based"}
+        )
     
     def __del__(self):
         """Cleanup on service destruction"""

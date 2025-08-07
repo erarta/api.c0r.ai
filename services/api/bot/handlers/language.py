@@ -4,7 +4,7 @@ Handles language switching and language detection
 """
 from aiogram import types
 from loguru import logger
-from common.supabase_client import update_user_language, update_user_country_and_phone
+from common.supabase_client import update_user_language
 from i18n.i18n import i18n, Language
 
 
@@ -114,7 +114,7 @@ async def handle_language_callback(callback: types.CallbackQuery):
 
 async def detect_and_set_user_language(message: types.Message) -> str:
     """
-    Detect user's language based on country and phone number, and set it in database
+    Detect user's language and set it in database
     
     Args:
         message: Telegram message object
@@ -124,42 +124,17 @@ async def detect_and_set_user_language(message: types.Message) -> str:
     """
     try:
         telegram_user_id = message.from_user.id
+        user_language = message.from_user.language_code or "en"
         
-        # Get user's country and phone number from Telegram
-        user_country = None
-        phone_number = None
+        # Update user's language in database
+        await update_user_language(telegram_user_id, user_language)
         
-        # Try to get country from user's language_code (Telegram provides this)
-        if hasattr(message.from_user, 'language_code') and message.from_user.language_code:
-            # Map Telegram language codes to countries
-            country_mapping = {
-                'ru': 'RU',  # Russian
-                'be': 'BY',  # Belarusian
-                'kk': 'KZ',  # Kazakh
-                'ky': 'KG',  # Kyrgyz
-                'hy': 'AM',  # Armenian
-                'az': 'AZ',  # Azerbaijani
-                'ka': 'GE',  # Georgian
-                'uz': 'UZ',  # Uzbek
-            }
-            user_country = country_mapping.get(message.from_user.language_code)
+        logger.info(f"Set language {user_language} for user {telegram_user_id}")
         
-        # Try to get phone number if available
-        if hasattr(message.from_user, 'phone_number') and message.from_user.phone_number:
-            phone_number = message.from_user.phone_number
-        
-        # Detect language
-        detected_language = i18n.detect_language(user_country, phone_number)
-        
-        # Update user's country and phone in database
-        await update_user_country_and_phone(telegram_user_id, user_country, phone_number)
-        
-        logger.info(f"Detected language {detected_language} for user {telegram_user_id} (country: {user_country}, phone: {phone_number})")
-        
-        return detected_language
+        return user_language
         
     except Exception as e:
-        logger.error(f"Error detecting language for user {telegram_user_id}: {e}")
+        logger.error(f"Error setting language for user {telegram_user_id}: {e}")
         return 'en'  # Default to English on error
 
 

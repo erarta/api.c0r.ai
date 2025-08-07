@@ -8,9 +8,25 @@ from datetime import datetime
 from loguru import logger
 
 from ...models.config.sota_config import TaskType, ModelTier
-from ....modules.location.models import RegionalContext, LocationInfo
+# Location models removed - using language-based region detection instead
 from ..motivation.praise_system import MotivationSystem
 from ..utils.plate_weight_estimator import PlateWeightEstimator
+
+
+# Simple stubs for removed location models
+class RegionalContext:
+    """Simple stub for RegionalContext"""
+    def __init__(self, region_code: str = "INTL"):
+        self.region_code = region_code
+        self.common_products = []
+        self.cooking_methods = []
+        self.measurement_units = "metric"
+
+
+class LocationInfo:
+    """Simple stub for LocationInfo"""
+    def __init__(self, country_code: str = "INTL"):
+        self.country_code = country_code
 
 
 class PromptBuilder:

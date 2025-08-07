@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-from services.api.bot.handlers.commands import start_command, help_command, status_command, buy_credits_command, handle_action_callback
+from services.api.bot.handlers.commands import start_command, help_command, status_command, buy_credits_command, buy_basic_callback, buy_pro_callback, handle_action_callback
 from services.api.bot.handlers.photo import photo_handler
 from services.api.bot.handlers.payments import handle_pre_checkout_query, handle_successful_payment, handle_buy_callback
 from services.api.bot.handlers.profile import (
@@ -201,6 +201,9 @@ dp.message.register(process_weight, ProfileStates.waiting_for_weight)
 # Recipe callback must be registered BEFORE general action callback to avoid conflicts
 dp.callback_query.register(handle_recipe_callback, lambda callback: callback.data == "action_recipe")
 dp.callback_query.register(handle_action_callback, lambda callback: callback.data.startswith("action_"))
+# Register specific payment plan handlers
+dp.callback_query.register(buy_basic_callback, lambda callback: callback.data == "buy_basic")
+dp.callback_query.register(buy_pro_callback, lambda callback: callback.data == "buy_pro")
 dp.callback_query.register(handle_buy_callback, lambda callback: callback.data.startswith("buy_"))
 dp.callback_query.register(handle_profile_callback, lambda callback: callback.data.startswith("profile_"))
 dp.callback_query.register(process_gender, lambda callback: callback.data.startswith("gender_"))

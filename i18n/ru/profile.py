@@ -121,6 +121,19 @@ TRANSLATIONS = {
     "profile_setup_dietary_success": "Отличные выборы! Диетические предпочтения: {preferences}",
     "profile_setup_allergies_success": "Понял! Аллергии: {allergies}",
     
+<<<<<<< Updated upstream
+=======
+    # Progress tracking
+    "profile_progress_water": "💧 **Твое Потребление Воды**\n📊 Цель: {target} стаканов\n✅ Выпито: {consumed} стаканов",
+    "profile_progress_exercise": "💪 **Твой Прогресс в Упражнениях**\n🎯 Цель: {target} минут/день\n✅ Выполнено: {completed} минут сегодня",
+    
+    # Region and payment system detection
+    "profile_location_title": "📍 **Регион и платежная система**",
+    "profile_language_detected": "🌐 Язык интерфейса: {language}",
+    "profile_region_detected": "📍 Регион: {region}",
+    "profile_payment_system": "💳 Платежная система: {system}",
+    
+>>>>>>> Stashed changes
     # Missing translations
     "profile_setup_important": "💡 Это важно для персональных рекомендаций!",
     "profile_setup_restart": "📝 Ты всегда можешь перезапустить настройку профиля в любое время!",

@@ -4,7 +4,7 @@ Main entry point for the enhanced ML service with SOTA models and regional adapt
 """
 
 from .core.models.managers.model_manager import ModelManager
-from .modules.location.detector import UserLocationDetector as LocationDetector
+# Location detector removed - using language-based region detection instead
 from .core.prompts.base.prompt_builder import PromptBuilder
 from .core.reliability.circuit_breaker import CircuitBreaker, circuit_breaker
 from .core.reliability.fallback_manager import FallbackManager
@@ -16,7 +16,6 @@ from .service import MLService
 __all__ = [
     "MLService",
     "ModelManager",
-    "LocationDetector", 
     "PromptBuilder",
     "CircuitBreaker",
     "circuit_breaker",

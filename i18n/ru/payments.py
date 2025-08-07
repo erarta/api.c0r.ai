@@ -10,6 +10,11 @@ TRANSLATIONS = {
     "status_online": "🌐 Статус: *Онлайн и готов помочь тебе!*",
     "status_powered_by": "⚡ Работает на c0R AI Vision - специально для тебя!",
     
+<<<<<<< Updated upstream
+=======
+    # System health indicators - REMOVED
+
+>>>>>>> Stashed changes
     # Payment plans and invoices
     "plan_basic_title": "Базовый план",
     "plan_basic_description": "20 кредитов для анализа еды",

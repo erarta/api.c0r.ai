@@ -231,6 +231,32 @@ async def status_command(message: types.Message):
         else:
             created_date = 'Unknown'
         
+<<<<<<< Updated upstream
+=======
+        # Determine overall health status
+        overall_health_status = "all_systems_ok"
+        error_count = 0
+        critical_services = ['telegram_configured', 'database_configured']
+        
+        for service in critical_services:
+            if not health_info.get(service, False):
+                error_count += 1
+        
+        # Check optional services
+        optional_services = ['ml_service_configured', 'pay_service_configured', 'openai_configured']
+        for service in optional_services:
+            if not health_info.get(service, False):
+                error_count += 0.5  # Half weight for optional services
+        
+        if error_count >= 2:
+            overall_health_status = "major_issues"
+        elif error_count > 0:
+            overall_health_status = "some_issues"
+        
+        # Build health indicators text - REMOVED
+        health_text = ""
+        
+>>>>>>> Stashed changes
         # Create status text using i18n
         status_text = (
             f"{i18n.get_text('status_title', user_language)}\n\n"
@@ -301,6 +327,33 @@ async def status_callback(callback: types.CallbackQuery):
         # Get user's language
         user_language = user.get('language', 'en')
 
+<<<<<<< Updated upstream
+=======
+        # Determine overall health status
+        overall_health_status = "all_systems_ok"
+        error_count = 0
+        critical_services = ['telegram_configured', 'database_configured']
+        
+        for service in critical_services:
+            if not health_info.get(service, False):
+                error_count += 1
+        
+        # Check optional services
+        optional_services = ['ml_service_configured', 'pay_service_configured', 'openai_configured']
+        for service in optional_services:
+            if not health_info.get(service, False):
+                error_count += 0.5  # Half weight for optional services
+        
+        if error_count >= 2:
+            overall_health_status = "major_issues"
+        elif error_count > 0:
+            overall_health_status = "some_issues"
+        
+        # Build health indicators text
+        # Build health indicators text - REMOVED
+        health_text = ""
+
+>>>>>>> Stashed changes
         # Create status text using i18n
         status_text = (
             f"{i18n.get_text('status_title', user_language)}\n\n"
@@ -603,7 +656,23 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     else:
         allergies_text = i18n.get_text('profile_allergy_none', user_language)
     
+<<<<<<< Updated upstream
     # Build clean profile text without emoji duplication
+=======
+    # Get geolocation information
+    # Get user region based on language_code
+    from shared.region_detector import region_detector
+    
+    # Detect user region based on language
+    region = region_detector.detect_region(user_language)
+    payment_system = region_detector.get_payment_system(user_language)
+    
+    geolocation_text = i18n.get_text('profile_location_title', user_language)
+    geolocation_text += f"\n{i18n.get_text('profile_language_detected', user_language, language=user_language.upper())}"
+    geolocation_text += f"\n{i18n.get_text('profile_region_detected', user_language, region=region.value)}"
+    geolocation_text += f"\n{i18n.get_text('profile_payment_system', user_language, system=payment_system.value)}"
+    
+>>>>>>> Stashed changes
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
@@ -789,4 +858,110 @@ async def handle_action_callback(callback: types.CallbackQuery, state: FSMContex
         
     except Exception as e:
         logger.error(f"Error in action callback: {e}")
-        await callback.answer("An error occurred. Please try again later.") 
+        await callback.answer("An error occurred. Please try again later.")
+
+
+# Payment plan callback handlers
+async def buy_basic_callback(callback: types.CallbackQuery):
+    """Handle buy_basic callback - process basic plan payment"""
+    try:
+        telegram_user_id = callback.from_user.id
+        logger.info(f"🔄 Processing buy_basic callback for user {telegram_user_id}")
+        
+        # Answer callback to remove loading state
+        await callback.answer()
+        
+        # Get user data
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        
+        # Get user region based on language_code
+        from shared.region_detector import region_detector
+        
+        # Detect user region based on language
+        region = region_detector.detect_region(user_language)
+        payment_system = region_detector.get_payment_system(user_language)
+        
+        logger.info(f"📍 User {telegram_user_id} language: {user_language}, region: {region}, payment system: {payment_system}")
+        
+        # Select payment provider based on region
+        if region == "CIS":
+            # Use YooKassa for CIS countries
+            await process_yookassa_payment(callback, "basic", user, user_language)
+        else:
+            # Use Stripe for international users
+            await process_stripe_payment(callback, "basic", user, user_language)
+            
+    except Exception as e:
+        logger.error(f"❌ Error in buy_basic_callback for user {telegram_user_id}: {e}")
+        await callback.message.answer("❌ " + i18n.get_text("error_general", "en"))
+
+
+async def buy_pro_callback(callback: types.CallbackQuery):
+    """Handle buy_pro callback - process pro plan payment"""
+    try:
+        telegram_user_id = callback.from_user.id
+        logger.info(f"🔄 Processing buy_pro callback for user {telegram_user_id}")
+        
+        # Answer callback to remove loading state
+        await callback.answer()
+        
+        # Get user data
+        user = await get_or_create_user(telegram_user_id)
+        user_language = user.get('language', 'en')
+        
+        # Get user region based on language_code
+        from shared.region_detector import region_detector
+        
+        # Detect user region based on language
+        region = region_detector.detect_region(user_language)
+        payment_system = region_detector.get_payment_system(user_language)
+        
+        logger.info(f"📍 User {telegram_user_id} language: {user_language}, region: {region}, payment system: {payment_system}")
+        
+        # Select payment provider based on region
+        if region == "CIS":
+            # Use YooKassa for CIS countries
+            await process_yookassa_payment(callback, "pro", user, user_language)
+        else:
+            # Use Stripe for international users
+            await process_stripe_payment(callback, "pro", user, user_language)
+            
+    except Exception as e:
+        logger.error(f"❌ Error in buy_pro_callback for user {telegram_user_id}: {e}")
+        await callback.message.answer("❌ " + i18n.get_text("error_general", "en"))
+
+
+async def process_yookassa_payment(callback: types.CallbackQuery, plan: str, user: dict, user_language: str):
+    """Process YooKassa payment for CIS users using Telegram invoice"""
+    try:
+        telegram_user_id = callback.from_user.id
+        logger.info(f"💳 Processing YooKassa invoice for user {telegram_user_id}, plan: {plan}")
+        
+        # Import the invoice creation function
+        from services.api.bot.handlers.payments import create_invoice_message
+        
+        # Create Telegram invoice
+        await create_invoice_message(callback.message, plan_id=plan, user_id=telegram_user_id)
+        
+    except Exception as e:
+        logger.error(f"❌ Error in process_yookassa_payment for user {telegram_user_id}: {e}")
+        await callback.message.answer("❌ " + i18n.get_text("error_general", user_language))
+
+
+async def process_stripe_payment(callback: types.CallbackQuery, plan: str, user: dict, user_language: str):
+    """Process Stripe payment for international users using Telegram invoice"""
+    try:
+        telegram_user_id = callback.from_user.id
+        logger.info(f"💳 Processing Stripe invoice for user {telegram_user_id}, plan: {plan}")
+        
+        # For now, use the same invoice creation as YooKassa
+        # TODO: Implement Stripe-specific invoice creation
+        from services.api.bot.handlers.payments import create_invoice_message
+        
+        # Create Telegram invoice (will use YooKassa for now)
+        await create_invoice_message(callback.message, plan_id=plan, user_id=telegram_user_id)
+        
+    except Exception as e:
+        logger.error(f"❌ Error in process_stripe_payment for user {telegram_user_id}: {e}")
+        await callback.message.answer("❌ " + i18n.get_text("error_general", user_language)) 

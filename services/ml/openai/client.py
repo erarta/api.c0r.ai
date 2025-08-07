@@ -51,6 +51,19 @@ async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en"
         user_language: User language preference
         use_premium_model: Whether to use premium model settings
     """
+<<<<<<< Updated upstream
+=======
+    # Create language-specific fallback values
+    if user_language == "ru":
+        fallback_positive = ["Питательное блюдо"]
+        fallback_suggestions = ["Добавить больше овощей"]
+        fallback_motivation = "Отличный выбор для здорового питания!"
+    else:
+        fallback_positive = ["Nutritious meal"]
+        fallback_suggestions = ["Add more vegetables"]
+        fallback_motivation = "Great choice for healthy eating!"
+
+>>>>>>> Stashed changes
     if not openai_client:
         raise HTTPException(status_code=500, detail="OpenAI client not initialized")
     

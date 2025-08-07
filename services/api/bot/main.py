@@ -202,4 +202,26 @@ async def get_user_photos_api(user_id: str, limit: int = 20):
         "user_id": user_id,
         "photos_count": len(photos),
         "photos": photos
-    } 
+    }
+
+
+@app.get("/test-region-detection/{language_code}")
+async def test_region_detection(language_code: str):
+    """Test endpoint for region detection by language code"""
+    try:
+        from shared.region_detector import region_detector
+        
+        region = region_detector.detect_region(language_code)
+        payment_system = region_detector.get_payment_system(language_code)
+        
+        return {
+            "success": True,
+            "language_code": language_code,
+            "region": region.value,
+            "payment_system": payment_system.value,
+            "is_cis_user": region_detector.is_cis_user(language_code)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in test_region_detection: {e}")
+        return {"success": False, "error": str(e)} 

@@ -118,4 +118,17 @@ TRANSLATIONS = {
     "profile_allergy_done": "✅ All Set!",
     "profile_setup_dietary_success": "Great choices! Dietary preferences: {preferences}",
     "profile_setup_allergies_success": "Got it! Allergies: {allergies}",
+<<<<<<< Updated upstream
+=======
+    
+    # Progress tracking
+    "profile_progress_water": "💧 **Your Water Intake**\n📊 Target: {target} glasses\n✅ Consumed: {consumed} glasses",
+    "profile_progress_exercise": "💪 **Your Exercise Progress**\n🎯 Target: {target} minutes/day\n✅ Completed: {completed} minutes today",
+    
+    # Region and payment system detection
+    "profile_location_title": "📍 **Region and Payment System**",
+    "profile_language_detected": "🌐 Interface Language: {language}",
+    "profile_region_detected": "📍 Region: {region}",
+    "profile_payment_system": "💳 Payment System: {system}",
+>>>>>>> Stashed changes
 }

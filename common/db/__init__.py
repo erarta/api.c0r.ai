@@ -8,7 +8,7 @@ from .users import (
     get_or_create_user,
     get_user_by_telegram_id,
     update_user_language,
-    update_user_country_and_phone
+    update_user_language
 )
 from .credits import (
     add_credits,
@@ -43,7 +43,7 @@ __all__ = [
     'decrement_credits',
     'add_credits',
     'update_user_language',
-    'update_user_country_and_phone',
+    'update_user_language',
     
     # Profiles
     'get_user_profile',
