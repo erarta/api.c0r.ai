@@ -98,6 +98,16 @@ TRANSLATIONS = {
     "profile_dietary_vegetarian": "🥬 Вегетарианство",
     "profile_dietary_vegan": "🌱 Веганство",
     "profile_dietary_pescatarian": "🐟 Пескетарианство",
+    
+    # Debug information
+    "profile_debug_title": "🔍 **Отладочная информация**",
+    "profile_debug_telegram_lang": "📱 Telegram language_code: {lang}",
+    "profile_debug_user_lang": "🗄️ Язык в БД: {lang}",
+    "profile_debug_is_cis": "🌍 СНГ регион: {is_cis}",
+    "profile_debug_payment_provider": "💳 Платежный провайдер: {provider}",
+    "profile_debug_available_providers": "💳 Доступные провайдеры: {providers}",
+    "profile_debug_currency": "💰 Валюта: {currency}",
+    "profile_debug_region": "🌍 Регион: {region}",
     "profile_dietary_keto": "🥩 Кето",
     "profile_dietary_paleo": "🦴 Палео",
     "profile_dietary_mediterranean": "🌊 Средиземноморская",
@@ -121,8 +131,6 @@ TRANSLATIONS = {
     "profile_setup_dietary_success": "Отличные выборы! Диетические предпочтения: {preferences}",
     "profile_setup_allergies_success": "Понял! Аллергии: {allergies}",
     
-<<<<<<< Updated upstream
-=======
     # Progress tracking
     "profile_progress_water": "💧 **Твое Потребление Воды**\n📊 Цель: {target} стаканов\n✅ Выпито: {consumed} стаканов",
     "profile_progress_exercise": "💪 **Твой Прогресс в Упражнениях**\n🎯 Цель: {target} минут/день\n✅ Выполнено: {completed} минут сегодня",
@@ -132,8 +140,6 @@ TRANSLATIONS = {
     "profile_language_detected": "🌐 Язык интерфейса: {language}",
     "profile_region_detected": "📍 Регион: {region}",
     "profile_payment_system": "💳 Платежная система: {system}",
-    
->>>>>>> Stashed changes
     # Missing translations
     "profile_setup_important": "💡 Это важно для персональных рекомендаций!",
     "profile_setup_restart": "📝 Ты всегда можешь перезапустить настройку профиля в любое время!",

@@ -98,6 +98,16 @@ TRANSLATIONS = {
     "profile_dietary_vegetarian": "🥬 Vegetarian",
     "profile_dietary_vegan": "🌱 Vegan",
     "profile_dietary_pescatarian": "🐟 Pescatarian",
+    
+    # Debug information
+    "profile_debug_title": "🔍 **Debug Information**",
+    "profile_debug_telegram_lang": "📱 Telegram language_code: {lang}",
+    "profile_debug_user_lang": "🗄️ User DB language: {lang}",
+    "profile_debug_is_cis": "🌍 Is CIS region: {is_cis}",
+    "profile_debug_payment_provider": "💳 Payment provider: {provider}",
+    "profile_debug_available_providers": "💳 Available providers: {providers}",
+    "profile_debug_currency": "💰 Currency: {currency}",
+    "profile_debug_region": "🌍 Region: {region}",
     "profile_dietary_keto": "🥩 Keto",
     "profile_dietary_paleo": "🦴 Paleo",
     "profile_dietary_mediterranean": "🌊 Mediterranean",
@@ -118,8 +128,6 @@ TRANSLATIONS = {
     "profile_allergy_done": "✅ All Set!",
     "profile_setup_dietary_success": "Great choices! Dietary preferences: {preferences}",
     "profile_setup_allergies_success": "Got it! Allergies: {allergies}",
-<<<<<<< Updated upstream
-=======
     
     # Progress tracking
     "profile_progress_water": "💧 **Your Water Intake**\n📊 Target: {target} glasses\n✅ Consumed: {consumed} glasses",
@@ -130,5 +138,4 @@ TRANSLATIONS = {
     "profile_language_detected": "🌐 Interface Language: {language}",
     "profile_region_detected": "📍 Region: {region}",
     "profile_payment_system": "💳 Payment System: {system}",
->>>>>>> Stashed changes
 }

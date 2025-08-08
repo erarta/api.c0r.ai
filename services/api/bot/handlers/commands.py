@@ -12,6 +12,7 @@ from .nutrition import NutritionStates
 from i18n.i18n import i18n
 from .language import detect_and_set_user_language
 from services.api.bot.config import VERSION, PAYMENT_PLANS
+from .enhanced_payments import enhanced_payment_handler
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -231,8 +232,6 @@ async def status_command(message: types.Message):
         else:
             created_date = 'Unknown'
         
-<<<<<<< Updated upstream
-=======
         # Determine overall health status
         overall_health_status = "all_systems_ok"
         error_count = 0
@@ -255,8 +254,6 @@ async def status_command(message: types.Message):
         
         # Build health indicators text - REMOVED
         health_text = ""
-        
->>>>>>> Stashed changes
         # Create status text using i18n
         status_text = (
             f"{i18n.get_text('status_title', user_language)}\n\n"
@@ -327,8 +324,6 @@ async def status_callback(callback: types.CallbackQuery):
         # Get user's language
         user_language = user.get('language', 'en')
 
-<<<<<<< Updated upstream
-=======
         # Determine overall health status
         overall_health_status = "all_systems_ok"
         error_count = 0
@@ -352,8 +347,6 @@ async def status_callback(callback: types.CallbackQuery):
         # Build health indicators text
         # Build health indicators text - REMOVED
         health_text = ""
-
->>>>>>> Stashed changes
         # Create status text using i18n
         status_text = (
             f"{i18n.get_text('status_title', user_language)}\n\n"
@@ -394,11 +387,21 @@ async def buy_credits_command(message: types.Message):
         telegram_user_id = message.from_user.id
         username = message.from_user.username
         
+        telegram_user = message.from_user
+        telegram_language_code = telegram_user.language_code or "unknown"
+        
         logger.info(f"=== BUY_COMMAND DEBUG ===")
         logger.info(f"/buy command by user {telegram_user_id} (@{username})")
+        logger.info(f"Telegram language_code: {telegram_language_code}")
         logger.info(f"Message object type: {type(message)}")
         logger.info(f"Message from_user: {message.from_user}")
         logger.info(f"========================")
+        
+        # Print to terminal for immediate visibility
+        print(f"\n🔍 BUY COMMAND DEBUG for user {telegram_user_id}:")
+        print(f"   Username: @{username}")
+        print(f"   Telegram language_code: {telegram_language_code}")
+        print("=" * 50)
         
         user = await get_or_create_user(telegram_user_id)
         
@@ -413,43 +416,8 @@ async def buy_credits_command(message: types.Message):
             }
         )
         
-        # Get user's language
-        user_language = user.get('language', 'en')
-        
-        # Get prices from config
-        basic_price = PAYMENT_PLANS['basic']['price'] // 100  # Convert kopecks to rubles
-        pro_price = PAYMENT_PLANS['pro']['price'] // 100
-        
-        # Show current credits and payment options
-        await message.answer(
-            f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
-            f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
-            f"{i18n.get_text('credits_explanation', user_language)}\n\n"
-            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**\n"
-            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**\n\n"
-            f"{i18n.get_text('choose_plan_to_continue', user_language)}",
-            parse_mode="Markdown",
-            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    types.InlineKeyboardButton(
-                        text=f"💰 {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р",
-                        callback_data="buy_basic"
-                    )
-                ],
-                [
-                    types.InlineKeyboardButton(
-                        text=f"💎 {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р", 
-                        callback_data="buy_pro"
-                    )
-                ],
-                [
-                    types.InlineKeyboardButton(
-                        text=i18n.get_text("btn_back", user_language),
-                        callback_data="action_main_menu"
-                    )
-                ]
-            ])
-        )
+        # Use enhanced payment handler for regional support
+        await enhanced_payment_handler.show_payment_options(message)
         
     except Exception as e:
         logger.error(f"Error in /buy for user {telegram_user_id}: {e}")
@@ -475,49 +443,14 @@ async def buy_callback(callback: types.CallbackQuery):
             user_id=user['id'],
             action_type="buy",
             metadata={
-                "username": username,  # ← ПРАВИЛЬНО: используем callback.from_user
+                "username": username,
                 "credits_remaining": user['credits_remaining'],
                 "total_paid": await get_user_total_paid(user['id'])
             }
         )
         
-        # Get user's language
-        user_language = user.get('language', 'en')
-        
-        # Get prices from config
-        basic_price = PAYMENT_PLANS['basic']['price'] // 100  # Convert kopecks to rubles
-        pro_price = PAYMENT_PLANS['pro']['price'] // 100
-        
-        # Show current credits and payment options
-        await callback.message.answer(
-            f"💳 **{i18n.get_text('buy_credits_title', user_language)}**\n\n"
-            f"**{i18n.get_text('current_credits', user_language, credits=user['credits_remaining'])}**: *{user['credits_remaining']}*\n\n"
-            f"{i18n.get_text('credits_explanation', user_language)}\n\n"
-            f"📦 **{PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р**\n"
-            f"📦 **{PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р**\n\n"
-            f"{i18n.get_text('choose_plan_to_continue', user_language)}",
-            parse_mode="Markdown",
-            reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    types.InlineKeyboardButton(
-                        text=f"💰 {PAYMENT_PLANS['basic']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {basic_price}р",
-                        callback_data="buy_basic"
-                    )
-                ],
-                [
-                    types.InlineKeyboardButton(
-                        text=f"💎 {PAYMENT_PLANS['pro']['credits']} {i18n.get_text('credits', user_language)} {i18n.get_text('for', user_language)} {pro_price}р", 
-                        callback_data="buy_pro"
-                    )
-                ],
-                [
-                    types.InlineKeyboardButton(
-                        text=i18n.get_text("btn_back", user_language),
-                        callback_data="action_main_menu"
-                    )
-                ]
-            ])
-        )
+        # Use enhanced payment handler for regional support
+        await enhanced_payment_handler.show_payment_options(callback.message)
         
     except Exception as e:
         logger.error(f"Error in buy callback for user {telegram_user_id}: {e}")
@@ -656,23 +589,7 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     else:
         allergies_text = i18n.get_text('profile_allergy_none', user_language)
     
-<<<<<<< Updated upstream
     # Build clean profile text without emoji duplication
-=======
-    # Get geolocation information
-    # Get user region based on language_code
-    from shared.region_detector import region_detector
-    
-    # Detect user region based on language
-    region = region_detector.detect_region(user_language)
-    payment_system = region_detector.get_payment_system(user_language)
-    
-    geolocation_text = i18n.get_text('profile_location_title', user_language)
-    geolocation_text += f"\n{i18n.get_text('profile_language_detected', user_language, language=user_language.upper())}"
-    geolocation_text += f"\n{i18n.get_text('profile_region_detected', user_language, region=region.value)}"
-    geolocation_text += f"\n{i18n.get_text('profile_payment_system', user_language, system=payment_system.value)}"
-    
->>>>>>> Stashed changes
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
@@ -875,22 +792,8 @@ async def buy_basic_callback(callback: types.CallbackQuery):
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
         
-        # Get user region based on language_code
-        from shared.region_detector import region_detector
-        
-        # Detect user region based on language
-        region = region_detector.detect_region(user_language)
-        payment_system = region_detector.get_payment_system(user_language)
-        
-        logger.info(f"📍 User {telegram_user_id} language: {user_language}, region: {region}, payment system: {payment_system}")
-        
-        # Select payment provider based on region
-        if region == "CIS":
-            # Use YooKassa for CIS countries
-            await process_yookassa_payment(callback, "basic", user, user_language)
-        else:
-            # Use Stripe for international users
-            await process_stripe_payment(callback, "basic", user, user_language)
+        # Use enhanced payment handler with regional routing
+        await enhanced_payment_handler.show_payment_options(callback.message)
             
     except Exception as e:
         logger.error(f"❌ Error in buy_basic_callback for user {telegram_user_id}: {e}")
@@ -910,22 +813,8 @@ async def buy_pro_callback(callback: types.CallbackQuery):
         user = await get_or_create_user(telegram_user_id)
         user_language = user.get('language', 'en')
         
-        # Get user region based on language_code
-        from shared.region_detector import region_detector
-        
-        # Detect user region based on language
-        region = region_detector.detect_region(user_language)
-        payment_system = region_detector.get_payment_system(user_language)
-        
-        logger.info(f"📍 User {telegram_user_id} language: {user_language}, region: {region}, payment system: {payment_system}")
-        
-        # Select payment provider based on region
-        if region == "CIS":
-            # Use YooKassa for CIS countries
-            await process_yookassa_payment(callback, "pro", user, user_language)
-        else:
-            # Use Stripe for international users
-            await process_stripe_payment(callback, "pro", user, user_language)
+        # Use enhanced payment handler with regional routing
+        await enhanced_payment_handler.show_payment_options(callback.message)
             
     except Exception as e:
         logger.error(f"❌ Error in buy_pro_callback for user {telegram_user_id}: {e}")

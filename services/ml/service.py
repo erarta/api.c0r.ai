@@ -91,7 +91,7 @@ class MLService:
             logger.debug(f"🌐 Using language-based region detection: {user_language}")
             
             # Step 2: Build regional prompt
-            regional_context = location_result.regional_context if location_result else None
+            regional_context = None
             
             # Use fallback manager for analysis
             analysis_result = await self.food_analysis_fallback.execute(
@@ -139,10 +139,8 @@ class MLService:
                     "response_time": model_response.response_time
                 },
                 "location_info": {
-                    "detected": location_result is not None,
-                    "country_code": location_result.location.country_code if location_result else None,
-                    "region_code": location_result.regional_context.region_code if location_result else None,
-                    "confidence": location_result.location.confidence if location_result else 0.0
+                    "source": "language_code",
+                    "language_code": user_language
                 },
                 "execution_time": time.time() - start_time,
                 "metadata": {
@@ -297,7 +295,7 @@ class MLService:
         
         # Get component health
         model_health = self.model_manager.get_health_status()
-        location_stats = self.location_detector.get_cache_stats()
+        location_stats = {"status": "removed"}
         
         # Calculate service metrics
         uptime = time.time() - self.stats["service_start_time"]

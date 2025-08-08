@@ -1,17 +1,40 @@
 """
-Telegram Payments handler for c0r.ai bot
-Handles native Telegram payments without leaving the app
+Enhanced Telegram Payments handler for c0r.ai bot
+Supports multiple payment providers: YooKassa, Stripe, Telegram Stars
 """
 import os
+import sys
 from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
 from services.api.bot.config import PAYMENT_PLANS
-from common.config.payment_plans import get_payment_plans_for_user_language
 import traceback
 import json
 from i18n.i18n import i18n
+
+# Add project root for imports
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')
+sys.path.insert(0, project_root)
+
+from common.config.payment_plans import (
+    get_payment_plans_for_user_language, 
+    get_all_payment_options_for_language,
+    get_payment_plans_for_region
+)
+from common.utils.region_detector import (
+    get_payment_provider, 
+    get_available_payment_providers, 
+    is_cis_region
+)
+
+# Try to import Stripe client
+try:
+    from services.pay.stripe.client import StripeClient
+    STRIPE_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Stripe client not available: {e}")
+    STRIPE_AVAILABLE = False
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")

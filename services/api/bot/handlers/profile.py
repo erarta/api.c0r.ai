@@ -21,6 +21,7 @@ from services.api.bot.utils.motivational_messages import (
     get_random_dietary_tip,
     get_random_allergies_tip
 )
+from common.utils.region_detector import is_cis_region, get_payment_provider, get_available_payment_providers
 
 # FSM States for profile setup
 class ProfileStates(StatesGroup):
@@ -75,6 +76,32 @@ async def profile_command(message: types.Message, state: FSMContext):
 async def show_profile_menu(message: types.Message, user: dict, profile: dict):
     """Show profile menu for existing profile"""
     user_language = user.get('language', 'en')
+    
+    # 🔍 DEBUG: Language and Region Detection
+    telegram_user = message.from_user
+    telegram_language_code = telegram_user.language_code or "unknown"
+    
+    # Get region info for debugging
+    is_cis = is_cis_region(user_language)
+    payment_provider = get_payment_provider(user_language)
+    available_providers = get_available_payment_providers(user_language)
+    
+    # Log detailed debug information
+    logger.info(f"🔍 PROFILE DEBUG for user {telegram_user.id}:")
+    logger.info(f"   Telegram language_code: {telegram_language_code}")
+    logger.info(f"   User DB language: {user_language}")
+    logger.info(f"   Is CIS region: {is_cis}")
+    logger.info(f"   Payment provider: {payment_provider}")
+    logger.info(f"   Available providers: {available_providers}")
+    
+    # Print to terminal for immediate visibility
+    print(f"\n🔍 PROFILE DEBUG for user {telegram_user.id}:")
+    print(f"   Telegram language_code: {telegram_language_code}")
+    print(f"   User DB language: {user_language}")
+    print(f"   Is CIS region: {is_cis}")
+    print(f"   Payment provider: {payment_provider}")
+    print(f"   Available providers: {available_providers}")
+    print("=" * 50)
     
     # Format profile data without emoji duplication
     age = profile.get('age', 'Not set')
@@ -476,6 +503,33 @@ async def show_progress(message: types.Message, telegram_user_id: int):
 async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: dict):
     """Show profile information for existing profile"""
     user_language = user.get('language', 'en')
+    
+    # 🔍 DEBUG: Language and Region Detection
+    telegram_user = callback.from_user
+    telegram_language_code = telegram_user.language_code or "unknown"
+    
+    # Get region info for debugging
+    is_cis = is_cis_region(user_language)
+    payment_provider = get_payment_provider(user_language)
+    available_providers = get_available_payment_providers(user_language)
+    
+    # Log detailed debug information
+    logger.info(f"🔍 PROFILE DEBUG for user {telegram_user.id}:")
+    logger.info(f"   Telegram language_code: {telegram_language_code}")
+    logger.info(f"   User DB language: {user_language}")
+    logger.info(f"   Is CIS region: {is_cis}")
+    logger.info(f"   Payment provider: {payment_provider}")
+    logger.info(f"   Available providers: {available_providers}")
+    
+    # Print to terminal for immediate visibility
+    print(f"\n🔍 PROFILE DEBUG for user {telegram_user.id}:")
+    print(f"   Telegram language_code: {telegram_language_code}")
+    print(f"   User DB language: {user_language}")
+    print(f"   Is CIS region: {is_cis}")
+    print(f"   Payment provider: {payment_provider}")
+    print(f"   Available providers: {available_providers}")
+    print("=" * 50)
+    
     age = profile.get('age', 'Not set')
     
     # Gender - use translation that already has emojis, no duplication
@@ -559,6 +613,18 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     else:
         allergies_text = i18n.get_text('profile_allergy_none', user_language)
     
+    # Build debug information section
+    debug_section = (
+        f"\n\n{i18n.get_text('profile_debug_title', user_language)}\n"
+        f"{i18n.get_text('profile_debug_telegram_lang', user_language, lang=telegram_language_code)}\n"
+        f"{i18n.get_text('profile_debug_user_lang', user_language, lang=user_language)}\n"
+        f"{i18n.get_text('profile_debug_is_cis', user_language, is_cis=is_cis)}\n"
+        f"{i18n.get_text('profile_debug_payment_provider', user_language, provider=payment_provider)}\n"
+        f"{i18n.get_text('profile_debug_available_providers', user_language, providers=', '.join(region_info.get('available_providers', [])))}\n"
+        f"{i18n.get_text('profile_debug_currency', user_language, currency=region_info.get('currency', 'unknown'))}\n"
+        f"{i18n.get_text('profile_debug_region', user_language, region=region_info.get('region', 'unknown'))}"
+    )
+    
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
@@ -570,6 +636,7 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
         f"{i18n.get_text('profile_diet', user_language, diet=dietary_text)}\n"
         f"{i18n.get_text('profile_allergies', user_language, allergies=allergies_text)}\n\n"
         f"{calories_label}"
+        f"{debug_section}"
     )
     
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[

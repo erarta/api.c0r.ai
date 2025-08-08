@@ -3,4 +3,5 @@ uvicorn
 httpx
 loguru
 yookassa
-jinja2 
+jinja2
+stripe 

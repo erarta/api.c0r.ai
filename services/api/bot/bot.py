@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from services.api.bot.handlers.commands import start_command, help_command, status_command, buy_credits_command, buy_basic_callback, buy_pro_callback, handle_action_callback
+from services.api.bot.handlers.enhanced_payments import enhanced_payment_handler
 from services.api.bot.handlers.photo import photo_handler
 from services.api.bot.handlers.payments import handle_pre_checkout_query, handle_successful_payment, handle_buy_callback
 from services.api.bot.handlers.profile import (
@@ -201,7 +202,16 @@ dp.message.register(process_weight, ProfileStates.waiting_for_weight)
 # Recipe callback must be registered BEFORE general action callback to avoid conflicts
 dp.callback_query.register(handle_recipe_callback, lambda callback: callback.data == "action_recipe")
 dp.callback_query.register(handle_action_callback, lambda callback: callback.data.startswith("action_"))
-# Register specific payment plan handlers
+# Enhanced payment handlers (NEW) - Register BEFORE legacy handlers
+dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("yookassa_pay_"))
+dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("stripe_pay_"))
+dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("stars_pay_"))
+# Payment system selection handlers
+dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data == "payment_system_stripe")
+dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data == "payment_system_stars")
+dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data == "payment_system_selection")
+
+# Legacy payment plan handlers (DEPRECATED but kept for compatibility)
 dp.callback_query.register(buy_basic_callback, lambda callback: callback.data == "buy_basic")
 dp.callback_query.register(buy_pro_callback, lambda callback: callback.data == "buy_pro")
 dp.callback_query.register(handle_buy_callback, lambda callback: callback.data.startswith("buy_"))

@@ -59,6 +59,8 @@ async def handle_language_callback(callback: types.CallbackQuery):
     """Handle language selection callback"""
     try:
         telegram_user_id = callback.from_user.id
+        telegram_user = callback.from_user
+        telegram_language_code = telegram_user.language_code or "unknown"
         
         # Extract language from callback data
         if not callback.data.startswith("language_"):
@@ -69,6 +71,17 @@ async def handle_language_callback(callback: types.CallbackQuery):
         if selected_language not in ['en', 'ru']:
             await callback.answer("Invalid language selection")
             return
+        
+        # 🔍 DEBUG: Language Change
+        logger.info(f"🔍 LANGUAGE CHANGE DEBUG for user {telegram_user_id}:")
+        logger.info(f"   Telegram language_code: {telegram_language_code}")
+        logger.info(f"   Selected language: {selected_language}")
+        
+        # Print to terminal for immediate visibility
+        print(f"\n🔍 LANGUAGE CHANGE DEBUG for user {telegram_user_id}:")
+        print(f"   Telegram language_code: {telegram_language_code}")
+        print(f"   Selected language: {selected_language}")
+        print("=" * 50)
         
         # Update user language in database
         updated_user = await update_user_language(telegram_user_id, selected_language)
