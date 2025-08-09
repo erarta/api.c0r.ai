@@ -1,5 +1,8 @@
 import sys; print("PYTHONPATH:", sys.path)
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import Optional, List, Any, Dict
 from fastapi.staticfiles import StaticFiles
 import asyncio
 from services.api.bot.bot import start_bot
@@ -7,13 +10,39 @@ import os
 import httpx
 from common.routes import Routes
 from common.supabase_client import (
-    get_or_create_user, get_user_by_telegram_id, decrement_credits, add_credits, log_analysis, add_payment
+    get_or_create_user,
+    get_user_by_telegram_id,
+    decrement_credits,
+    add_credits,
+    log_analysis,
+    add_payment,
+    # Favorites
+    save_favorite_food,
+    list_favorites,
+    get_favorite_by_id,
+    delete_favorite,
+    # Recipes
+    save_recipe,
+    list_recipes,
+    get_recipe_by_id,
+    delete_recipe,
 )
 from services.api.bot.utils.r2 import test_r2_connection, get_photo_stats, get_user_photos
 from shared.auth import require_internal_auth, get_auth_headers
 from loguru import logger
 
 app = FastAPI()
+
+# CORS for mobile/web clients
+_origins = os.getenv("CORS_ORIGINS", "*")
+origins = [o.strip() for o in _origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount static files directory for assets (logo, etc.)
 if os.path.exists("assets"):
@@ -225,3 +254,113 @@ async def test_region_detection(language_code: str):
     except Exception as e:
         logger.error(f"Error in test_region_detection: {e}")
         return {"success": False, "error": str(e)} 
+
+# --- Favorites Endpoints ---
+
+class FavoriteItem(BaseModel):
+    id: str
+    user_id: str
+    name: str
+    items_json: Dict[str, Any]
+    composition_hash: str
+    default_portion: Optional[float] = None
+    created_at: Optional[str] = None
+
+class FavoritesSaveRequest(BaseModel):
+    user_id: str
+    name: str
+    items_json: Dict[str, Any]
+    composition_hash: str
+    default_portion: Optional[float] = Field(default=None, description="grams")
+
+class FavoriteResponse(BaseModel):
+    success: bool = True
+    favorite: FavoriteItem
+
+class FavoritesListResponse(BaseModel):
+    success: bool = True
+    items: List[FavoriteItem]
+
+@app.post("/favorites/save", response_model=FavoriteResponse)
+@require_internal_auth
+async def favorites_save(request: Request, body: FavoritesSaveRequest):
+    saved = await save_favorite_food(body.user_id, body.name, body.items_json, body.composition_hash, body.default_portion)
+    return FavoriteResponse(success=True, favorite=saved)  # type: ignore[arg-type]
+
+
+@app.get("/favorites/list", response_model=FavoritesListResponse)
+@require_internal_auth
+async def favorites_list(user_id: str, limit: int = 50, search: str | None = None):
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id required")
+    items = await list_favorites(user_id, limit=limit, search=search)
+    return FavoritesListResponse(success=True, items=items)  # type: ignore[arg-type]
+
+
+@app.get("/favorites/{favorite_id}", response_model=FavoriteResponse)
+@require_internal_auth
+async def favorites_get(favorite_id: str, user_id: str):
+    item = await get_favorite_by_id(user_id, favorite_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    return FavoriteResponse(success=True, favorite=item)  # type: ignore[arg-type]
+
+
+class OkResponse(BaseModel):
+    success: bool = True
+
+@app.delete("/favorites/{favorite_id}", response_model=OkResponse)
+@require_internal_auth
+async def favorites_delete(favorite_id: str, user_id: str):
+    ok = await delete_favorite(user_id, favorite_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Favorite not found or already deleted")
+    return OkResponse(success=True)
+
+
+# --- Recipes Endpoints ---
+
+class RecipeItem(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    language: Optional[str] = "en"
+    recipe_json: Dict[str, Any]
+    source: Optional[str] = None
+    created_at: Optional[str] = None
+
+class RecipesSaveRequest(BaseModel):
+    user_id: str
+    title: str
+    recipe_json: Dict[str, Any]
+    language: Optional[str] = "en"
+    source: Optional[str] = None
+
+class RecipeResponse(BaseModel):
+    success: bool = True
+    recipe: RecipeItem
+
+class RecipesListResponse(BaseModel):
+    success: bool = True
+    items: List[RecipeItem]
+
+@app.post("/recipes/save", response_model=RecipeResponse)
+@require_internal_auth
+async def recipes_save(request: Request, body: RecipesSaveRequest):
+    saved = await save_recipe(body.user_id, body.title, body.recipe_json, language=body.language or "en", source=body.source)
+    return RecipeResponse(success=True, recipe=saved)  # type: ignore[arg-type]
+
+
+@app.get("/recipes/list", response_model=RecipesListResponse)
+@require_internal_auth
+async def recipes_list(user_id: str, limit: int = 50, search: str | None = None):
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id required")
+    items = await list_recipes(user_id, limit=limit, search=search)
+    return RecipesListResponse(success=True, items=items)  # type: ignore[arg-type]
+
+
+@app.get("/recipes/{recipe_id}", response_model=RecipeResponse)
+@require_internal_auth
+async def recipes_get(recipe_id: str, user_id: str):
+    item = await get_recipe_by_id(user_id, recipe_id)

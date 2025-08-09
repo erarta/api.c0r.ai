@@ -32,6 +32,18 @@ from .payments import (
     add_payment,
     get_user_total_paid
 )
+from .favorites import (
+    save_favorite_food,
+    list_favorites,
+    get_favorite_by_id,
+    delete_favorite,
+)
+from .recipes import (
+    save_recipe,
+    list_recipes,
+    get_recipe_by_id,
+    delete_recipe,
+)
 
 __all__ = [
     # Client
@@ -61,5 +73,17 @@ __all__ = [
     
     # Payments
     'add_payment',
-    'get_user_total_paid'
+    'get_user_total_paid',
+    
+    # Favorites
+    'save_favorite_food',
+    'list_favorites',
+    'get_favorite_by_id',
+    'delete_favorite',
+    
+    # Recipes
+    'save_recipe',
+    'list_recipes',
+    'get_recipe_by_id',
+    'delete_recipe'
 ]

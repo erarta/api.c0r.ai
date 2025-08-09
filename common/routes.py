@@ -7,6 +7,7 @@ class Routes:
     ML_ANALYZE = "/api/v1/analyze"
     ML_GENERATE_RECIPE = "/api/v1/generate-recipe"
     ML_HEALTH = "/"
+    ML_LABEL_ANALYZE = "/api/v1/label/analyze"
     
     # === Payment Service routes ===
     PAY_INVOICE = "/invoice"

@@ -3,6 +3,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import List, Optional
 import base64
 import json
 import httpx
@@ -15,6 +18,17 @@ from .config import get_model_config, validate_model_for_task
 from services.ml.core.providers.llm_factory import llm_factory
 
 app = FastAPI()
+
+# CORS for mobile/web clients
+_origins = os.getenv("CORS_ORIGINS", "*")
+origins = [o.strip() for o in _origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Get environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -44,6 +58,30 @@ else:
     openai_client = None
     logger.warning("OpenAI API key not provided")
 
+class DetectedBarcode(BaseModel):
+    type: str
+    value: str
+
+class OcrBlock(BaseModel):
+    text: str
+    confidence: Optional[float] = None
+
+class LabelAnalyzeResponse(BaseModel):
+    language: str
+    barcodes: List[DetectedBarcode] = Field(default_factory=list)
+    ocr_text: str = ""
+    ocr_blocks: List[OcrBlock] = Field(default_factory=list)
+    parsed_nutrition: Optional[dict] = None
+    notes: Optional[str] = None
+
+async def _stub_detect_barcodes(image_bytes: bytes) -> List[DetectedBarcode]:
+    # TODO: integrate pyzbar or zxing in a future iteration
+    return []
+
+async def _stub_ocr_text(image_bytes: bytes, lang: str) -> tuple[str, List[OcrBlock]]:
+    # TODO: integrate pytesseract/easyocr; for now return empty
+    return "", []
+
 @app.get(Routes.ML_HEALTH)
 async def health():
     """Comprehensive health check for ML service"""
@@ -65,6 +103,40 @@ async def health():
 async def health_alias():
     """Health check alias endpoint"""
     return await health()
+
+@app.post(Routes.ML_LABEL_ANALYZE, response_model=LabelAnalyzeResponse)
+@require_internal_auth
+async def label_analyze(
+    request: Request,
+    photo: UploadFile = File(...),
+    user_language: str = Form(default="en"),
+):
+    """
+    Analyze packaging/label image. Skeleton only: returns OCR/barcodes stubs.
+    """
+    try:
+        if not photo.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        image_bytes = await photo.read()
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty image file")
+
+        barcodes = await _stub_detect_barcodes(image_bytes)
+        ocr_text, ocr_blocks = await _stub_ocr_text(image_bytes, user_language)
+
+        return LabelAnalyzeResponse(
+            language=user_language,
+            barcodes=barcodes,
+            ocr_text=ocr_text,
+            ocr_blocks=ocr_blocks,
+            parsed_nutrition=None,
+            notes="Skeleton response: OCR/barcode integrations are stubs",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Label analyze error: {e}")
+        raise HTTPException(status_code=500, detail="Label analysis failed")
 
 async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """
@@ -627,8 +699,13 @@ async def analyze_file(
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
         
-        # Use LLM factory for analysis (respects LLM_PROVIDER env var)
-        analysis_result = await llm_factory.analyze_food(image_bytes, user_language)
+        # Use LLM factory for analysis (respects LLM_PROVIDER/ANALYSIS_PROVIDER env vars) and per-request override
+        analysis_result = await llm_factory.analyze_food(
+            image_bytes,
+            user_language,
+            use_premium_model=False,
+            provider_override=provider,
+        )
         
         logger.info(f"Analysis complete for user {telegram_user_id}: {analysis_result}")
         
