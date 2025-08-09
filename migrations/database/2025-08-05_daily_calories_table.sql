@@ -33,14 +33,35 @@ COMMENT ON COLUMN daily_calories.total_carbohydrates IS 'Total carbohydrates con
 ALTER TABLE daily_calories ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies
-CREATE POLICY "Users can view their own daily calories" ON daily_calories
-    FOR SELECT USING (auth.uid()::text = user_id::text);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'daily_calories' 
+          AND policyname = 'Users can view their own daily calories'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can view their own daily calories" ON daily_calories
+            FOR SELECT USING (auth.uid()::text = user_id::text)';
+    END IF;
 
-CREATE POLICY "Users can insert their own daily calories" ON daily_calories
-    FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'daily_calories' 
+          AND policyname = 'Users can insert their own daily calories'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can insert their own daily calories" ON daily_calories
+            FOR INSERT WITH CHECK (auth.uid()::text = user_id::text)';
+    END IF;
 
-CREATE POLICY "Users can update their own daily calories" ON daily_calories
-    FOR UPDATE USING (auth.uid()::text = user_id::text);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'daily_calories' 
+          AND policyname = 'Users can update their own daily calories'
+    ) THEN
+        EXECUTE 'CREATE POLICY "Users can update their own daily calories" ON daily_calories
+            FOR UPDATE USING (auth.uid()::text = user_id::text)';
+    END IF;
+END$$ LANGUAGE plpgsql;
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_daily_calories_updated_at()
@@ -52,7 +73,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger to automatically update updated_at
-CREATE TRIGGER update_daily_calories_updated_at
-    BEFORE UPDATE ON daily_calories
-    FOR EACH ROW
-    EXECUTE FUNCTION update_daily_calories_updated_at(); 
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_trigger t
+        JOIN pg_class c ON c.oid = t.tgrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE t.tgname = 'update_daily_calories_updated_at'
+          AND c.relname = 'daily_calories'
+          AND n.nspname = 'public'
+    ) THEN
+        EXECUTE 'CREATE TRIGGER update_daily_calories_updated_at
+            BEFORE UPDATE ON daily_calories
+            FOR EACH ROW
+            EXECUTE FUNCTION update_daily_calories_updated_at()';
+    END IF;
+END$$ LANGUAGE plpgsql;

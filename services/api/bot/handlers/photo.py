@@ -12,6 +12,9 @@ from common.supabase_client import get_or_create_user, decrement_credits, get_us
 from common.calories_manager import add_calories_from_analysis, get_daily_calories
 from services.api.bot.utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
+from aiogram.filters import StateFilter
+from aiogram.fsm.state import State, StatesGroup
+from common.db.logs import get_latest_photo_analysis_log_id
 from i18n.i18n import i18n
 from services.api.bot.config import PAYMENT_PLANS
 from .nutrition import sanitize_markdown_text
@@ -44,6 +47,13 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
         if "regional_analysis" in analysis:
             regional_info = analysis["regional_analysis"]
             dish_type = regional_info.get("dish_identification", "")
+            # Fallback naming when provider returns generic/unknown
+            if dish_type in ("", "Unknown", "Unknown Dish", "Analyzed Dish"):
+                if "food_items" in analysis and analysis["food_items"]:
+                    food_names = [item.get("name", "").lower() for item in analysis["food_items"][:3] if item.get("name")]
+                    if food_names:
+                        dish_type = (f"салат с {', '.join(food_names)}" if user_language == "ru" else f"salad with {', '.join(food_names)}")
+                        regional_info["dish_identification"] = dish_type
             confidence = regional_info.get("regional_match_confidence", 0)
             
             # Always show dish name, even with low confidence
@@ -53,15 +63,8 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
                 else:
                     message_parts.append(f"🌍 Dish: {dish_type}")
             else:
-                # Generate dish name from food items if dish_identification is empty or generic
-                if "food_items" in analysis and analysis["food_items"]:
-                    food_names = [item.get("name", "").lower() for item in analysis["food_items"][:3] if item.get("name")]
-                    if food_names:
-                        if user_language == "ru":
-                            dish_name = f"салат с {', '.join(food_names)}"
-                        else:
-                            dish_name = f"salad with {', '.join(food_names)}"
-                        message_parts.append(f"🌍 {'Блюдо' if user_language == 'ru' else 'Dish'}: {dish_name}")
+                # Already has a usable dish name
+                pass
             
             message_parts.append("")  # Empty line
         
@@ -330,8 +333,27 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Clear the state
         await state.clear()
         
-        # Send result with main menu
-        keyboard = create_main_menu_keyboard(user_language)
+        # Send result with main menu and Fix Calories/Add to favorites buttons
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('fix_calories_btn', user_language),
+                    callback_data='action_fix_calories'
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_save_to_favorites', user_language, default='⭐ Save to favorites'),
+                    callback_data='action_save_favorite'
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_main_menu', user_language),
+                    callback_data='action_main_menu'
+                )
+            ]
+        ])
         
         final_text = f"{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits - 1} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
         

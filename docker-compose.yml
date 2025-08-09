@@ -11,6 +11,20 @@ services:
       - pay
     networks:
       - c0r-network
+    mem_limit: 512m
+    mem_reservation: 256m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
   ml:
     build:
       context: .
@@ -20,6 +34,20 @@ services:
       - "8001:8001"
     networks:
       - c0r-network
+    mem_limit: 768m
+    mem_reservation: 384m
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 384M
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
   pay:
     build:
       context: .
@@ -29,6 +57,20 @@ services:
       - "8002:8002"
     networks:
       - c0r-network
+    mem_limit: 384m
+    mem_reservation: 192m
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 192M
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 networks:
   c0r-network:

@@ -6,6 +6,9 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from collections import defaultdict, deque
+import uuid
+import time
 import base64
 import json
 import httpx
@@ -16,12 +19,33 @@ from shared.health import create_health_response
 from shared.auth import require_internal_auth
 from .config import get_model_config, validate_model_for_task
 from services.ml.core.providers.llm_factory import llm_factory
+from services.ml.openfoodfacts_client import fetch_product_by_barcode, map_off_to_nutrition
 
-app = FastAPI()
+# Environment and app configuration
+ENV = os.getenv("ENV", "development").lower()
 
-# CORS for mobile/web clients
-_origins = os.getenv("CORS_ORIGINS", "*")
+# Swagger/Docs exposure: enabled in non-production by default; use ENABLE_SWAGGER to override
+_enable_swagger_env = os.getenv("ENABLE_SWAGGER")
+ENABLE_SWAGGER = (
+    (_enable_swagger_env or ("true" if ENV != "production" else "false")).lower() == "true"
+)
+
+docs_url = "/docs" if ENABLE_SWAGGER else None
+openapi_url = "/openapi.json" if ENABLE_SWAGGER else None
+
+app = FastAPI(docs_url=docs_url, openapi_url=openapi_url, redoc_url=None)
+
+# CORS for mobile/web clients (locked down in production)
+_default_origins = "*" if ENV != "production" else ""
+_origins = os.getenv("CORS_ORIGINS", _default_origins)
 origins = [o.strip() for o in _origins.split(",") if o.strip()]
+if ENV == "production" and ("*" in origins or not origins):
+    # Disable CORS by default in production unless explicitly allowed
+    origins = []
+    logger.warning(
+        "CORS is disabled by default in production. Set CORS_ORIGINS to an allowlist if needed."
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -29,6 +53,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Basic request ID middleware for observability
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+# Lightweight per-IP rate limiter (internal endpoints still benefit from abuse protection)
+RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
+_request_history: dict[str, deque[float]] = defaultdict(deque)
+
+def _rate_limit_ok(key: str) -> bool:
+    now = time.time()
+    window_seconds = 60.0
+    dq = _request_history[key]
+    while dq and (now - dq[0] > window_seconds):
+        dq.popleft()
+    if len(dq) >= RATE_LIMIT_PER_MINUTE:
+        return False
+    dq.append(now)
+    return True
+
+# Upload size guard
+MAX_UPLOAD_MB = float(os.getenv("MAX_UPLOAD_MB", "8"))
+MAX_UPLOAD_BYTES = int(MAX_UPLOAD_MB * 1024 * 1024)
 
 # Get environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -75,7 +127,7 @@ class LabelAnalyzeResponse(BaseModel):
     notes: Optional[str] = None
 
 async def _stub_detect_barcodes(image_bytes: bytes) -> List[DetectedBarcode]:
-    # TODO: integrate pyzbar or zxing in a future iteration
+    # TODO (v0.2.0): integrate pyzbar/zxing. For v0.1.0, return empty.
     return []
 
 async def _stub_ocr_text(image_bytes: bytes, lang: str) -> tuple[str, List[OcrBlock]]:
@@ -115,27 +167,54 @@ async def label_analyze(
     Analyze packaging/label image. Skeleton only: returns OCR/barcodes stubs.
     """
     try:
+        # Rate limiting (by client IP)
+        client_ip = request.client.host if request.client else "unknown"
+        if not _rate_limit_ok(f"label_analyze:{client_ip}"):
+            raise HTTPException(status_code=429, detail="Too many requests")
+
+        # Content length early check (if present)
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Image too large")
+
         if not photo.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="File must be an image")
         image_bytes = await photo.read()
         if not image_bytes:
             raise HTTPException(status_code=400, detail="Empty image file")
+        if len(image_bytes) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Image too large")
 
         barcodes = await _stub_detect_barcodes(image_bytes)
         ocr_text, ocr_blocks = await _stub_ocr_text(image_bytes, user_language)
+
+        # If we have a barcode, try OpenFoodFacts as first release logic
+        parsed_nutrition = None
+        if barcodes:
+            for b in barcodes:
+                off_product = await fetch_product_by_barcode(b.value)
+                if off_product:
+                    mapped = map_off_to_nutrition(off_product)
+                    if mapped and isinstance(mapped, dict) and "analysis" in mapped:
+                        parsed_nutrition = mapped
+                        break
 
         return LabelAnalyzeResponse(
             language=user_language,
             barcodes=barcodes,
             ocr_text=ocr_text,
             ocr_blocks=ocr_blocks,
-            parsed_nutrition=None,
-            notes="Skeleton response: OCR/barcode integrations are stubs",
+            parsed_nutrition=parsed_nutrition,
+            notes=(
+                "Matched OpenFoodFacts by barcode"
+                if parsed_nutrition else
+                "No barcode match; OCR pipeline planned v0.2.0"
+            ),
         )
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Label analyze error: {e}")
+        logger.error(f"Label analyze error [{getattr(request.state, 'request_id', '-') }]: {e}")
         raise HTTPException(status_code=500, detail="Label analysis failed")
 
 async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
@@ -685,6 +764,15 @@ async def analyze_file(
     Analyze food image and return KBZHU data
     """
     try:
+        # Rate limiting (by client IP)
+        client_ip = request.client.host if request.client else "unknown"
+        if not _rate_limit_ok(f"analyze_file:{client_ip}"):
+            raise HTTPException(status_code=429, detail="Too many requests")
+        # Content length early check (if present)
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Image too large")
+
         logger.info(f"🔥 ANALYZE_FILE CALLED: user={telegram_user_id}, provider={provider}")
         logger.info(f"🎯 Factory current provider: {llm_factory.get_current_provider()}")
         logger.info(f"Analyzing photo for user {telegram_user_id} with provider {provider}")
@@ -698,6 +786,8 @@ async def analyze_file(
         
         if len(image_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty image file")
+        if len(image_bytes) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Image too large")
         
         # Use LLM factory for analysis (respects LLM_PROVIDER/ANALYSIS_PROVIDER env vars) and per-request override
         analysis_result = await llm_factory.analyze_food(
@@ -714,7 +804,7 @@ async def analyze_file(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Analysis error: {e}")
+        logger.error(f"Analysis error [{getattr(request.state, 'request_id', '-') }]: {e}")
         raise HTTPException(status_code=500, detail="Analysis failed")
 
 @app.post(Routes.ML_GENERATE_RECIPE)

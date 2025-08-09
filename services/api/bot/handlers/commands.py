@@ -13,6 +13,10 @@ from i18n.i18n import i18n
 from .language import detect_and_set_user_language
 from services.api.bot.config import VERSION, PAYMENT_PLANS
 from .enhanced_payments import enhanced_payment_handler
+# Import specialized handlers so we can route specific actions before/within the generic handler
+from services.api.bot.handlers.corrections import start_fix_calories_callback
+from services.api.bot.handlers.favorites import save_latest_analysis_to_favorites, favorites_callback_router
+from services.api.bot.handlers.scan import start_scan_barcode
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -766,10 +770,25 @@ async def handle_action_callback(callback: types.CallbackQuery, state: FSMContex
             user_language = user.get('language', 'en')
             menu_text, menu_keyboard = create_main_menu_text(user_language, has_profile)
             await callback.message.answer(menu_text, parse_mode="Markdown", reply_markup=menu_keyboard)
+        elif action == "fix_calories":
+            # Delegate to corrections handler
+            await start_fix_calories_callback(callback, state)
+        elif action == "favorites":
+            # Open favorites list
+            await favorites_callback_router(callback, state)
+        elif action == "save_favorite":
+            # Save latest analysis as favorite
+            await save_latest_analysis_to_favorites(callback, state)
+        elif action == "scan_barcode":
+            # Delegate to scan handler
+            await start_scan_barcode(callback, state)
         elif action == "language":
             # Handle language selection
             from .language import language_command
             await language_command(callback.message)
+        elif action.startswith("fav_"):
+            # Favorites router (pagination/add/delete)
+            await favorites_callback_router(callback, state)
         
         logger.info(f"Action callback '{action}' handled for user {telegram_user_id}")
         

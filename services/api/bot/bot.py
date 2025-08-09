@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from services.api.bot.handlers.commands import start_command, help_command, status_command, buy_credits_command, buy_basic_callback, buy_pro_callback, handle_action_callback
+from services.api.bot.handlers.favorites import favorites_callback_router
 from services.api.bot.handlers.enhanced_payments import enhanced_payment_handler
 from services.api.bot.handlers.photo import photo_handler
 from services.api.bot.handlers.payments import handle_pre_checkout_query, handle_successful_payment, handle_buy_callback
@@ -21,6 +22,14 @@ from services.api.bot.handlers.profile import (
 from services.api.bot.handlers.recipe import recipe_command, handle_recipe_callback, process_recipe_photo, RecipeStates
 from services.api.bot.handlers.daily import daily_command, handle_daily_callback
 from services.api.bot.handlers.nutrition import nutrition_insights_command, weekly_report_command, water_tracker_command, process_nutrition_photo, NutritionStates
+from services.api.bot.handlers.corrections import start_fix_calories_callback, process_fix_calories_input, FixCaloriesStates
+from services.api.bot.handlers.scan import (
+    start_scan_barcode,
+    process_barcode_photo,
+    process_portion_grams,
+    start_enter_grams,
+    ScanStates,
+)
 from services.api.bot.handlers.language import language_command, handle_language_callback
 from i18n.i18n import i18n
 from loguru import logger
@@ -38,6 +47,8 @@ class RateLimiter:
     def __init__(self):
         self.requests = defaultdict(list)
         self.photo_requests = defaultdict(list)
+        self._cleanup_interval_seconds = 600  # 10 minutes
+        self._entry_ttl_seconds = 3600  # 1 hour without activity -> purge
         
     def is_rate_limited(self, user_id: int, request_type: str = "general") -> bool:
         """Check if user is rate limited"""
@@ -48,6 +59,9 @@ class RateLimiter:
             user_requests = self.photo_requests[user_id]
             # Remove old requests (older than 1 minute)
             user_requests[:] = [req_time for req_time in user_requests if current_time - req_time < 60]
+            if not user_requests:
+                # Cleanup empty buckets to avoid unbounded dict growth
+                self.photo_requests.pop(user_id, None)
             
             if len(user_requests) >= 5:
                 return True
@@ -59,6 +73,9 @@ class RateLimiter:
             user_requests = self.requests[user_id]
             # Remove old requests (older than 1 minute)
             user_requests[:] = [req_time for req_time in user_requests if current_time - req_time < 60]
+            if not user_requests:
+                # Cleanup empty buckets to avoid unbounded dict growth
+                self.requests.pop(user_id, None)
             
             if len(user_requests) >= 20:
                 return True
@@ -80,6 +97,32 @@ class RateLimiter:
                 return max(0, int(60 - (current_time - user_requests[0])))
         
         return 0
+
+    async def periodic_cleanup(self) -> None:
+        """Periodically remove stale rate-limit entries to prevent memory growth."""
+        while True:
+            try:
+                now = time.time()
+                # Build lists first to avoid changing dict size during iteration
+                general_keys_to_delete = [
+                    uid for uid, times in self.requests.items()
+                    if not times or (now - times[-1]) > self._entry_ttl_seconds
+                ]
+                photo_keys_to_delete = [
+                    uid for uid, times in self.photo_requests.items()
+                    if not times or (now - times[-1]) > self._entry_ttl_seconds
+                ]
+                for uid in general_keys_to_delete:
+                    self.requests.pop(uid, None)
+                for uid in photo_keys_to_delete:
+                    self.photo_requests.pop(uid, None)
+                if general_keys_to_delete or photo_keys_to_delete:
+                    logger.debug(
+                        f"RateLimiter cleanup: removed {len(general_keys_to_delete)} general and {len(photo_keys_to_delete)} photo entries"
+                    )
+            except Exception as cleanup_error:
+                logger.warning(f"RateLimiter periodic cleanup error: {cleanup_error}")
+            await asyncio.sleep(self._cleanup_interval_seconds)
 
 # Create rate limiter instance
 rate_limiter = RateLimiter()
@@ -149,6 +192,9 @@ dp.message.register(language_command, Command(commands=["language"]))
 # FSM handlers (MUST be registered BEFORE general photo handler)
 dp.message.register(process_recipe_photo, RecipeStates.waiting_for_photo)
 dp.message.register(process_nutrition_photo, NutritionStates.waiting_for_photo)
+dp.message.register(process_fix_calories_input, FixCaloriesStates.waiting_for_value)
+dp.message.register(process_barcode_photo, ScanStates.waiting_for_photo)
+dp.message.register(process_portion_grams, ScanStates.waiting_for_grams)
 
 # Photo handler (only for photos, not documents) - registered AFTER FSM handlers
 # This handler only processes photos when no FSM state is set
@@ -199,9 +245,15 @@ dp.message.register(process_weight, ProfileStates.waiting_for_weight)
 
 
 # Callback handlers - ORDER MATTERS!
-# Recipe callback must be registered BEFORE general action callback to avoid conflicts
+# Register more specific handlers BEFORE general action handler
 dp.callback_query.register(handle_recipe_callback, lambda callback: callback.data == "action_recipe")
+# Favorites actions (add/delete/pagination)
+dp.callback_query.register(favorites_callback_router, lambda callback: callback.data and callback.data.startswith("fav_"))
+# General action_* router
 dp.callback_query.register(handle_action_callback, lambda callback: callback.data.startswith("action_"))
+dp.callback_query.register(start_fix_calories_callback, lambda callback: callback.data == "action_fix_calories")
+dp.callback_query.register(start_scan_barcode, lambda callback: callback.data == "action_scan_barcode")
+dp.callback_query.register(start_enter_grams, lambda callback: callback.data == "action_ate_this")
 # Enhanced payment handlers (NEW) - Register BEFORE legacy handlers
 dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("yookassa_pay_"))
 dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("stripe_pay_"))
@@ -258,6 +310,8 @@ async def start_bot():
         # Start polling
         logger.info("Starting polling...")
         logger.info("Bot is now ready to receive messages!")
+        # Start background cleanup for rate limiter to avoid memory growth over time
+        asyncio.create_task(rate_limiter.periodic_cleanup())
         await dp.start_polling(bot, skip_updates=True)
         
     except Exception as e:

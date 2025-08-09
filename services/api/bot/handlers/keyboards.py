@@ -115,6 +115,18 @@ def create_main_menu_text(language: str = "en", has_profile: bool = False):
         ],
         [
             types.InlineKeyboardButton(
+                text=i18n.get_text("btn_favorites", language, default="⭐ Favorites"),
+                callback_data="action_favorites"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
+                text=i18n.get_text("btn_scan_barcode", language, default="📷 Scan barcode"),
+                callback_data="action_scan_barcode"
+            )
+        ],
+        [
+            types.InlineKeyboardButton(
                 text=i18n.get_text("btn_weekly_report", language),
                 callback_data="action_weekly_report"
             ),

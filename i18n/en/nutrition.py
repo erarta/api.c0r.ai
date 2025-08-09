@@ -177,4 +177,16 @@ TRANSLATIONS = {
     "advice_lose_weight": "🎯 **Your Amazing Weight Loss Journey:**\n• 💪 Let's create a gentle calorie deficit (300-500 calories) - sustainable wins are the best wins!\n• 🥩 Protein is your secret weapon for preserving muscle and feeling full - I'm so excited for you to see the results!\n• 🏋️‍♀️ Strength training 2-3x/week will boost your metabolism - you're going to feel so strong!\n• 🧘‍♀️ Eat slowly and savor your food - your brain needs 20 minutes to register fullness, and you deserve to enjoy every bite!",
     "advice_gain_weight": "🌱 **Your Incredible Healthy Weight Gain Plan:**\n• 🍽️ Let's aim for a gentle calorie surplus (300-500 calories) - steady progress is the most sustainable and you're going to love how you feel!\n• 🥑 Healthy fats are going to be your best friend - these nutrient-dense calories will fuel your amazing growth!\n• ⏰ Frequent, enjoyable meals will keep your energy steady all day - I'm here to help you find what works best for you!\n• 💪 Resistance training will transform those calories into strong, healthy muscle - you're going to be amazed by your progress!",
     "advice_maintain_weight": "⚖️ **Your Maintenance Mastery - You're Incredible:**\n• 🎯 You've found your perfect sweet spot! Focus on consistent, joyful eating - I'm so proud of you!\n• 📊 Weekly check-ins will help you stay in tune with your body - you know yourself best!\n• 🌈 Variety keeps nutrition exciting and ensures you get all nutrients - keep exploring and having fun with food!\n• 🏃‍♀️ Mix cardio and strength training for total body wellness - you're creating such a healthy, balanced lifestyle!",
+    
+    # --- Minimal keys for new features ---
+    "fix_calories_btn": "✍️ Fix calories",
+    "enter_corrected_calories": "Enter corrected calories (e.g., 195)",
+    "fix_calories_success": "✅ Calories updated",
+    "fix_calories_details": "Applied change: {delta} kcal. Your new total for {date}: {new_total} kcal.",
+    "scan_barcode_prompt": "📷 Send a photo of the product barcode",
+    "ate_this_btn": "I ate this",
+    "enter_grams_prompt": "Enter grams you ate (e.g., 30)",
+    "enter_grams_invalid": "Please enter a number between 1 and 2000",
+    "portion_added_success": "Added to your daily total ✅",
+    "scan_no_product_found": "No product found. OCR fallback coming in the next update.",
 }

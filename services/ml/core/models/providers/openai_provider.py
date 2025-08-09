@@ -163,10 +163,13 @@ class OpenAIProvider(BaseAIProvider):
         return messages
     
     async def _make_openai_request(self, request_params: Dict[str, Any]):
-        """Выполнение запроса к OpenAI API"""
+        """Выполнение запроса к OpenAI API в отдельном потоке, чтобы не блокировать event loop."""
+        import asyncio
         try:
-            # Используем синхронный клиент, так как OpenAI SDK не поддерживает async
-            response = self.client.chat.completions.create(**request_params)
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(
+                None, lambda: self.client.chat.completions.create(**request_params)
+            )
             return response
         except openai.RateLimitError as e:
             raise ProviderRateLimitError(f"OpenAI rate limit exceeded: {e}")

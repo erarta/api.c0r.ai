@@ -13,13 +13,13 @@ sys.path.insert(0, project_root)
 
 from common.config.payment_plans import get_payment_plans_for_region
 
-# Configure Stripe
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+# Configure Stripe (support both STRIPE_SECRET_KEY and STRIPE_API_KEY)
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_API_KEY")
 
 class StripeClient:
     def __init__(self):
         self.webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
-        self.api_key = os.getenv("STRIPE_SECRET_KEY")
+        self.api_key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_API_KEY")
         
         if not self.api_key:
             logger.warning("STRIPE_SECRET_KEY not found in environment variables")

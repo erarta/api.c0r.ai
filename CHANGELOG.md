@@ -92,7 +92,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - 2025-08-05
+## [Unreleased] - 2025-08-09
+
+### Added
+- Mobile planning docs: `docs/mobile/` (README, PLAN, ARCHITECTURE, API_CONTRACTS, DESIGNS, REPO_STRUCTURE)
+- Migration draft: `migrations/database/2025-08-09_social_feed_schema.sql` (followers, food_posts, post_likes, post_comments, conversations, messages, weight_logs with RLS policies)
 
 ### 🔧 Bug Fixes
 - **Async/Await Error Fix**: Fixed "object dict can't be used in 'await' expression" error in photo analysis by removing incorrect `await` calls from synchronous functions `add_calories_from_analysis` and `get_daily_calories`
@@ -140,6 +144,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Import Path Corrections**: Updated import paths to reflect current project structure
 - **Test Mocking**: Corrected mock targets and parameters for external dependencies
 - **Validation Error Handling**: Updated test expectations for Pydantic v2 validation errors
+
+### 📈 Stability & Ops
+- **Bot Rate Limiter**: Added periodic cleanup for in-memory rate-limit buckets to prevent unbounded growth over long uptimes
+- **OpenAI Calls**: Offloaded sync OpenAI SDK requests to a background thread to avoid event loop blocking under load
+- **Docker Runtime**: Added memory reservations/limits and JSON log rotation for `api`, `ml`, and `pay` services in `docker-compose.yml` (also included non-swarm `mem_limit`/`mem_reservation` for docker-compose)
 
 ### ✨ New Features
 - **CaloriesService Module**: Created dedicated module for calorie tracking with automatic table creation

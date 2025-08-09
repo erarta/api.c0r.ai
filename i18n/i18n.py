@@ -166,12 +166,18 @@ class I18nManager:
             Random food fact string
         """
         try:
-            from i18n.food_facts import FOOD_FACTS
+            from i18n.food_facts import FOOD_FACTS, FACT_EXTENSIONS
             
             facts = FOOD_FACTS.get(language, FOOD_FACTS.get("en", []))
             if facts:
                 import random
-                return random.choice(facts)
+                base = random.choice(facts)
+                # Optionally extend the fact with a longer explanatory tail
+                extensions = FACT_EXTENSIONS.get(language, FACT_EXTENSIONS.get("en", []))
+                if extensions:
+                    tail = random.choice(extensions)
+                    return f"{base}. {tail}"
+                return base
         except ImportError:
             pass
         return "🍎 Food is amazing!"

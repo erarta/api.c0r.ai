@@ -252,3 +252,91 @@ async def cleanup_old_logs(days_to_keep: int = 90):
     except Exception as e:
         logger.error(f"Failed to cleanup old logs: {e}")
         return 0
+
+# --- Analysis correction helpers ---
+
+def get_log_by_id(user_id: str, log_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch a single log row by id for a specific user"""
+    try:
+        res = supabase.table("logs").select("*").eq("user_id", user_id).eq("id", log_id).single().execute()
+        return res.data
+    except Exception as e:
+        logger.error(f"Failed to get log {log_id} for user {user_id}: {e}")
+        return None
+
+
+def get_latest_photo_analysis_log_id(user_id: str) -> Optional[str]:
+    """Return most recent photo_analysis log id for a user"""
+    try:
+        res = (
+            supabase
+            .table("logs")
+            .select("id")
+            .eq("user_id", user_id)
+            .eq("action_type", "photo_analysis")
+            .order("timestamp", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if res.data:
+            return res.data[0]["id"]
+        return None
+    except Exception as e:
+        logger.error(f"Failed to get latest analysis log for user {user_id}: {e}")
+        return None
+
+
+def extract_log_calories(log_row: Dict[str, Any]) -> Optional[float]:
+    """
+    Try to extract the original calories from a log row.
+    Priority: kbzhu.calories → metadata.analysis.total_nutrition.calories
+    """
+    try:
+        kbzhu = log_row.get("kbzhu")
+        if isinstance(kbzhu, dict) and "calories" in kbzhu:
+            return float(kbzhu["calories"])  # type: ignore[arg-type]
+    except Exception:
+        pass
+    try:
+        meta = log_row.get("metadata") or {}
+        analysis = meta.get("analysis") if isinstance(meta, dict) else None
+        if isinstance(analysis, dict):
+            tn = analysis.get("total_nutrition")
+            if isinstance(tn, dict) and "calories" in tn:
+                return float(tn["calories"])  # type: ignore[arg-type]
+    except Exception:
+        pass
+    return None
+
+
+def get_effective_log_calories(log_row: Dict[str, Any]) -> Optional[float]:
+    """Return corrected calories if present, else original calories."""
+    meta = log_row.get("metadata") or {}
+    corrected = None
+    if isinstance(meta, dict):
+        corrected = meta.get("corrected_total_calories")
+    if corrected is not None:
+        try:
+            return float(corrected)
+        except Exception:
+            pass
+    return extract_log_calories(log_row)
+
+
+def set_analysis_corrected_calories(user_id: str, log_id: str, corrected_calories: float) -> bool:
+    """
+    Persist corrected calories into logs.metadata.corrected_total_calories.
+    """
+    try:
+        row = get_log_by_id(user_id, log_id)
+        if not row:
+            return False
+        metadata = row.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+        metadata["corrected_total_calories"] = float(corrected_calories)
+        supabase.table("logs").update({"metadata": metadata}).eq("id", log_id).eq("user_id", user_id).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Failed to set corrected calories for log {log_id}: {e}")
+        return False
