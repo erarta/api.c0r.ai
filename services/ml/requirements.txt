@@ -4,3 +4,7 @@ httpx
 loguru
 python-multipart
 openai 
+Pillow
+pyzbar
+certifi
+pytesseract

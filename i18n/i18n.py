@@ -29,14 +29,20 @@ class I18nManager:
         "UZ",  # Uzbekistan
     }
     
-    # Phone number patterns for Russian-speaking countries
-    RUSSIAN_PHONE_PATTERNS = [
-        r'^\+7',  # +7 (Russia)
-        r'^8',    # 8 (Russia)
-        r'^\+375',  # +375 (Belarus)
-        r'^\+7[0-9]{10}$',  # +7XXXXXXXXXX
-        r'^8[0-9]{10}$',    # 8XXXXXXXXXX
-    ]
+    # Language detection based on Telegram language_code
+    CIS_LANGUAGES = {
+        'ru',  # Russian
+        'kk',  # Kazakh
+        'be',  # Belarusian
+        'uz',  # Uzbek
+        'ky',  # Kyrgyz
+        'tg',  # Tajik
+        'tk',  # Turkmen
+        'hy',  # Armenian
+        'az',  # Azerbaijani
+        'mo',  # Moldovan
+        'uk',  # Ukrainian
+    }
     
     def __init__(self):
         self.translations = self._load_translations()
@@ -70,31 +76,29 @@ class I18nManager:
                     Language.RUSSIAN.value: {},
                 }
     
-    def detect_language(self, user_country: Optional[str] = None, phone_number: Optional[str] = None) -> str:
+    def detect_language(self, language_code: Optional[str] = None) -> str:
         """
-        Detect user's preferred language based on country and phone number
+        Detect user's preferred language based on Telegram language_code
         
         Args:
-            user_country: User's country code (e.g., 'RU', 'US')
-            phone_number: User's phone number
+            language_code: Telegram language_code (e.g., 'ru', 'en', 'de')
             
         Returns:
             Language code ('en' or 'ru')
         """
-        # Check country first
-        if user_country and user_country.upper() in self.RUSSIAN_COUNTRIES:
-            logger.info(f"Detected Russian language for country: {user_country}")
+        if not language_code:
+            return Language.ENGLISH.value
+        
+        # Normalize language code
+        lang = language_code.lower().strip()
+        
+        # Check if it's a CIS language
+        if lang in self.CIS_LANGUAGES:
+            logger.info(f"Detected Russian language for language_code: {language_code}")
             return Language.RUSSIAN.value
         
-        # Check phone number patterns
-        if phone_number:
-            for pattern in self.RUSSIAN_PHONE_PATTERNS:
-                if re.match(pattern, phone_number):
-                    logger.info(f"Detected Russian language for phone: {phone_number}")
-                    return Language.RUSSIAN.value
-        
         # Default to English
-        logger.info(f"Defaulting to English language for country: {user_country}, phone: {phone_number}")
+        logger.info(f"Defaulting to English language for language_code: {language_code}")
         return Language.ENGLISH.value
     
     def get_text(self, key: str, language: str = Language.ENGLISH.value, **kwargs) -> str:
@@ -162,12 +166,18 @@ class I18nManager:
             Random food fact string
         """
         try:
-            from i18n.food_facts import FOOD_FACTS
+            from i18n.food_facts import FOOD_FACTS, FACT_EXTENSIONS
             
             facts = FOOD_FACTS.get(language, FOOD_FACTS.get("en", []))
             if facts:
                 import random
-                return random.choice(facts)
+                base = random.choice(facts)
+                # Optionally extend the fact with a longer explanatory tail
+                extensions = FACT_EXTENSIONS.get(language, FACT_EXTENSIONS.get("en", []))
+                if extensions:
+                    tail = random.choice(extensions)
+                    return f"{base}. {tail}"
+                return base
         except ImportError:
             pass
         return "🍎 Food is amazing!"

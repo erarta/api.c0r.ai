@@ -1,17 +1,40 @@
 """
-Telegram Payments handler for c0r.ai bot
-Handles native Telegram payments without leaving the app
+Enhanced Telegram Payments handler for c0r.ai bot
+Supports multiple payment providers: YooKassa, Stripe, Telegram Stars
 """
 import os
+import sys
 from aiogram import types
 from loguru import logger
 from common.supabase_client import get_or_create_user, add_credits, add_payment, log_user_action
 from .keyboards import create_main_menu_keyboard, create_payment_success_keyboard
 from services.api.bot.config import PAYMENT_PLANS
-from common.config.payment_plans import get_payment_plans_for_user_language
 import traceback
 import json
 from i18n.i18n import i18n
+
+# Add project root for imports
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')
+sys.path.insert(0, project_root)
+
+from common.config.payment_plans import (
+    get_payment_plans_for_user_language, 
+    get_all_payment_options_for_language,
+    get_payment_plans_for_region
+)
+from common.utils.region_detector import (
+    get_payment_provider, 
+    get_available_payment_providers, 
+    is_cis_region
+)
+
+# Try to import Stripe client
+try:
+    from services.pay.stripe.client import StripeClient
+    STRIPE_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Stripe client not available: {e}")
+    STRIPE_AVAILABLE = False
 
 # Environment variables
 YOOKASSA_PROVIDER_TOKEN = os.getenv("YOOKASSA_PROVIDER_TOKEN")
@@ -98,7 +121,7 @@ async def create_invoice_message(message: types.Message, plan_id: str = "basic",
             need_email=True,
             send_email_to_provider=True,
             provider_data=provider_data,
-            need_phone_number=False,
+            need_phone_number=False,  # Not used anymore
             need_shipping_address=False,
             is_flexible=False
         )
@@ -292,7 +315,8 @@ async def handle_successful_payment(message: types.Message):
         success_title = i18n.get_text("payment_success_title", user_language)
         plan_title = plan['title']
         credits_added = i18n.get_text("payment_success_credits_added", user_language, credits=plan['credits'])
-        amount_paid = f"{payment.total_amount/100:.2f} {payment.currency}"
+        # Localized amount string
+        amount_value = f"{payment.total_amount/100:.2f} {payment.currency}"
         total_credits = i18n.get_text("payment_success_total_credits", user_language, total_credits=updated_user['credits_remaining'])
         continue_message = i18n.get_text("payment_success_continue", user_language)
         
@@ -300,7 +324,7 @@ async def handle_successful_payment(message: types.Message):
             f"{success_title}\n\n"
             f"💳 **{plan_title}**\n"
             f"⚡ **{credits_added}**\n"
-            f"💰 **Amount Paid**: {amount_paid}\n"
+            f"{i18n.get_text('payment_success_amount_paid', user_language, amount=amount_value)}\n"
             f"🔋 **{total_credits}**\n\n"
             f"{continue_message}"
         )
@@ -308,7 +332,7 @@ async def handle_successful_payment(message: types.Message):
         await message.answer(
             confirmation_message,
             parse_mode="Markdown",
-            reply_markup=create_payment_success_keyboard()
+            reply_markup=create_payment_success_keyboard(user_language)
         )
         
         logger.info(f"Payment processed successfully for user {user_id}: {plan['credits']} credits added, total credits: {updated_user['credits_remaining']}")

@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from loguru import logger
 from common.db.client import get_client
+from common.db.logs import get_log_by_id, get_effective_log_calories, set_analysis_corrected_calories
 
 
 class CaloriesManager:
@@ -229,6 +230,58 @@ class CaloriesManager:
                 'food_items_count': 0,
                 'food_items': []
             }
+
+    def apply_calorie_correction(self, user_id: str, log_id: str, corrected_calories: float):
+        """
+        Apply correction to a specific analysis log and update daily_calories by delta.
+        Returns a dict with operation details on success or False on failure for backward compatibility.
+        { ok: True, delta: float, new_total: float, date: str, corrected: float, previous: float }
+        """
+        try:
+            # Fetch log and effective calories
+            log_row = get_log_by_id(user_id, log_id)
+            if not log_row:
+                logger.error(f"Log not found: {log_id} for user {user_id}")
+                return False
+            current_effective = get_effective_log_calories(log_row)
+            if current_effective is None:
+                logger.error(f"Cannot determine current calories for log {log_id}")
+                return False
+            corrected = float(corrected_calories)
+            delta = corrected - float(current_effective)
+            # Persist correction on the log
+            if not set_analysis_corrected_calories(user_id, log_id, corrected):
+                return False
+            # Update daily_calories row for the log date
+            log_ts = log_row.get("timestamp")
+            date_str = (log_ts or datetime.now().isoformat())[:10]
+            entry_res = self.supabase.table("daily_calories").select("*").eq("user_id", user_id).eq("date", date_str).execute()
+            if entry_res.data:
+                entry = entry_res.data[0]
+                new_total = float(entry.get("total_calories", 0)) + delta
+                self.supabase.table("daily_calories").update({
+                    "total_calories": new_total,
+                    "updated_at": datetime.now().isoformat()
+                }).eq("id", entry["id"]).execute()
+                logger.info(f"Applied correction delta {delta} to daily total for {user_id} on {date_str}")
+                return {"ok": True, "delta": delta, "new_total": new_total, "date": date_str, "corrected": corrected, "previous": float(current_effective)}
+            else:
+                # If there is no daily row, create it with corrected value as baseline
+                self.supabase.table("daily_calories").insert({
+                    "user_id": user_id,
+                    "date": date_str,
+                    "total_calories": max(0.0, corrected),
+                    "total_proteins": 0.0,
+                    "total_fats": 0.0,
+                    "total_carbohydrates": 0.0,
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat()
+                }).execute()
+                logger.info(f"Created daily row with corrected calories {corrected} for {user_id} on {date_str}")
+                return {"ok": True, "delta": corrected, "new_total": corrected, "date": date_str, "corrected": corrected, "previous": 0.0}
+        except Exception as e:
+            logger.error(f"Failed to apply calorie correction for user {user_id}, log {log_id}: {e}")
+            return False
     
     @staticmethod
     async def get_weekly_summary(user_id: str, end_date: str = None) -> Dict:

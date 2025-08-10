@@ -4,7 +4,7 @@ LLM Provider Factory for dynamic model switching
 
 import os
 from enum import Enum
-from typing import Dict, Any, Callable, Awaitable
+from typing import Dict, Any, Callable, Optional
 from loguru import logger
 
 from services.ml.openai.client import analyze_food_with_openai
@@ -40,7 +40,12 @@ class LLMProviderFactory:
         Returns:
             LLMProvider enum value
         """
-        provider_name = os.getenv("LLM_PROVIDER", "openai").lower()
+        # Support both LLM_PROVIDER and ANALYSIS_PROVIDER (alias)
+        provider_name = (
+            os.getenv("LLM_PROVIDER")
+            or os.getenv("ANALYSIS_PROVIDER")
+            or "openai"
+        ).lower()
         
         try:
             return LLMProvider(provider_name)
@@ -49,10 +54,11 @@ class LLMProviderFactory:
             return LLMProvider.OPENAI
     
     async def analyze_food(
-        self, 
-        image_bytes: bytes, 
-        user_language: str = "en", 
-        use_premium_model: bool = False
+        self,
+        image_bytes: bytes,
+        user_language: str = "en",
+        use_premium_model: bool = False,
+        provider_override: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Analyze food using current LLM provider
@@ -61,48 +67,57 @@ class LLMProviderFactory:
             image_bytes: Image data to analyze
             user_language: User language preference
             use_premium_model: Whether to use premium model settings
+            provider_override: If provided, use this provider for this call only
             
         Returns:
             Analysis result dict with provider info
         """
-        logger.info(f"🎯 analyze_food called with provider: {self.current_provider.value}")
-        logger.info(f"📝 Available providers: {list(self.providers.keys())}")
-        provider_func = self.providers.get(self.current_provider)
+        # Decide which provider to use for this call
+        effective_provider = self.current_provider
+        if provider_override:
+            try:
+                effective_provider = LLMProvider(provider_override.lower())
+            except ValueError:
+                logger.warning(f"Invalid provider_override '{provider_override}', using default {self.current_provider.value}")
+        
+        logger.info(f"🎯 analyze_food called with provider: {effective_provider.value}")
+        logger.info(f"📝 Available providers: {[p.value for p in self.providers.keys()]}")
+        provider_func = self.providers.get(effective_provider)
         
         if not provider_func:
-            logger.error(f"Provider {self.current_provider} not implemented")
-            raise ValueError(f"Provider {self.current_provider} not available")
+            logger.error(f"Provider {effective_provider} not implemented")
+            raise ValueError(f"Provider {effective_provider} not available")
         
-        logger.info(f"🔍 Using provider: {self.current_provider.value}")
+        logger.info(f"🔍 Using provider: {effective_provider.value}")
 
-        logger.debug(f"Provider selected: {self.current_provider.value}")
+        logger.debug(f"Provider selected: {effective_provider.value}")
 
         try:
-            logger.info(f"🔍 Analyzing food with {self.current_provider.value}")
+            logger.info(f"🔍 Analyzing food with {effective_provider.value}")
             logger.info(f"🔧 Provider function: {provider_func}")
             result = await provider_func(image_bytes, user_language, use_premium_model)
-            logger.info(f"✅ {self.current_provider.value} analysis completed successfully")
+            logger.info(f"✅ {effective_provider.value} analysis completed successfully")
             
             # Ensure provider info is included for debugging
             if "analysis" in result:
-                result["analysis"]["llm_provider"] = self.current_provider.value
+                result["analysis"]["llm_provider"] = effective_provider.value
             else:
-                result["llm_provider"] = self.current_provider.value
+                result["llm_provider"] = effective_provider.value
             
             return result
             
         except Exception as e:
-            logger.error(f"Analysis failed with {self.current_provider.value}: {str(e)}")
+            logger.error(f"Analysis failed with {effective_provider.value}: {str(e)}")
             
             # Try fallback to OpenAI if current provider fails
-            if self.current_provider != LLMProvider.OPENAI:
+            if effective_provider != LLMProvider.OPENAI:
                 logger.info("🔄 Falling back to OpenAI...")
                 try:
                     result = await analyze_food_with_openai(image_bytes, user_language, use_premium_model)
                     if "analysis" in result:
-                        result["analysis"]["llm_provider"] = self.current_provider.value
+                        result["analysis"]["llm_provider"] = effective_provider.value
                     else:
-                        result["llm_provider"] = self.current_provider.value
+                        result["llm_provider"] = effective_provider.value
                     return result
                 except Exception as fallback_error:
                     logger.error(f"Fallback to OpenAI also failed: {str(fallback_error)}")
@@ -110,7 +125,7 @@ class LLMProviderFactory:
             # If all fails, return error structure
             return {
                 "analysis": {
-                    "llm_provider": f"{self.current_provider.value} (failed)",
+                    "llm_provider": f"{effective_provider.value} (failed)",
                     "error": str(e),
                     "regional_analysis": {
                         "detected_cuisine_type": "Unknown",

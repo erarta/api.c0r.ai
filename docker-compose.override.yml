@@ -10,8 +10,8 @@ services:
       - ./i18n:/app/i18n:ro
     environment:
       - PYTHONPATH=/app
-      - UVICORN_RELOAD=true
-    command: python -m uvicorn services.api.bot.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/services/api --reload-dir /app/shared --reload-dir /app/common --reload-dir /app/i18n
+      - UVICORN_RELOAD=false
+    command: python -m uvicorn services.api.bot.main:app --host 0.0.0.0 --port 8000
 
   ml:
     volumes:

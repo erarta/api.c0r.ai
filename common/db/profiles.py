@@ -8,6 +8,7 @@ from datetime import datetime
 from loguru import logger
 from .client import supabase
 from .users import get_or_create_user
+from .logs import get_effective_log_calories
 
 
 async def get_user_profile(user_id: str):
@@ -279,7 +280,9 @@ async def get_daily_calories_consumed(user_id: str, date: str = None):
             kbzhu = log['kbzhu']
             logger.info(f"Processing kbzhu data: {kbzhu}")
             
-            calories = float(kbzhu.get('calories', 0))
+            # Respect corrected calories if present in metadata
+            effective = get_effective_log_calories(log)
+            calories = float(effective) if effective is not None else float(kbzhu.get('calories', 0))
             protein = float(kbzhu.get('proteins', 0))  # Changed from 'protein' to 'proteins'
             fats = float(kbzhu.get('fats', 0))
             carbs = float(kbzhu.get('carbohydrates', 0))  # Changed from 'carbs' to 'carbohydrates'

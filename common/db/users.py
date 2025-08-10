@@ -8,14 +8,12 @@ from loguru import logger
 from .client import supabase
 
 
-async def get_or_create_user(telegram_id: int, country: Optional[str] = None, phone_number: Optional[str] = None, language: Optional[str] = None):
+async def get_or_create_user(telegram_id: int, language: Optional[str] = None):
     """
     Get existing user or create new one with initial credits
     
     Args:
         telegram_id: Telegram user ID
-        country: User's country code (optional)
-        phone_number: User's phone number (optional)
         language: User's preferred language (optional)
         
     Returns:
@@ -31,10 +29,6 @@ async def get_or_create_user(telegram_id: int, country: Optional[str] = None, ph
     
     # Create new user with 3 initial credits
     data = {"telegram_id": telegram_id, "credits_remaining": 3}
-    if country:
-        data["country"] = country
-    if phone_number:
-        data["phone_number"] = phone_number
     if language:
         data["language"] = language
     
@@ -137,31 +131,10 @@ async def update_user_language(telegram_id: int, language: str):
 
 async def update_user_country_and_phone(telegram_id: int, country: Optional[str] = None, phone_number: Optional[str] = None):
     """
-    Update user's country and phone number for language detection
-    
-    Args:
-        telegram_id: Telegram user ID
-        country: Country code (e.g., 'RU', 'US')
-        phone_number: Phone number
-        
-    Returns:
-        Updated user data or None if no data to update
+    DEPRECATED: This function is no longer used. Use update_user_language instead.
     """
-    logger.info(f"Updating country/phone for user {telegram_id}: country={country}, phone={phone_number}")
-    
-    update_data = {}
-    if country:
-        update_data["country"] = country
-    if phone_number:
-        update_data["phone_number"] = phone_number
-    
-    if not update_data:
-        logger.warning(f"No data to update for user {telegram_id}")
-        return None
-    
-    updated = supabase.table("users").update(update_data).eq("telegram_id", telegram_id).execute().data[0]
-    logger.info(f"Country/phone updated for user {telegram_id}: {updated}")
-    return updated
+    logger.warning(f"update_user_country_and_phone is deprecated for user {telegram_id}")
+    return None
 
 
 async def get_user_stats(telegram_id: int):

@@ -26,8 +26,18 @@ TRANSLATIONS = {
     "btn_water_tracker": "💧 Water Tracker",
     "btn_get_recipe": "🍽️ Create Recipe from My Photo",
     "btn_language": "🌐 Language",
+    "btn_save_to_favorites": "⭐ Save to favorites",
     "btn_back": "⬅️ Back",
     "btn_meal_history": "🍽️ My Meal History",
+    "btn_scan_barcode": "📷 Scan product",
+    "btn_favorites": "⭐ Favorites",
+    "favorites_title": "⭐ Your Favorites",
+    "favorite_saved": "Saved to favorites ⭐",
+    "favorites_empty": "No favorites yet. Save from analysis with ⭐",
+    "favorite_added_to_daily": "Added to your daily total ✅",
+    "favorite_deleted": "Removed from favorites ✅",
+    "favorite_delete": "🗑️ Delete",
+    "favorite_add_daily": "➕ Add to my day",
     
     # Main menu
     "main_menu_title": "🚀 **What would you like to do together?**",

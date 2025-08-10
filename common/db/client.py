@@ -3,8 +3,12 @@ Supabase client initialization
 Centralized client configuration for all database operations
 """
 import os
+from dotenv import load_dotenv
 from supabase import create_client, Client
 from loguru import logger
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Must be set in .env file
 SUPABASE_URL = os.getenv("SUPABASE_URL")

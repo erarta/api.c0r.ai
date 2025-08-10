@@ -14,6 +14,8 @@ TRANSLATIONS = {
     "profile_calories": "🔥 **Your Daily Calorie Target:** {calories}",
     "profile_edit_btn": "✏️ Let's Update My Profile",
     "profile_what_next": "What would you like to do next, my friend?",
+    "profile_telegram_language": "🌐 Telegram language_code: {lang}",
+    "profile_interface_language": "🗣️ Interface language: {lang}",
     
     # Profile setup messages
     "profile_setup_age": "👶 **Step 1/8: How old are you?**\n\nPlease tell me your age in years (like 25):",
@@ -98,6 +100,16 @@ TRANSLATIONS = {
     "profile_dietary_vegetarian": "🥬 Vegetarian",
     "profile_dietary_vegan": "🌱 Vegan",
     "profile_dietary_pescatarian": "🐟 Pescatarian",
+    
+    # Debug information
+    "profile_debug_title": "🔍 **Debug Information**",
+    "profile_debug_telegram_lang": "📱 Telegram language_code: {lang}",
+    "profile_debug_user_lang": "🗄️ User DB language: {lang}",
+    "profile_debug_is_cis": "🌍 Is CIS region: {is_cis}",
+    "profile_debug_payment_provider": "💳 Payment provider: {provider}",
+    "profile_debug_available_providers": "💳 Available providers: {providers}",
+    "profile_debug_currency": "💰 Currency: {currency}",
+    "profile_debug_region": "🌍 Region: {region}",
     "profile_dietary_keto": "🥩 Keto",
     "profile_dietary_paleo": "🦴 Paleo",
     "profile_dietary_mediterranean": "🌊 Mediterranean",
@@ -118,4 +130,14 @@ TRANSLATIONS = {
     "profile_allergy_done": "✅ All Set!",
     "profile_setup_dietary_success": "Great choices! Dietary preferences: {preferences}",
     "profile_setup_allergies_success": "Got it! Allergies: {allergies}",
+    
+    # Progress tracking
+    "profile_progress_water": "💧 **Your Water Intake**\n📊 Target: {target} glasses\n✅ Consumed: {consumed} glasses",
+    "profile_progress_exercise": "💪 **Your Exercise Progress**\n🎯 Target: {target} minutes/day\n✅ Completed: {completed} minutes today",
+    
+    # Region and payment system detection
+    "profile_location_title": "📍 **Region and Payment System**",
+    "profile_language_detected": "🌐 Interface Language: {language}",
+    "profile_region_detected": "📍 Region: {region}",
+    "profile_payment_system": "💳 Payment System: {system}",
 }

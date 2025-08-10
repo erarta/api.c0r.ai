@@ -5,16 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.1] - 2025-08-05
+## [0.4.2] - 2025-08-10
 
-### 🚀 **MAJOR IMPROVEMENTS**
+See detailed notes in `changelogs/v0.4.x.md`.
 
-#### **Multi-LLM Provider Support**
-- **Added Perplexity API integration** with `sonar` and `sonar-pro` models
-- **Implemented LLM provider selection** via environment variable (`LLM_PROVIDER`)
-- **Added Perplexity client** with optimized parameters for maximum accuracy
-- **Enhanced provider factory** with support for OpenAI, Perplexity, and Gemini
-- **Added provider info to analysis output** for debugging and transparency
+Highlights:
+- Label scan powered by Perplexity; barcode optional; smarter, localized tips.
+- “I ate this” confirmation shows added KBZhU and new daily total with quick actions.
+- CIS routing fix: RU/KK/UZ/etc → YooKassa; others → Stripe + Stars.
+- Pricing: Basic 99₽/20 credits, PRO 349₽/100 credits. UI uses “packages”.
+- Removed OpenFoodFacts integration from bot and ML usage.
 
 #### **Advanced Food Recognition**
 - **Fixed egg vs mozzarella misidentification** with aggressive prompt engineering
@@ -92,7 +92,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - 2025-08-05
+## [Unreleased]
+
+### Added
+- Mobile planning docs: `docs/mobile/` (README, PLAN, ARCHITECTURE, API_CONTRACTS, DESIGNS, REPO_STRUCTURE)
+- Migration draft: `migrations/database/2025-08-09_social_feed_schema.sql` (followers, food_posts, post_likes, post_comments, conversations, messages, weight_logs with RLS policies)
 
 ### 🔧 Bug Fixes
 - **Async/Await Error Fix**: Fixed "object dict can't be used in 'await' expression" error in photo analysis by removing incorrect `await` calls from synchronous functions `add_calories_from_analysis` and `get_daily_calories`
@@ -141,6 +145,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Mocking**: Corrected mock targets and parameters for external dependencies
 - **Validation Error Handling**: Updated test expectations for Pydantic v2 validation errors
 
+### 📈 Stability & Ops
+- **Bot Rate Limiter**: Added periodic cleanup for in-memory rate-limit buckets to prevent unbounded growth over long uptimes
+- **OpenAI Calls**: Offloaded sync OpenAI SDK requests to a background thread to avoid event loop blocking under load
+- **Docker Runtime**: Added memory reservations/limits and JSON log rotation for `api`, `ml`, and `pay` services in `docker-compose.yml` (also included non-swarm `mem_limit`/`mem_reservation` for docker-compose)
+
 ### ✨ New Features
 - **CaloriesService Module**: Created dedicated module for calorie tracking with automatic table creation
 - **Comprehensive Unit Tests**: Added 15+ unit tests for calories management system
@@ -165,13 +174,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Archive
 
-For older changelog entries, see the organized files in the [`changelogs/`](changelogs/) directory:
+For full history, see `changelogs/`:
 
-- [`changelogs/v0.4.x.md`](changelogs/v0.4.x.md) - Version 0.4.x changes (0.4.0 - 0.4.2) - **ML Service Enhancements & Photo Analysis Improvements**
-- [`changelogs/v0.3.x.md`](changelogs/v0.3.x.md) - Version 0.3.x changes (0.3.0 - 0.3.68)
-- [`changelogs/v0.2.x.md`](changelogs/v0.2.x.md) - Version 0.2.x changes  
-- [`changelogs/v0.1.x.md`](changelogs/v0.1.x.md) - Version 0.1.x changes
-- [`changelogs/v0.0.x.md`](changelogs/v0.0.x.md) - Version 0.0.x changes
+- `changelogs/v0.4.x.md` (0.4.0–0.4.2)
+- `changelogs/v0.3.x.md`
+- `changelogs/v0.2.x.md`
+- `changelogs/v0.1.x.md`
+- `changelogs/v0.0.x.md`
 
 ## Contributing
 

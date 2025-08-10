@@ -13,7 +13,7 @@ lsof -ti:8000 | xargs kill -9 2>/dev/null || true
 # Start ML service
 echo "🧠 Starting ML service on port 8001..."
 cd services/ml
-python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload &
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload &
 ML_PID=$!
 cd ../..
 
@@ -23,7 +23,7 @@ sleep 3
 # Start Payment service
 echo "💳 Starting Payment service on port 8002..."
 cd services/pay
-python -m uvicorn main:app --host 0.0.0.0 --port 8002 --reload &
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8002 --reload &
 PAY_PID=$!
 cd ../..
 
@@ -33,7 +33,7 @@ sleep 3
 # Start API service (Bot)
 echo "🤖 Starting API Bot service on port 8000..."
 cd services/api/bot
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
 API_PID=$!
 cd ../../..
 

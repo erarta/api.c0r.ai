@@ -7,7 +7,16 @@ from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 from loguru import logger
 
-from ....modules.location.models import RegionalContext
+# Location models removed - using language-based region detection instead
+
+# Simple stub for RegionalContext
+class RegionalContext:
+    """Simple stub for RegionalContext"""
+    def __init__(self, region_code: str = "INTL"):
+        self.region_code = region_code
+        self.common_products = []
+        self.cooking_methods = []
+        self.measurement_units = "metric"
 
 
 class TripleRecipeGenerator:

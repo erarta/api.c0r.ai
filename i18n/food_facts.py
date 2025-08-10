@@ -514,6 +514,24 @@ FOOD_FACTS = {
     ]
 }
 
+# Longer tails to make each fact 3–5x longer for engagement during 7–10s processing
+FACT_EXTENSIONS = {
+    "en": [
+        "This small insight can help you make smarter choices at the store and in the kitchen, turning labels into useful decisions for your daily plan",
+        "Scientists have studied this for decades; the takeaway is simple: moderation and awareness of serving sizes matter more than any single number",
+        "Next time you pick a product, compare per‑100g values—this normalizes brands so you can quickly see which option fits your goals best",
+        "Dietitians often recommend focusing on fiber and protein for satiety while watching added sugars and ultra‑processed ingredients",
+        "A practical tip: keep a mental shortlist of your favorite ‘go‑to’ products with clear ingredient lists and balanced macros"
+    ],
+    "ru": [
+        "Этот небольшой факт помогает принимать осознанные решения в магазине и на кухне — читать этикетку и выбирать лучшее для дневного плана",
+        "Ученые изучают тему уже десятилетиями; главный вывод прост: важнее всего умеренность и понимание размера порции",
+        "В следующий раз сравните значения на 100 г — так бренды становятся сопоставимыми и легче выбрать подходящий вариант",
+        "Диетологи часто рекомендуют делать упор на клетчатку и белок для насыщения и следить за добавленным сахаром и ультра‑переработанными продуктами",
+        "Практический совет: держите короткий список любимых продуктов с ясным составом и сбалансированным БЖУ"
+    ]
+}
+
 WAITING_PHRASES = {
     "ru": [
         "Это так захватывающе! Дай мне секундочку поколдовать! ✨",

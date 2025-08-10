@@ -32,7 +32,7 @@ __all__ = [
     'decrement_credits',
     'add_credits',
     'update_user_language',
-    'update_user_country_and_phone',
+    'update_user_language',
     
     # Profiles
     'get_user_profile',

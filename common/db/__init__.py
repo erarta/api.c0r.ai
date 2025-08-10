@@ -8,7 +8,7 @@ from .users import (
     get_or_create_user,
     get_user_by_telegram_id,
     update_user_language,
-    update_user_country_and_phone
+    update_user_language
 )
 from .credits import (
     add_credits,
@@ -32,6 +32,18 @@ from .payments import (
     add_payment,
     get_user_total_paid
 )
+from .favorites import (
+    save_favorite_food,
+    list_favorites,
+    get_favorite_by_id,
+    delete_favorite,
+)
+from .recipes import (
+    save_recipe,
+    list_recipes,
+    get_recipe_by_id,
+    delete_recipe,
+)
 
 __all__ = [
     # Client
@@ -43,7 +55,7 @@ __all__ = [
     'decrement_credits',
     'add_credits',
     'update_user_language',
-    'update_user_country_and_phone',
+    'update_user_language',
     
     # Profiles
     'get_user_profile',
@@ -61,5 +73,17 @@ __all__ = [
     
     # Payments
     'add_payment',
-    'get_user_total_paid'
+    'get_user_total_paid',
+    
+    # Favorites
+    'save_favorite_food',
+    'list_favorites',
+    'get_favorite_by_id',
+    'delete_favorite',
+    
+    # Recipes
+    'save_recipe',
+    'list_recipes',
+    'get_recipe_by_id',
+    'delete_recipe'
 ]

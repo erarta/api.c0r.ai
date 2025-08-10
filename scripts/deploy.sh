@@ -58,6 +58,40 @@ fi
 
 print_status "✅ All tests passed! Proceeding with deployment..."
 
+# Step 2.5: Load environment and create DB backup before migrations
+print_status "Loading environment from .env..."
+if [ -f .env ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source .env
+    set +a
+else
+    print_error ".env not found. DATABASE_URL must be set."
+    exit 1
+fi
+
+: "${DATABASE_URL:?DATABASE_URL must be set in .env (URL-encoded password and sslmode=require)}"
+
+print_status "Creating database backup before migrations..."
+# Use local backup script; requires postgresql-client on host
+BACKUP_DIR="./backups"
+mkdir -p "$BACKUP_DIR"
+if BACKUP_DIR="$BACKUP_DIR" PG_URI="$DATABASE_URL" bash ./scripts/pg_backup.sh; then
+    print_status "✅ Database backup completed"
+else
+    print_error "❌ Database backup failed. Aborting deployment."
+    exit 1
+fi
+
+# Step 2.6: Run DB migrations; abort on failure
+print_status "Running database migrations..."
+if docker-compose run --rm api python scripts/run_migrations.py --database-url "$DATABASE_URL"; then
+    print_status "✅ Migrations applied successfully"
+else
+    print_error "❌ Migrations failed. Aborting deployment."
+    exit 1
+fi
+
 # Step 3: Stop existing containers
 print_status "Stopping existing containers..."
 docker-compose down

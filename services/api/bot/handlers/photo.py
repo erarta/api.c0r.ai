@@ -12,6 +12,11 @@ from common.supabase_client import get_or_create_user, decrement_credits, get_us
 from common.calories_manager import add_calories_from_analysis, get_daily_calories
 from services.api.bot.utils.r2 import upload_telegram_photo
 from .keyboards import create_main_menu_keyboard
+from aiogram.filters import StateFilter
+import re
+from typing import List, Tuple, Optional
+from aiogram.fsm.state import State, StatesGroup
+from common.db.logs import get_latest_photo_analysis_log_id
 from i18n.i18n import i18n
 from services.api.bot.config import PAYMENT_PLANS
 from .nutrition import sanitize_markdown_text
@@ -19,8 +24,72 @@ from .nutrition import sanitize_markdown_text
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
 
+def _is_generic_points(points: Optional[List[str]], user_language: str) -> bool:
+    if not points:
+        return True
+    if user_language == 'ru':
+        joined = ' '.join(points)
+        only_ascii = re.fullmatch(r"[\x00-\x7F\s.,!?'\-:;()]+", joined or '') is not None
+        too_short = len(points) <= 1 and len(points[0]) <= 20
+        common = any(p.strip().lower() in {'nutritious meal', 'healthy choice', 'add more vegetables'} for p in points)
+        return only_ascii or too_short or common
+    return len(points) == 1 and len(points[0]) < 16
+
+
+def _generate_personalized_points(total_nutrition: dict, profile: Optional[dict], user_language: str) -> Tuple[List[str], List[str]]:
+    def t(ru: str, en: str) -> str:
+        return ru if user_language == 'ru' else en
+    def to_float(v) -> float:
+        try:
+            return float(v)
+        except Exception:
+            return 0.0
+    cals = to_float(total_nutrition.get('calories'))
+    prot = to_float(total_nutrition.get('proteins'))
+    fats = to_float(total_nutrition.get('fats'))
+    carbs = to_float(total_nutrition.get('carbohydrates'))
+    sugar = to_float(total_nutrition.get('sugars'))
+    fiber = to_float(total_nutrition.get('fiber'))
+    salt = to_float(total_nutrition.get('salt'))
+    sat_fat = to_float(total_nutrition.get('saturated_fat'))
+    goal = (profile or {}).get('goal') if profile else None
+    positives: List[str] = []
+    improvements: List[str] = []
+    if prot >= 20:
+        positives.append(t('Высокое содержание белка — поддерживает сытость', 'High protein — supports satiety'))
+    if fiber >= 5:
+        positives.append(t('Много клетчатки — хорошо для пищеварения', 'High in fiber — good for digestion'))
+    if sugar > 0 and sugar <= 10:
+        positives.append(t('Низкое содержание сахара', 'Low sugar'))
+    if salt > 0 and salt <= 0.5:
+        positives.append(t('Низкая соль', 'Low salt'))
+    if cals <= 450:
+        positives.append(t('Умеренная калорийность блюда', 'Moderate total calories'))
+    if 15 <= fats <= 35 and 15 <= prot <= 40 and 20 <= carbs <= 60:
+        positives.append(t('Сбалансированные макроэлементы', 'Balanced macros'))
+    if sat_fat >= 12 or fats >= 40:
+        improvements.append(t('Понизь долю насыщенных жиров: меньше сыра/масла', 'Reduce saturated fat: less cheese/butter'))
+    if salt >= 2.0:
+        improvements.append(t('Слишком много соли — выбери менее солёные ингредиенты', 'Too much salt — choose lower-salt ingredients'))
+    if fiber < 5:
+        improvements.append(t('Добавь овощи/зелень для клетчатки и микронутриентов', 'Add vegetables/greens for fiber and micronutrients'))
+    if goal == 'gain_weight' and cals < 600:
+        improvements.append(t('Для набора — добавь сложные углеводы (крупы/хлеб цельнозерн.)', 'For gain — add complex carbs (grains/wholegrain bread)'))
+    if goal == 'lose_weight' and cals >= 600:
+        improvements.append(t('Для снижения веса — уменьшай порцию или калорийные добавки', 'For weight loss — reduce portion or high-calorie add‑ons'))
+    def dedup(items: List[str]) -> List[str]:
+        seen = set(); out: List[str] = []
+        for it in items:
+            k = it.lower()
+            if k in seen:
+                continue
+            seen.add(k); out.append(it)
+        return out[:3]
+    return dedup(positives), dedup(improvements)
+
+
 # Helper to format rich analysis result from ML service
-def format_analysis_result(result: dict, user_language: str = 'en') -> str:
+def format_analysis_result(result: dict, user_language: str = 'en', profile: Optional[dict] = None) -> str:
     message_parts = []
     
     # Start with random creative success message with LLM provider
@@ -44,6 +113,13 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
         if "regional_analysis" in analysis:
             regional_info = analysis["regional_analysis"]
             dish_type = regional_info.get("dish_identification", "")
+            # Fallback naming when provider returns generic/unknown
+            if dish_type in ("", "Unknown", "Unknown Dish", "Analyzed Dish"):
+                if "food_items" in analysis and analysis["food_items"]:
+                    food_names = [item.get("name", "").lower() for item in analysis["food_items"][:3] if item.get("name")]
+                    if food_names:
+                        dish_type = (f"салат с {', '.join(food_names)}" if user_language == "ru" else f"salad with {', '.join(food_names)}")
+                        regional_info["dish_identification"] = dish_type
             confidence = regional_info.get("regional_match_confidence", 0)
             
             # Always show dish name, even with low confidence
@@ -53,15 +129,8 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
                 else:
                     message_parts.append(f"🌍 Dish: {dish_type}")
             else:
-                # Generate dish name from food items if dish_identification is empty or generic
-                if "food_items" in analysis and analysis["food_items"]:
-                    food_names = [item.get("name", "").lower() for item in analysis["food_items"][:3] if item.get("name")]
-                    if food_names:
-                        if user_language == "ru":
-                            dish_name = f"салат с {', '.join(food_names)}"
-                        else:
-                            dish_name = f"salad with {', '.join(food_names)}"
-                        message_parts.append(f"🌍 {'Блюдо' if user_language == 'ru' else 'Dish'}: {dish_name}")
+                # Already has a usable dish name
+                pass
             
             message_parts.append("")  # Empty line
         
@@ -139,7 +208,7 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
             
             message_parts.append("")  # Empty line
             
-            # Add what's good about the meal
+            # Add what's good about the meal (replace generic with personalized if needed)
             positive_aspects = nutrition_analysis.get("positive_aspects", [])
             if positive_aspects:
                 if user_language == "ru":
@@ -155,7 +224,12 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
                     # If it's already a list
                     aspects = positive_aspects
                 
-                for aspect in aspects:
+                # If generic, replace with personalized suggestions based on totals and profile
+                totals = analysis.get("total_nutrition", {})
+                if _is_generic_points(aspects, user_language):
+                    gen_pos, _ = _generate_personalized_points(totals, profile, user_language)
+                    aspects = gen_pos or aspects
+                for aspect in aspects[:5]:
                     message_parts.append(f"• {aspect}")
             
             # Add recommendations for improving
@@ -174,14 +248,26 @@ def format_analysis_result(result: dict, user_language: str = 'en') -> str:
                 else:
                     # If it's already a list
                     suggestions = improvement_suggestions
-                
-                suggestions_text = ", ".join(suggestions)
-                message_parts.append(f"• {suggestions_text}")
+                # If generic, replace with personalized improvements
+                totals = analysis.get("total_nutrition", {})
+                if _is_generic_points(suggestions, user_language):
+                    _, gen_imp = _generate_personalized_points(totals, profile, user_language)
+                    suggestions = gen_imp or suggestions
+                for s in suggestions[:5]:
+                    message_parts.append(f"• {s}")
         
-        # Add motivation message if available
+        # Add motivation message if available (localized/suppressed for RU)
         if "motivation_message" in analysis and analysis["motivation_message"]:
-            message_parts.append("")  # Empty line
-            message_parts.append(f"🌟 {analysis['motivation_message']}")
+            mot = str(analysis["motivation_message"]).strip()
+            if user_language == 'ru':
+                mot_lc = mot.lower()
+                if mot_lc == 'great choice for healthy eating!':
+                    mot = 'Отличный выбор для здорового питания!'
+                elif re.fullmatch(r"[\x00-\x7F\s.,!?'\-:;()]+", mot):
+                    mot = ''  # suppress unknown English for RU UI
+            if mot:
+                message_parts.append("")  # Empty line
+                message_parts.append(f"🌟 {mot}")
     else:
         # This should not happen anymore, but just in case
         raise ValueError("Invalid ML service response format - missing 'analysis' key")
@@ -330,8 +416,27 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Clear the state
         await state.clear()
         
-        # Send result with main menu
-        keyboard = create_main_menu_keyboard(user_language)
+        # Send result with main menu and Fix Calories/Add to favorites buttons
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('fix_calories_btn', user_language),
+                    callback_data='action_fix_calories'
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_save_to_favorites', user_language, default='⭐ Save to favorites'),
+                    callback_data='action_save_favorite'
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    text=i18n.get_text('btn_main_menu', user_language),
+                    callback_data='action_main_menu'
+                )
+            ]
+        ])
         
         final_text = f"{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits - 1} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
         

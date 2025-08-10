@@ -11,6 +11,8 @@ from loguru import logger
 from common.routes import Routes
 from shared.health import create_health_response
 from shared.auth import require_internal_auth, get_auth_headers
+from services.pay.stripe.client import StripeClient  # type: ignore
+from services.pay.stripe.webhooks import stripe_webhook_endpoint  # type: ignore
 from yookassa_handlers.client import create_yookassa_invoice, verify_yookassa_payment, validate_yookassa_webhook
 from yookassa_handlers.config import PLANS_YOOKASSA
 
@@ -50,6 +52,31 @@ async def health():
 async def health_alias():
     """Health check alias endpoint"""
     return await health()
+
+@app.post("/stripe/checkout")
+@require_internal_auth
+async def stripe_checkout(request: Request):
+    """Create Stripe checkout session and return checkout URL"""
+    try:
+        body = await request.json()
+        user_id = int(body.get("user_id"))
+        plan_id = body.get("plan_id", "basic")
+        language = body.get("language", "en")
+        success_url = body.get("success_url")
+        cancel_url = body.get("cancel_url")
+
+        client = StripeClient()
+        session = await client.create_checkout_session(
+            user_id=user_id,
+            plan_id=plan_id,
+            language=language,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        return session
+    except Exception as e:
+        logger.error(f"Failed to create stripe checkout: {e}")
+        raise HTTPException(status_code=500, detail="Stripe checkout failed")
 
 @app.post(Routes.PAY_INVOICE)
 @require_internal_auth
@@ -121,6 +148,11 @@ async def yookassa_webhook(request: Request):
     except Exception as e:
         logger.error(f"Error processing YooKassa webhook: {e}")
         raise HTTPException(status_code=500, detail="Webhook processing failed")
+
+@app.post(Routes.PAY_WEBHOOK_STRIPE)
+async def stripe_webhook(request: Request):
+    """Proxy to Stripe webhook handler"""
+    return await stripe_webhook_endpoint(request)
 
 async def add_credits_to_user(user_id: str, credits_count: int, payment_id: str, amount: float):
     """
