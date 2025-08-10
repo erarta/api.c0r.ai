@@ -182,15 +182,15 @@ BASE_PAYMENT_PLANS = {
 PRICE_CONFIG = {
     "yookassa": {
         "production": {
-            "basic": 19900,   # 199 RUB in kopecks
+            "basic": 9900,    # 99 RUB in kopecks
             "pro": 34900,     # 349 RUB in kopecks
         },
         "staging": {
-            "basic": 19900,   # Same as production for staging
+            "basic": 9900,    # Match production
             "pro": 34900,
         },
         "development": {
-            "basic": 19900,   # Use production prices in development too
+            "basic": 9900,    # Match production
             "pro": 34900,
         },
         "test": {

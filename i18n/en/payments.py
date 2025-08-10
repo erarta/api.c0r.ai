@@ -59,6 +59,7 @@ TRANSLATIONS = {
     "payment_success_credits_added": "✅ Added {credits} credits to your account",
     "payment_success_total_credits": "💳 You now have {total_credits} credits",
     "payment_success_continue": "Keep sending food photos for analysis!",
+    "payment_success_amount_paid": "💰 Amount paid: {amount}",
     
     # Payment error messages
     "payment_error_title": "❌ **Payment Error**",
@@ -139,6 +140,10 @@ TRANSLATIONS = {
     
     # Payment system selection
     "payment_system_selection": "💳 **Let's Get You More Credits!**\n\nYou currently have: {credits}\n\n💡 **What are credits?**\n• 1 credit = 1 photo analysis\n• Each delicious food photo you send costs 1 credit\n• Your credits never expire - they're yours forever!\n\nPick the payment method that feels right for you:",
-    "stripe_payment_plans": "💳 **Credit Card Payment Plans**\n\nChoose your plan:",
-    "stars_payment_plans": "⭐ **Telegram Stars Payment Plans**\n\nChoose your plan:",
+    "stripe_payment_plans": "💳 **Credit Card Packages**\n\nChoose your package:",
+    "stars_payment_plans": "⭐ **Telegram Stars Packages**\n\nChoose your package:",
+    "plan_basic_title": "Basic package",
+    "plan_basic_description": "20 credits for food analysis",
+    "plan_pro_title": "Pro package",
+    "plan_pro_description": "100 credits for food analysis",
 }

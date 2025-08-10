@@ -236,27 +236,7 @@ async def status_command(message: types.Message):
         else:
             created_date = 'Unknown'
         
-        # Determine overall health status
-        overall_health_status = "all_systems_ok"
-        error_count = 0
-        critical_services = ['telegram_configured', 'database_configured']
-        
-        for service in critical_services:
-            if not health_info.get(service, False):
-                error_count += 1
-        
-        # Check optional services
-        optional_services = ['ml_service_configured', 'pay_service_configured', 'openai_configured']
-        for service in optional_services:
-            if not health_info.get(service, False):
-                error_count += 0.5  # Half weight for optional services
-        
-        if error_count >= 2:
-            overall_health_status = "major_issues"
-        elif error_count > 0:
-            overall_health_status = "some_issues"
-        
-        # Build health indicators text - REMOVED
+        # Build health indicators text - removed (no global health_info here)
         health_text = ""
         # Create status text using i18n
         status_text = (
@@ -328,28 +308,7 @@ async def status_callback(callback: types.CallbackQuery):
         # Get user's language
         user_language = user.get('language', 'en')
 
-        # Determine overall health status
-        overall_health_status = "all_systems_ok"
-        error_count = 0
-        critical_services = ['telegram_configured', 'database_configured']
-        
-        for service in critical_services:
-            if not health_info.get(service, False):
-                error_count += 1
-        
-        # Check optional services
-        optional_services = ['ml_service_configured', 'pay_service_configured', 'openai_configured']
-        for service in optional_services:
-            if not health_info.get(service, False):
-                error_count += 0.5  # Half weight for optional services
-        
-        if error_count >= 2:
-            overall_health_status = "major_issues"
-        elif error_count > 0:
-            overall_health_status = "some_issues"
-        
-        # Build health indicators text
-        # Build health indicators text - REMOVED
+        # Build health indicators text - removed (no global health_info here)
         health_text = ""
         # Create status text using i18n
         status_text = (
@@ -421,7 +380,7 @@ async def buy_credits_command(message: types.Message):
         )
         
         # Use enhanced payment handler for regional support
-        await enhanced_payment_handler.show_payment_options(message)
+        await enhanced_payment_handler.show_payment_options(message, actor_user=message.from_user)
         
     except Exception as e:
         logger.error(f"Error in /buy for user {telegram_user_id}: {e}")
@@ -454,7 +413,7 @@ async def buy_callback(callback: types.CallbackQuery):
         )
         
         # Use enhanced payment handler for regional support
-        await enhanced_payment_handler.show_payment_options(callback.message)
+        await enhanced_payment_handler.show_payment_options(callback.message, actor_user=callback.from_user)
         
     except Exception as e:
         logger.error(f"Error in buy callback for user {telegram_user_id}: {e}")

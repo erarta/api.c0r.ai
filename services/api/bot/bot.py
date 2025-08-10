@@ -249,11 +249,12 @@ dp.message.register(process_weight, ProfileStates.waiting_for_weight)
 dp.callback_query.register(handle_recipe_callback, lambda callback: callback.data == "action_recipe")
 # Favorites actions (add/delete/pagination)
 dp.callback_query.register(favorites_callback_router, lambda callback: callback.data and callback.data.startswith("fav_"))
-# General action_* router
-dp.callback_query.register(handle_action_callback, lambda callback: callback.data.startswith("action_"))
+# Specific action_* handlers FIRST
 dp.callback_query.register(start_fix_calories_callback, lambda callback: callback.data == "action_fix_calories")
 dp.callback_query.register(start_scan_barcode, lambda callback: callback.data == "action_scan_barcode")
 dp.callback_query.register(start_enter_grams, lambda callback: callback.data == "action_ate_this")
+# General action_* router LAST
+dp.callback_query.register(handle_action_callback, lambda callback: callback.data.startswith("action_"))
 # Enhanced payment handlers (NEW) - Register BEFORE legacy handlers
 dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("yookassa_pay_"))
 dp.callback_query.register(enhanced_payment_handler.handle_payment_callback, lambda callback: callback.data.startswith("stripe_pay_"))

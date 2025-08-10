@@ -4,7 +4,7 @@ Determines payment provider based on user's language/region:
 - CIS countries (language codes) -> YooKassa
 - International users -> Stripe + Telegram Stars
 """
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional
 from loguru import logger
 
 # Коды языков стран СНГ
@@ -21,6 +21,11 @@ CIS_LANGUAGE_CODES = {
     'be',  # Беларусь
     'uk',  # Украина
     'mo',  # Молдова
+}
+
+# Two-letter country codes for CIS
+CIS_COUNTRY_CODES = {
+    'RU', 'KZ', 'UZ', 'KG', 'TJ', 'TM', 'AZ', 'AM', 'GE', 'BY', 'UA', 'MD'
 }
 
 PaymentProvider = Literal['yookassa', 'stripe', 'telegram_stars']
@@ -63,6 +68,27 @@ def get_payment_provider(language_code: str) -> PaymentProvider:
         return 'yookassa'
     else:
         return 'stripe'
+
+def is_cis_country(country_code: str | None) -> bool:
+    if not country_code:
+        return False
+    return country_code.upper() in CIS_COUNTRY_CODES
+
+def is_cis_user(telegram_language_code: Optional[str], user_language: Optional[str], country_code: Optional[str]) -> bool:
+    """
+    Decide CIS routing using a conservative OR across all available signals.
+    Priority: country_code (if present) OR Telegram language_code OR stored user language.
+    """
+    # Country wins if available
+    if is_cis_country(country_code):
+        return True
+    # Telegram language
+    if telegram_language_code and is_cis_region(telegram_language_code):
+        return True
+    # Stored DB language
+    if user_language and is_cis_region(user_language):
+        return True
+    return False
 
 def get_available_payment_providers(language_code: str) -> List[PaymentProvider]:
     """

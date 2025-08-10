@@ -20,6 +20,9 @@ services:
         reservations:
           memory: 256M
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     logging:
       driver: json-file
       options:
@@ -45,6 +48,9 @@ services:
         reservations:
           memory: 384M
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     logging:
       driver: json-file
       options:
@@ -68,6 +74,9 @@ services:
         reservations:
           memory: 192M
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     logging:
       driver: json-file
       options:

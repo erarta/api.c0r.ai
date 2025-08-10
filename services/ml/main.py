@@ -22,12 +22,8 @@ from shared.auth import require_internal_auth
 from .config import get_model_config, validate_model_for_task
 from services.ml.core.providers.llm_factory import llm_factory
 from services.ml.perplexity.client import analyze_food_with_perplexity
-from services.ml.openfoodfacts_client import (
-    fetch_product_by_barcode,
-    fetch_product_by_name,
-    fetch_best_product_by_names,
-    map_off_to_nutrition,
-)
+from common.db.profiles import get_user_profile
+# OpenFoodFacts removed
 from services.ml.chestnyznak_client import fetch_product_by_gtin, map_cz_to_basic
 from services.ml.barcodelist_client import fetch_product_by_barcode as fetch_barcodelist, map_barcodelist_to_basic
 
@@ -457,7 +453,7 @@ async def label_analyze(
             logger.info("No barcodes detected")
         ocr_text, ocr_blocks = await _ocr_text(image_bytes, user_language)
 
-        # If we have a barcode, try providers in order with time budget: OFF → ChestnyZNAK → BarcodeList (RU)
+        # If we have a barcode, try providers in order with time budget: ChestnyZNAK → BarcodeList (RU)
         parsed_nutrition = None
         overall_deadline = start_overall + 9.5  # hard cap ~10s total
         if barcodes:
@@ -468,21 +464,7 @@ async def label_analyze(
                     logger.info(f"[LOOKUP] Cache hit for {b.value}")
                     parsed_nutrition = cached[1]
                     break
-                # 1) OFF by barcode (fast path)
-                step_t = time.monotonic()
-                off_timeout = max(2.0, min(5.0, overall_deadline - step_t))
-                if off_timeout <= 0:
-                    break
-                logger.info(f"[LOOKUP] Trying OpenFoodFacts for {b.value} (timeout={off_timeout:.1f}s)")
-                off_product = await fetch_product_by_barcode(b.value, timeout_sec=off_timeout)
-                if off_product:
-                    mapped = map_off_to_nutrition(off_product)
-                    if mapped and isinstance(mapped, dict) and "analysis" in mapped:
-                        tn = mapped.get('analysis',{}).get('total_nutrition',{})
-                        logger.info(f"[LOOKUP] Matched OFF by barcode in {round((time.monotonic()-step_t)*1000)}ms; per-serving: cal={tn.get('calories')} p={tn.get('proteins')} f={tn.get('fats')} c={tn.get('carbohydrates')}")
-                        parsed_nutrition = mapped
-                        _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
-                        break
+                # 1) OpenFoodFacts removed
 
                 # 2/3) Try CZ and BarcodeList concurrently with small timeouts
                 remaining = overall_deadline - time.monotonic()
@@ -503,40 +485,12 @@ async def label_analyze(
                                 mapped2 = map_cz_to_basic(res)
                                 if mapped2 and isinstance(mapped2, dict) and "analysis" in mapped2:
                                     parsed_nutrition = mapped2
-                                    # Try OFF by name upgrade using best-name search
-                                    cz_name = res.get("product_name") or res.get("raw", {}).get("product_name")
-                                    if cz_name:
-                                        logger.info(f"[LOOKUP] OFF by name from CZ: {cz_name}")
-                                        by_name = await fetch_best_product_by_names([cz_name], timeout_sec=min(5.0, overall_deadline - time.monotonic()))
-                                        if by_name:
-                                            mapped_name = map_off_to_nutrition(by_name)
-                                            if mapped_name and isinstance(mapped_name, dict) and "analysis" in mapped_name:
-                                                parsed_nutrition = mapped_name
-                                                _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
-                                                tn = parsed_nutrition.get('analysis',{}).get('total_nutrition',{})
-                                                logger.info(f"[LOOKUP] Upgrade success via OFF name; per-serving: cal={tn.get('calories')} p={tn.get('proteins')} f={tn.get('fats')} c={tn.get('carbohydrates')}")
-                                                break
+                                    # OFF upgrade removed
                             elif t is bl_task:
                                 mapped3 = map_barcodelist_to_basic(res)
                                 if mapped3 and isinstance(mapped3, dict) and "analysis" in mapped3:
                                     parsed_nutrition = mapped3
-                                    bl_name = res.get("title")
-                                    if bl_name:
-                                        logger.info(f"[LOOKUP] OFF by name from barcode-list: {bl_name}")
-                                        by_name2 = await fetch_best_product_by_names(
-                                            [bl_name],
-                                            timeout_sec=min(4.0, max(2.0, overall_deadline - time.monotonic())),
-                                            page_size=6,
-                                            deadline_ts=overall_deadline,
-                                        )
-                                        if by_name2:
-                                            mapped_name2 = map_off_to_nutrition(by_name2)
-                                            if mapped_name2 and isinstance(mapped_name2, dict) and "analysis" in mapped_name2:
-                                                parsed_nutrition = mapped_name2
-                                                _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
-                                                tn = parsed_nutrition.get('analysis',{}).get('total_nutrition',{})
-                                                logger.info(f"[LOOKUP] Upgrade success via OFF name; per-serving: cal={tn.get('calories')} p={tn.get('proteins')} f={tn.get('fats')} c={tn.get('carbohydrates')}")
-                                                break
+                                    # OFF upgrade removed
                     # Cancel pending to save time
                     for p in pending:
                         p.cancel()
@@ -607,8 +561,7 @@ async def label_analyze(
             ocr_blocks=ocr_blocks,
             parsed_nutrition=parsed_nutrition,
             notes=(
-                "Matched OpenFoodFacts by barcode" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'openfoodfacts'
-                else "Matched ChestnyZNAK (basic metadata)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'chestnyznak'
+                "Matched ChestnyZNAK (basic metadata)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'chestnyznak'
                 else "Matched BarcodeList (basic metadata)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'barcodelist'
                 else "Parsed from label (OCR)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'ocr'
                 else "Heuristic estimate (RU dairy)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'heuristic'
@@ -637,8 +590,40 @@ async def label_analyze_perplexity(
         image_bytes = await photo.read()
         if not image_bytes:
             raise HTTPException(status_code=400, detail="Empty image file")
+        # Detect barcode(s) up front
+        try:
+            barcodes = await _detect_barcodes(image_bytes)
+        except Exception:
+            barcodes = []
         # Delegate to Perplexity client for a rich product analysis
-        analysis = await analyze_food_with_perplexity(image_bytes, user_language, use_premium_model=False, mode="label")
+        # Try to fetch a minimal user context if telegram id header present
+        user_context = None
+        try:
+            telegram_id = request.headers.get("X-Telegram-Id")
+            if telegram_id:
+                from common.db.users import get_user_by_telegram_id
+                user = await get_user_by_telegram_id(int(telegram_id))
+                if user:
+                    profile = await get_user_profile(user['id'])
+                    user_context = profile or {}
+        except Exception:
+            user_context = None
+        analysis = await analyze_food_with_perplexity(
+            image_bytes,
+            user_language,
+            use_premium_model=False,
+            mode="label",
+            user_context=user_context,
+        )
+        # Attach detected barcodes into provenance.debug for UI usage
+        try:
+            az = analysis.get("analysis") if isinstance(analysis, dict) else None
+            if isinstance(az, dict):
+                prov = az.setdefault("provenance", {}).setdefault("debug", {})
+                if barcodes:
+                    prov["barcodes_detected"] = [b.value for b in barcodes]
+        except Exception:
+            pass
         return PerplexityAnalyzeResponse(language=user_language, analysis=analysis.get("analysis", analysis))
     except HTTPException:
         raise

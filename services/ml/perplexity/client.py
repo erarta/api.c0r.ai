@@ -35,7 +35,14 @@ PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 PERPLEXITY_BASE_URL = "https://api.perplexity.ai"
 
 
-async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False, *, mode: str = "dish") -> dict:
+async def analyze_food_with_perplexity(
+    image_bytes: bytes,
+    user_language: str = "en",
+    use_premium_model: bool = False,
+    *,
+    mode: str = "dish",
+    user_context: dict | None = None,
+) -> dict:
     """
     Analyze food image using Perplexity API
     Returns KBZHU data in expected format
@@ -57,6 +64,31 @@ async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = 
             user_prompt = get_product_label_prompt(user_language)
         else:
             user_prompt = get_food_analysis_prompt(user_language)
+        # Inject personalized context for allergies/diet/goal/calorie target
+        context_suffix = ""
+        if user_context:
+            try:
+                diet = user_context.get("dietary_preferences") or []
+                allergies = user_context.get("allergies") or []
+                goal = user_context.get("goal")
+                daily_target = user_context.get("daily_calories_target")
+                extras = []
+                if diet:
+                    extras.append(f"Diet: {', '.join(diet)}")
+                if allergies:
+                    extras.append(f"Allergies: {', '.join(allergies)}")
+                if goal:
+                    extras.append(f"Goal: {goal}")
+                if daily_target:
+                    extras.append(f"Daily calories target: {daily_target}")
+                if extras:
+                    if user_language == "ru":
+                        context_suffix = "\n\nПользовательский контекст: " + "; ".join(extras) + ". Учитывай это при оценке пригодности продукта, рисков и порций."
+                    else:
+                        context_suffix = "\n\nUser context: " + "; ".join(extras) + ". Consider this for suitability, risks, and portion advice."
+            except Exception:
+                pass
+        user_prompt = user_prompt + context_suffix
         system_prompt = get_system_prompt()
         
         # Perplexity API supports vision with sonar models
@@ -70,7 +102,7 @@ async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = 
             "temperature": 0.2,      # Минимальная случайность для точности
             "top_p": 0.3,           # Ограничение ядра выборки для фокуса на вероятных токенах
             "presence_penalty": 0.1, # Снижает риск повторений, не подавляя новые токены
-            "max_tokens": 1000,     # Достаточно для детального описания ингредиентов
+            "max_tokens": 1200,
             "return_images": False, # Не нужны обратные изображения - экономим токены
             "search_domain_filter": ["wikipedia.org", "seriouseats.com", "bonappetit.com"], # Источники с высокой кулинарной достоверностью
             "response_format": {"type": "text"}, # Perplexity uses "text" format, not "json_object"

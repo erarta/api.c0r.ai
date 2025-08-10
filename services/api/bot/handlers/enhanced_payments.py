@@ -24,7 +24,8 @@ from common.config.payment_plans import (
 from common.utils.region_detector import (
     get_payment_provider, 
     get_available_payment_providers, 
-    is_cis_region
+    is_cis_region,
+    is_cis_user,
 )
 
 # Try to import Stripe client
@@ -56,28 +57,35 @@ class EnhancedPaymentHandler:
             self.stripe_client = None
             logger.warning("❌ Stripe client not available - using None")
         
-    async def show_payment_options(self, message: types.Message):
+    async def show_payment_options(self, message: types.Message, actor_user: types.User | None = None):
         """
         Show appropriate payment options based on user's region
         """
         try:
-            user_id = message.from_user.id
-            username = message.from_user.username
-            telegram_user = message.from_user
-            telegram_language_code = telegram_user.language_code or "unknown"
+            # Use the real actor (callback.from_user) when available, otherwise fall back to message.from_user
+            telegram_user = actor_user or message.from_user
+            user_id = telegram_user.id
+            username = telegram_user.username
+            telegram_language_code = (getattr(telegram_user, 'language_code', None) or "").strip() or None
+            telegram_country_code = getattr(telegram_user, 'country', None) or None
             
             user = await get_or_create_user(user_id, username)
             user_language = user.get('language', 'en')
             
-            # 🔍 DEBUG: Payment Routing Analysis
-            is_cis = is_cis_region(user_language)
-            payment_provider = get_payment_provider(user_language)
-            available_providers = get_available_payment_providers(user_language)
+            # Prefer Telegram language_code for regional routing; fallback to stored user language
+            effective_lang_code = (telegram_language_code or user_language or 'en')
+            
+            # 🔍 DEBUG: Payment Routing Analysis (based on effective_lang_code)
+            is_cis = is_cis_user(telegram_language_code, user_language, telegram_country_code)
+            payment_provider = get_payment_provider(effective_lang_code)
+            available_providers = get_available_payment_providers(effective_lang_code)
             
             # Log detailed debug information
             logger.info(f"🔍 PAYMENT DEBUG for user {user_id}:")
             logger.info(f"   Telegram language_code: {telegram_language_code}")
             logger.info(f"   User DB language: {user_language}")
+            logger.info(f"   Effective language_code: {effective_lang_code}")
+            logger.info(f"   Telegram country: {telegram_country_code}")
             logger.info(f"   Is CIS region: {is_cis}")
             logger.info(f"   Payment provider: {payment_provider}")
             logger.info(f"   Available providers: {available_providers}")
@@ -86,6 +94,7 @@ class EnhancedPaymentHandler:
             print(f"\n🔍 PAYMENT DEBUG for user {user_id}:")
             print(f"   Telegram language_code: {telegram_language_code}")
             print(f"   User DB language: {user_language}")
+            print(f"   Effective language_code: {effective_lang_code}")
             print(f"   Is CIS region: {is_cis}")
             print(f"   Payment provider: {payment_provider}")
             print(f"   Available providers: {available_providers}")
@@ -93,8 +102,8 @@ class EnhancedPaymentHandler:
             
             logger.info(f"Showing payment options for user {user_id}, language: {user_language}")
             
-            # Get available providers for user's region
-            available_providers = get_available_payment_providers(user_language)
+            # Get available providers for user's region (based on effective_lang_code)
+            available_providers = get_available_payment_providers(effective_lang_code)
             
             if not available_providers:
                 await message.answer(
@@ -104,12 +113,15 @@ class EnhancedPaymentHandler:
                 return
             
             # Show payment options based on region
-            if is_cis_region(user_language):
+            if is_cis:
                 # CIS users - YooKassa only
-                await self.show_yookassa_payment_options(message, user_language)
+                # Normalize language for plans/messages: use 'ru' for CIS
+                cis_lang = 'ru'
+                await self.show_yookassa_payment_options(message, cis_lang)
             else:
                 # International users - Stripe + Telegram Stars
-                await self.show_international_payment_options(message, user_language)
+                intl_lang = 'en'
+                await self.show_international_payment_options(message, intl_lang)
                 
         except Exception as e:
             logger.error(f"Error showing payment options: {e}")
@@ -176,7 +188,7 @@ class EnhancedPaymentHandler:
             keyboard_buttons = [
                 [
                     types.InlineKeyboardButton(
-                        text="💳 Credit Card (Stripe)",
+                        text="💳 Stripe",
                         callback_data="payment_system_stripe"
                     )
                 ],

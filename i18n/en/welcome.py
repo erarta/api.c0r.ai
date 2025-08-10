@@ -29,7 +29,7 @@ TRANSLATIONS = {
     "btn_save_to_favorites": "⭐ Save to favorites",
     "btn_back": "⬅️ Back",
     "btn_meal_history": "🍽️ My Meal History",
-    "btn_scan_barcode": "📷 Scan barcode",
+    "btn_scan_barcode": "📷 Scan product",
     "btn_favorites": "⭐ Favorites",
     "favorites_title": "⭐ Your Favorites",
     "favorite_saved": "Saved to favorites ⭐",

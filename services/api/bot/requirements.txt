@@ -7,3 +7,5 @@ supabase
 python-telegram-bot 
 loguru
 boto3 
+stripe
+yookassa

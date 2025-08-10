@@ -315,7 +315,8 @@ async def handle_successful_payment(message: types.Message):
         success_title = i18n.get_text("payment_success_title", user_language)
         plan_title = plan['title']
         credits_added = i18n.get_text("payment_success_credits_added", user_language, credits=plan['credits'])
-        amount_paid = f"{payment.total_amount/100:.2f} {payment.currency}"
+        # Localized amount string
+        amount_value = f"{payment.total_amount/100:.2f} {payment.currency}"
         total_credits = i18n.get_text("payment_success_total_credits", user_language, total_credits=updated_user['credits_remaining'])
         continue_message = i18n.get_text("payment_success_continue", user_language)
         
@@ -323,7 +324,7 @@ async def handle_successful_payment(message: types.Message):
             f"{success_title}\n\n"
             f"💳 **{plan_title}**\n"
             f"⚡ **{credits_added}**\n"
-            f"💰 **Amount Paid**: {amount_paid}\n"
+            f"{i18n.get_text('payment_success_amount_paid', user_language, amount=amount_value)}\n"
             f"🔋 **{total_credits}**\n\n"
             f"{continue_message}"
         )
@@ -331,7 +332,7 @@ async def handle_successful_payment(message: types.Message):
         await message.answer(
             confirmation_message,
             parse_mode="Markdown",
-            reply_markup=create_payment_success_keyboard()
+            reply_markup=create_payment_success_keyboard(user_language)
         )
         
         logger.info(f"Payment processed successfully for user {user_id}: {plan['credits']} credits added, total credits: {updated_user['credits_remaining']}")
