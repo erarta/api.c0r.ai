@@ -14,6 +14,8 @@ TRANSLATIONS = {
     "profile_calories": "🔥 **Your Daily Calorie Target:** {calories}",
     "profile_edit_btn": "✏️ Let's Update My Profile",
     "profile_what_next": "What would you like to do next, my friend?",
+    "profile_telegram_language": "🌐 Telegram language_code: {lang}",
+    "profile_interface_language": "🗣️ Interface language: {lang}",
     
     # Profile setup messages
     "profile_setup_age": "👶 **Step 1/8: How old are you?**\n\nPlease tell me your age in years (like 25):",

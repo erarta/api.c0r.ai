@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from loguru import logger
 
 from shared.prompts.food_analysis import get_food_analysis_prompt, get_system_prompt
+from shared.prompts.product_label import get_product_label_prompt
 
 
 def get_expert_prefix(user_language: str = "en") -> str:
@@ -34,7 +35,7 @@ PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 PERPLEXITY_BASE_URL = "https://api.perplexity.ai"
 
 
-async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
+async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False, *, mode: str = "dish") -> dict:
     """
     Analyze food image using Perplexity API
     Returns KBZHU data in expected format
@@ -51,8 +52,11 @@ async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = 
         # Encode image to base64
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
-        # Get shared prompts
-        user_prompt = get_food_analysis_prompt(user_language)
+        # Get prompts depending on mode: 'dish' or 'label'
+        if mode == "label":
+            user_prompt = get_product_label_prompt(user_language)
+        else:
+            user_prompt = get_food_analysis_prompt(user_language)
         system_prompt = get_system_prompt()
         
         # Perplexity API supports vision with sonar models
@@ -95,7 +99,7 @@ async def analyze_food_with_perplexity(image_bytes: bytes, user_language: str = 
             "Content-Type": "application/json"
         }
         
-        logger.info(f"🔍 Preparing to call Perplexity API with model: {model}")
+        logger.info(f"🔍 Preparing to call Perplexity API with model: {model}, mode={mode}")
         logger.info(f"🔧 Payload: {json.dumps(payload, indent=2)}")
         logger.info(f"🔑 Using API Key: {PERPLEXITY_API_KEY[:5]}...{PERPLEXITY_API_KEY[-5:]}")
 

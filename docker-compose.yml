@@ -30,6 +30,8 @@ services:
       context: .
       dockerfile: services/ml/Dockerfile
     env_file: .env
+    environment:
+      CHESTNYZNAK_ENABLED: "${CHESTNYZNAK_ENABLED:-true}"
     ports:
       - "8001:8001"
     networks:

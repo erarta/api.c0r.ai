@@ -1,0 +1,27 @@
+name: App CI
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+  pull_request:
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      - name: Install dependencies
+        working-directory: app
+        run: flutter pub get
+      - name: Analyze
+        working-directory: app
+        run: flutter analyze
+      - name: Test with coverage
+        working-directory: app
+        run: flutter test --coverage
+      - name: Check coverage >= 85%
+        working-directory: app
+        run: dart run tool/check_coverage.dart --min 0.85

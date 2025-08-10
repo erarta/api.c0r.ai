@@ -6,12 +6,14 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from io import BytesIO
 from collections import defaultdict, deque
 import uuid
 import time
 import base64
 import json
 import httpx
+import asyncio
 from openai import OpenAI
 from loguru import logger
 from common.routes import Routes
@@ -19,7 +21,26 @@ from shared.health import create_health_response
 from shared.auth import require_internal_auth
 from .config import get_model_config, validate_model_for_task
 from services.ml.core.providers.llm_factory import llm_factory
-from services.ml.openfoodfacts_client import fetch_product_by_barcode, map_off_to_nutrition
+from services.ml.perplexity.client import analyze_food_with_perplexity
+from services.ml.openfoodfacts_client import (
+    fetch_product_by_barcode,
+    fetch_product_by_name,
+    fetch_best_product_by_names,
+    map_off_to_nutrition,
+)
+from services.ml.chestnyznak_client import fetch_product_by_gtin, map_cz_to_basic
+from services.ml.barcodelist_client import fetch_product_by_barcode as fetch_barcodelist, map_barcodelist_to_basic
+
+# Optional imports for barcode detection
+try:
+    from PIL import Image, ImageOps, ImageEnhance
+    from pyzbar.pyzbar import decode as zbar_decode
+    _BARCODE_AVAILABLE = True
+except Exception as _e:
+    _BARCODE_AVAILABLE = False
+    logger.warning(f"Barcode dependencies not available yet: {_e}")
+
+_OCR_AVAILABLE = True
 
 # Environment and app configuration
 ENV = os.getenv("ENV", "development").lower()
@@ -66,6 +87,8 @@ async def add_request_id(request: Request, call_next):
 # Lightweight per-IP rate limiter (internal endpoints still benefit from abuse protection)
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
 _request_history: dict[str, deque[float]] = defaultdict(deque)
+_barcode_cache: dict[str, tuple[float, dict]] = {}
+BARCODE_CACHE_TTL_SEC = 600.0
 
 def _rate_limit_ok(key: str) -> bool:
     now = time.time()
@@ -126,13 +149,253 @@ class LabelAnalyzeResponse(BaseModel):
     parsed_nutrition: Optional[dict] = None
     notes: Optional[str] = None
 
-async def _stub_detect_barcodes(image_bytes: bytes) -> List[DetectedBarcode]:
-    # TODO (v0.2.0): integrate pyzbar/zxing. For v0.1.0, return empty.
-    return []
 
-async def _stub_ocr_text(image_bytes: bytes, lang: str) -> tuple[str, List[OcrBlock]]:
-    # TODO: integrate pytesseract/easyocr; for now return empty
-    return "", []
+class PerplexityAnalyzeResponse(BaseModel):
+    language: str
+    analysis: dict
+
+async def _detect_barcodes(image_bytes: bytes) -> List[DetectedBarcode]:
+    """Detect barcodes using pyzbar with simple augmentations (rotate/contrast/resize).
+    Adds detailed logs about attempts and successes to help diagnose failures in the field.
+    """
+    found_codes: dict[str, str] = {}
+    results: List[DetectedBarcode] = []
+    if not _BARCODE_AVAILABLE:
+        return results
+    try:
+        t0 = time.monotonic()
+        base = Image.open(BytesIO(image_bytes))
+        # Ensure RGB for consistent ops
+        if base.mode not in ("RGB", "L"):
+            base = base.convert("RGB")
+
+        # Prepare candidate variants
+        candidates: List[Image.Image] = []
+        # Original and grayscale
+        candidates.append(base)
+        candidates.append(ImageOps.grayscale(base))
+        # Slight contrast boost can help
+        try:
+            candidates.append(ImageEnhance.Contrast(ImageOps.grayscale(base)).enhance(1.5))
+        except Exception:
+            pass
+        # If image small, upscale (cap to 1600px on largest side)
+        w, h = base.size
+        max_side = max(w, h)
+        if max_side < 900:
+            scale = min(1600 / max_side, 2.5)
+            new_size = (int(w * scale), int(h * scale))
+            try:
+                candidates.extend([
+                    base.resize(new_size),
+                    ImageOps.grayscale(base.resize(new_size))
+                ])
+            except Exception:
+                pass
+
+        logger.info(f"[BARCODE] Candidates prepared: {len(candidates)}; original size={w}x{h}")
+
+        # Try rotations for each candidate
+        total_decodes = 0
+        for img in candidates:
+            for angle in (0, 90, 180, 270):
+                try:
+                    test_img = img.rotate(angle, expand=True) if angle else img
+                    decoded = zbar_decode(test_img)
+                    logger.info(f"[BARCODE] Attempt angle={angle}: {len(decoded)} codes")
+                    for d in decoded:
+                        try:
+                            value = d.data.decode("utf-8").strip()
+                        except Exception:
+                            value = d.data.decode(errors="ignore").strip()
+                        if not value:
+                            continue
+                        # Deduplicate by value
+                        if value not in found_codes:
+                            found_codes[value] = d.type or "unknown"
+                            total_decodes += 1
+                except Exception:
+                    continue
+
+        logger.info(f"[BARCODE] Unique codes found={len(found_codes)} (raw decodes={total_decodes}) in {round((time.monotonic()-t0)*1000)}ms")
+        for val, typ in found_codes.items():
+            results.append(DetectedBarcode(type=typ, value=val))
+    except Exception as e:
+        logger.warning(f"Barcode decode failed: {e}")
+    return results
+
+def _normalize_text(s: str) -> str:
+    return " ".join((s or "").replace("\n", " ").split())
+
+
+async def _ocr_text(image_bytes: bytes, lang: str) -> tuple[str, List[OcrBlock]]:
+    if not _OCR_AVAILABLE:
+        return "", []
+    try:
+        import pytesseract
+        from PIL import Image
+        from io import BytesIO
+        lang_code = "rus+eng" if lang.startswith("ru") else "eng+rus"
+        img = Image.open(BytesIO(image_bytes)).convert("RGB")
+        text = pytesseract.image_to_string(img, lang=lang_code)
+        # Split lines as blocks; pytesseract confidence requires image_to_data; we keep it simple for speed
+        blocks = [OcrBlock(text=line.strip()) for line in text.splitlines() if line.strip()]
+        return text, blocks
+    except Exception as e:
+        logger.warning(f"OCR failed: {e}")
+        return "", []
+
+
+def _parse_nutrition_from_text(text: str) -> Optional[dict]:
+    if not text:
+        return None
+    import re
+    # Normalize common locale/spacing issues
+    t = text.replace('\xa0', ' ')
+    t = t.replace(',', '.')
+    t = t.lower()
+    # Common RU labels
+    # energy (kcal)
+    kcal = None
+    m = re.search(r"(ккал|kcal)\D{0,15}([0-9]+(?:\.[0-9]+)?)", t)
+    if m:
+        try:
+            kcal = float(m.group(2))
+        except Exception:
+            kcal = None
+    # energy (kJ)
+    kj = None
+    m_kj = re.search(r"(кдж|kj)\D{0,15}([0-9]+(?:\.[0-9]+)?)", t)
+    if m_kj:
+        try:
+            kj = float(m_kj.group(2))
+        except Exception:
+            kj = None
+    # proteins
+    prot = None
+    m = re.search(r"(белк[аи]?|белок|protein[s]?)\D{0,15}([0-9]+(?:\.[0-9]+)?)\s*(g|гр|г)?\b", t)
+    if m:
+        try:
+            prot = float(m.group(2))
+        except Exception:
+            prot = None
+    # fats
+    fat = None
+    m = re.search(r"(жир[ыа]?|fat[s]?)\D{0,15}([0-9]+(?:\.[0-9]+)?)\s*(g|гр|г)?\b", t)
+    if m:
+        try:
+            fat = float(m.group(2))
+        except Exception:
+            fat = None
+    # carbs
+    carb = None
+    m = re.search(r"(углевод[ыа]?|carb[sh]?)\D{0,20}([0-9]+(?:\.[0-9]+)?)\s*(g|гр|г)?\b", t)
+    if m:
+        try:
+            carb = float(m.group(2))
+        except Exception:
+            carb = None
+
+    # serving size detection (e.g., 100 г / 100g)
+    serving_g = 100.0
+    m = re.search(r"(100)\s*(г|g)\b", t)
+    if m:
+        serving_g = 100.0
+
+    if kcal is None and all(v is None for v in [prot, fat, carb]):
+        return None
+
+    # If kcal looks like kJ (too large), convert using kJ if available
+    if kcal is not None and kcal > 1000:
+        try:
+            if kj is not None:
+                kcal = float(kj) / 4.184
+            else:
+                kcal = float(kcal) / 4.184
+        except Exception:
+            pass
+    # If kcal missing but macros present, estimate
+    if kcal is None and any(v is not None for v in [prot, fat, carb]):
+        try:
+            kcal = 4.0 * (prot or 0) + 9.0 * (fat or 0) + 4.0 * (carb or 0)
+        except Exception:
+            kcal = None
+
+    if kcal is None:
+        return None
+
+    analysis = {
+        "analysis": {
+            "food_items": [
+                {
+                    "name": "Product",
+                    "weight_grams": round(serving_g, 1),
+                    "calories": round(kcal, 1),
+                    "emoji": "🍽️",
+                    "health_benefits": "",
+                }
+            ],
+            "total_nutrition": {
+                "calories": round(kcal, 1),
+                "proteins": round(prot or 0.0, 1),
+                "fats": round(fat or 0.0, 1),
+                "carbohydrates": round(carb or 0.0, 1),
+            },
+            "provenance": {
+                "source": "ocr",
+                "debug": {"kcal_raw": kcal, "kj_raw": kj, "prot": prot, "fat": fat, "carb": carb}
+            },
+        }
+    }
+    return analysis
+
+
+def _heuristic_nutrition_from_title(title: Optional[str]) -> Optional[dict]:
+    """Very small RU dairy heuristic to avoid zeros when only product name is known.
+    Returns analysis per 100 g using typical values. Provenance: heuristic.
+    """
+    if not title:
+        return None
+    t = title.lower()
+    # (kcal, proteins, fats, carbs)
+    heuristics: list[tuple[str, tuple[float, float, float, float]]] = [
+        (r"сливочн.*сыр", (330.0, 25.0, 26.0, 3.0)),  # cream-style cheese
+        (r"\bсыр\b", (350.0, 25.0, 27.0, 0.0)),      # generic hard cheese
+        (r"творог", (170.0, 16.0, 9.0, 3.0)),         # cottage cheese
+        (r"молок", (64.0, 3.3, 3.2, 4.7)),            # 3.2% milk
+        (r"йогурт", (60.0, 4.0, 3.0, 5.0)),           # plain yogurt
+        (r"кефир", (52.0, 3.0, 3.0, 4.0)),            # kefir
+    ]
+    import re
+    for pattern, (kcal, prot, fat, carb) in heuristics:
+        if re.search(pattern, t):
+            serving_g = 100.0
+            analysis = {
+                "analysis": {
+                    "food_items": [
+                        {
+                            "name": title,
+                            "weight_grams": serving_g,
+                            "calories": round(kcal, 1),
+                            "emoji": "🍽️",
+                            "health_benefits": "",
+                        }
+                    ],
+                    "total_nutrition": {
+                        "calories": round(kcal, 1),
+                        "proteins": round(prot, 1),
+                        "fats": round(fat, 1),
+                        "carbohydrates": round(carb, 1),
+                    },
+                    "provenance": {
+                        "source": "heuristic",
+                        "basis": "typical per 100 g",
+                        "matched": pattern,
+                    },
+                }
+            }
+            return analysis
+    return None
 
 @app.get(Routes.ML_HEALTH)
 async def health():
@@ -185,37 +448,203 @@ async def label_analyze(
         if len(image_bytes) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="Image too large")
 
-        barcodes = await _stub_detect_barcodes(image_bytes)
-        ocr_text, ocr_blocks = await _stub_ocr_text(image_bytes, user_language)
+        start_overall = time.monotonic()
+        logger.info("[BARCODE] Starting detection")
+        barcodes = await _detect_barcodes(image_bytes)
+        if barcodes:
+            logger.info(f"Detected barcodes: {[b.value for b in barcodes]}")
+        else:
+            logger.info("No barcodes detected")
+        ocr_text, ocr_blocks = await _ocr_text(image_bytes, user_language)
 
-        # If we have a barcode, try OpenFoodFacts as first release logic
+        # If we have a barcode, try providers in order with time budget: OFF → ChestnyZNAK → BarcodeList (RU)
         parsed_nutrition = None
+        overall_deadline = start_overall + 9.5  # hard cap ~10s total
         if barcodes:
             for b in barcodes:
-                off_product = await fetch_product_by_barcode(b.value)
+                # Quick cache check
+                cached = _barcode_cache.get(b.value)
+                if cached and (time.monotonic() - cached[0] < BARCODE_CACHE_TTL_SEC):
+                    logger.info(f"[LOOKUP] Cache hit for {b.value}")
+                    parsed_nutrition = cached[1]
+                    break
+                # 1) OFF by barcode (fast path)
+                step_t = time.monotonic()
+                off_timeout = max(2.0, min(5.0, overall_deadline - step_t))
+                if off_timeout <= 0:
+                    break
+                logger.info(f"[LOOKUP] Trying OpenFoodFacts for {b.value} (timeout={off_timeout:.1f}s)")
+                off_product = await fetch_product_by_barcode(b.value, timeout_sec=off_timeout)
                 if off_product:
                     mapped = map_off_to_nutrition(off_product)
                     if mapped and isinstance(mapped, dict) and "analysis" in mapped:
+                        tn = mapped.get('analysis',{}).get('total_nutrition',{})
+                        logger.info(f"[LOOKUP] Matched OFF by barcode in {round((time.monotonic()-step_t)*1000)}ms; per-serving: cal={tn.get('calories')} p={tn.get('proteins')} f={tn.get('fats')} c={tn.get('carbohydrates')}")
                         parsed_nutrition = mapped
+                        _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
                         break
 
-        return LabelAnalyzeResponse(
+                # 2/3) Try CZ and BarcodeList concurrently with small timeouts
+                remaining = overall_deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                per_call_timeout = max(2.0, min(4.0, remaining))
+                logger.info(f"[LOOKUP] Parallel CZ & BarcodeList (timeout={per_call_timeout:.1f}s each)")
+                try:
+                    cz_task = asyncio.create_task(fetch_product_by_gtin(b.value))
+                    bl_task = asyncio.create_task(fetch_barcodelist(b.value))
+                    done, pending = await asyncio.wait(
+                        {cz_task, bl_task}, timeout=per_call_timeout, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    for t in done:
+                        res = t.result()
+                        if res and not parsed_nutrition:
+                            if t is cz_task:
+                                mapped2 = map_cz_to_basic(res)
+                                if mapped2 and isinstance(mapped2, dict) and "analysis" in mapped2:
+                                    parsed_nutrition = mapped2
+                                    # Try OFF by name upgrade using best-name search
+                                    cz_name = res.get("product_name") or res.get("raw", {}).get("product_name")
+                                    if cz_name:
+                                        logger.info(f"[LOOKUP] OFF by name from CZ: {cz_name}")
+                                        by_name = await fetch_best_product_by_names([cz_name], timeout_sec=min(5.0, overall_deadline - time.monotonic()))
+                                        if by_name:
+                                            mapped_name = map_off_to_nutrition(by_name)
+                                            if mapped_name and isinstance(mapped_name, dict) and "analysis" in mapped_name:
+                                                parsed_nutrition = mapped_name
+                                                _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
+                                                tn = parsed_nutrition.get('analysis',{}).get('total_nutrition',{})
+                                                logger.info(f"[LOOKUP] Upgrade success via OFF name; per-serving: cal={tn.get('calories')} p={tn.get('proteins')} f={tn.get('fats')} c={tn.get('carbohydrates')}")
+                                                break
+                            elif t is bl_task:
+                                mapped3 = map_barcodelist_to_basic(res)
+                                if mapped3 and isinstance(mapped3, dict) and "analysis" in mapped3:
+                                    parsed_nutrition = mapped3
+                                    bl_name = res.get("title")
+                                    if bl_name:
+                                        logger.info(f"[LOOKUP] OFF by name from barcode-list: {bl_name}")
+                                        by_name2 = await fetch_best_product_by_names(
+                                            [bl_name],
+                                            timeout_sec=min(4.0, max(2.0, overall_deadline - time.monotonic())),
+                                            page_size=6,
+                                            deadline_ts=overall_deadline,
+                                        )
+                                        if by_name2:
+                                            mapped_name2 = map_off_to_nutrition(by_name2)
+                                            if mapped_name2 and isinstance(mapped_name2, dict) and "analysis" in mapped_name2:
+                                                parsed_nutrition = mapped_name2
+                                                _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
+                                                tn = parsed_nutrition.get('analysis',{}).get('total_nutrition',{})
+                                                logger.info(f"[LOOKUP] Upgrade success via OFF name; per-serving: cal={tn.get('calories')} p={tn.get('proteins')} f={tn.get('fats')} c={tn.get('carbohydrates')}")
+                                                break
+                    # Cancel pending to save time
+                    for p in pending:
+                        p.cancel()
+                except Exception:
+                    pass
+
+                # If still metadata only, apply RU dairy heuristic from BL title
+                if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'barcodelist':
+                    bl_name = None
+                    try:
+                        bl_name = res.get("title") if 'res' in locals() and isinstance(res, dict) else None
+                    except Exception:
+                        bl_name = None
+                    if bl_name and parsed_nutrition.get('analysis',{}).get('total_nutrition',{}).get('calories', 0) == 0:
+                        heur = _heuristic_nutrition_from_title(bl_name)
+                        if heur:
+                            parsed_nutrition = heur
+                            _barcode_cache[b.value] = (time.monotonic(), parsed_nutrition)
+                            logger.info("[LOOKUP] Applied RU dairy heuristic from title")
+                            break
+
+        # If no provider matched, try OCR nutrition extraction as fallback
+        if not parsed_nutrition:
+            # Run OCR parse fast
+            parsed_nutrition = _parse_nutrition_from_text(ocr_text)
+            if parsed_nutrition:
+                logger.info("[OCR] Nutrition extracted from label text")
+            else:
+                # Try to guess product name from OCR and search OFF by name under tight deadline
+                try:
+                    title_candidate = None
+                    for blk in ocr_blocks:
+                        line = blk.text.strip()
+                        if 8 <= len(line) <= 80 and any(c.isalpha() for c in line):
+                            upper_letters = sum(1 for c in line if c.isalpha() and c.upper() == c)
+                            total_letters = sum(1 for c in line if c.isalpha())
+                            upper_ratio = (upper_letters / total_letters) if total_letters else 0.0
+                            if upper_ratio > 0.6 or line.istitle():
+                                title_candidate = line
+                                break
+                    if title_candidate:
+                        deadline = time.monotonic() + 3.0
+                        logger.info(f"[OCR] OFF by OCR title (deadline): {title_candidate}")
+                        off_by_title = await fetch_best_product_by_names([title_candidate], deadline_ts=deadline, page_size=5, timeout_sec=2.5)
+                        if off_by_title:
+                            mapped_from_title = map_off_to_nutrition(off_by_title)
+                            if mapped_from_title and isinstance(mapped_from_title, dict) and "analysis" in mapped_from_title:
+                                parsed_nutrition = mapped_from_title
+                                logger.info("[LOOKUP] Upgrade success via OFF name from OCR title")
+                except Exception:
+                    pass
+
+        # Assemble debug info for provenance
+        provenance = None
+        if parsed_nutrition and isinstance(parsed_nutrition, dict):
+            provenance = parsed_nutrition.get('analysis', {}).get('provenance', {})
+            if isinstance(provenance, dict):
+                provenance.setdefault('debug', {})
+                provenance['debug'].update({
+                    'barcodes_detected': [b.value for b in barcodes] if barcodes else [],
+                    'ocr_present': bool(ocr_text),
+                    'time_ms': round((time.monotonic() - start_overall) * 1000),
+                })
+        resp = LabelAnalyzeResponse(
             language=user_language,
             barcodes=barcodes,
             ocr_text=ocr_text,
             ocr_blocks=ocr_blocks,
             parsed_nutrition=parsed_nutrition,
             notes=(
-                "Matched OpenFoodFacts by barcode"
-                if parsed_nutrition else
-                "No barcode match; OCR pipeline planned v0.2.0"
+                "Matched OpenFoodFacts by barcode" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'openfoodfacts'
+                else "Matched ChestnyZNAK (basic metadata)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'chestnyznak'
+                else "Matched BarcodeList (basic metadata)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'barcodelist'
+                else "Parsed from label (OCR)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'ocr'
+                else "Heuristic estimate (RU dairy)" if parsed_nutrition and parsed_nutrition.get('analysis',{}).get('provenance',{}).get('source') == 'heuristic'
+                else "No barcode match; OCR pending"
             ),
         )
+        elapsed = round((time.monotonic() - start_overall) * 1000)
+        logger.info(f"[TIMING] label_analyze elapsed={elapsed}ms")
+        return resp
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Label analyze error [{getattr(request.state, 'request_id', '-') }]: {e}")
         raise HTTPException(status_code=500, detail="Label analysis failed")
+
+@app.post(Routes.ML_LABEL_PERPLEXITY, response_model=PerplexityAnalyzeResponse)
+@require_internal_auth
+async def label_analyze_perplexity(
+    request: Request,
+    photo: UploadFile = File(...),
+    user_language: str = Form(default="en"),
+):
+    try:
+        if not photo.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        image_bytes = await photo.read()
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty image file")
+        # Delegate to Perplexity client for a rich product analysis
+        analysis = await analyze_food_with_perplexity(image_bytes, user_language, use_premium_model=False, mode="label")
+        return PerplexityAnalyzeResponse(language=user_language, analysis=analysis.get("analysis", analysis))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Perplexity label analyze error: {e}")
+        raise HTTPException(status_code=500, detail="Perplexity label analysis failed")
 
 async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """

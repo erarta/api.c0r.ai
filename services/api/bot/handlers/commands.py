@@ -511,6 +511,7 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     """Show profile information for existing profile"""
     # Get user's language
     user_language = user.get('language', 'en')
+    telegram_language_code = callback.from_user.language_code or "unknown"
     
     # Format profile data without duplicate emojis
     age = profile.get('age', 'Not set')
@@ -596,6 +597,8 @@ async def show_profile_info(callback: types.CallbackQuery, user: dict, profile: 
     # Build clean profile text without emoji duplication
     profile_text = (
         f"{i18n.get_text('profile_title', user_language)}\n\n"
+        f"{i18n.get_text('profile_telegram_language', user_language, lang=telegram_language_code)}\n"
+        f"{i18n.get_text('profile_interface_language', user_language, lang=user_language)}\n\n"
         f"{i18n.get_text('profile_age', user_language, age=age)}\n"
         f"{i18n.get_text('profile_gender', user_language, gender=gender_label)}\n"
         f"{i18n.get_text('profile_height', user_language, height=height)}\n"
@@ -781,6 +784,8 @@ async def handle_action_callback(callback: types.CallbackQuery, state: FSMContex
             await save_latest_analysis_to_favorites(callback, state)
         elif action == "scan_barcode":
             # Delegate to scan handler
+            await start_scan_barcode(callback, state)
+        elif action == "scan_again":
             await start_scan_barcode(callback, state)
         elif action == "language":
             # Handle language selection
