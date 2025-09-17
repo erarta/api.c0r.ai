@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from io import BytesIO
 from collections import defaultdict, deque
 import uuid
@@ -630,6 +630,48 @@ async def label_analyze_perplexity(
     except Exception as e:
         logger.error(f"Perplexity label analyze error: {e}")
         raise HTTPException(status_code=500, detail="Perplexity label analysis failed")
+
+
+class FoodPlanRequest(BaseModel):
+    profile: Dict[str, Any] = Field(default_factory=dict)
+    food_history: List[Dict[str, Any]] = Field(default_factory=list)
+    days: int = Field(default=3, ge=1, le=7)
+
+
+@app.post("/api/v1/food-plan/generate", response_model=Dict[str, Any])
+@require_internal_auth
+async def ml_generate_food_plan(payload: FoodPlanRequest):
+    """Generate simple food plan. Placeholder for full LLM integration.
+    Returns plan_json, shopping_list_json, confidence, model_used.
+    """
+    try:
+        profile = payload.profile or {}
+        days = int(payload.days)
+        target = profile.get("daily_calories_target") or 2000
+        try:
+            target = int(target)
+        except Exception:
+            target = 2000
+        per_meal = max(200, int(target // 4))
+        plan: Dict[str, Any] = {}
+        for d in range(1, days + 1):
+            plan[f"day_{d}"] = {
+                "breakfast": {"calories": per_meal, "protein": 20, "fats": 15, "carbs": 45, "text": "Oatmeal with berries"},
+                "lunch": {"calories": per_meal, "protein": 25, "fats": 18, "carbs": 40, "text": "Chicken, rice, salad"},
+                "dinner": {"calories": per_meal, "protein": 25, "fats": 18, "carbs": 40, "text": "Fish, quinoa, veggies"},
+                "snack": {"calories": per_meal, "protein": 10, "fats": 10, "carbs": 25, "text": "Yogurt and nuts"},
+                "summary": {},
+            }
+        shopping = {"items": ["oats", "berries", "chicken", "rice", "salad", "fish", "quinoa", "yogurt", "nuts"]}
+        return {
+            "plan_json": plan,
+            "shopping_list_json": shopping,
+            "confidence": 0.5,
+            "model_used": llm_factory.get_current_provider(),
+        }
+    except Exception as e:
+        logger.error(f"ML food plan generation error: {e}")
+        raise HTTPException(status_code=500, detail="Food plan generation failed")
 
 async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """

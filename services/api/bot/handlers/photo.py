@@ -11,6 +11,8 @@ from common.routes import Routes
 from common.supabase_client import get_or_create_user, decrement_credits, get_user_with_profile, log_user_action
 from common.calories_manager import add_calories_from_analysis, get_daily_calories
 from services.api.bot.utils.r2 import upload_telegram_photo
+from common.cache.redis_client import get_async_redis, make_cache_key, cache_get_json, cache_set_json
+from common.utils.hash_utils import sha256_bytes_to_hex
 from .keyboards import create_main_menu_keyboard
 from aiogram.filters import StateFilter
 import re
@@ -324,7 +326,7 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
             "nutrition_analysis"
         )
         
-        # Call ML service for analysis
+        # Call ML service for analysis (with Redis cache pre-check by image hash)
         async with httpx.AsyncClient() as client:
             # Download photo data for ML service
             photo_file = await message.bot.get_file(photo.file_id)
@@ -339,6 +341,54 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
                 photo_bytes = photo_bytes_io
             
             logger.info(f"🔍 Calling ML service for user {telegram_user_id}, photo size: {len(photo_bytes)} bytes")
+
+            # Compute image hash and check Redis cache first
+            image_hash = sha256_bytes_to_hex(photo_bytes)
+            redis = await get_async_redis()
+            cache_key = make_cache_key("analysis", {"user": str(user["id"]), "image_hash": image_hash})
+            try:
+                cached = await cache_get_json(cache_key)
+            except Exception:
+                cached = None
+            if cached and isinstance(cached, dict) and cached.get("analysis"):
+                logger.info("✅ Cache hit for analysis; skipping LLM and credits deduction")
+                analysis_text = format_analysis_result(cached, user_language)
+                # Optional hint for cached results without mentioning LLM
+                try:
+                    analysis_text += "\n\n" + i18n.get_text('cached_result', user_language, default='(cached result)')
+                except Exception:
+                    pass
+                # Do not decrement credits; do not add calories again
+                # Clear state and respond
+                await state.clear()
+                keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+                    [
+                        types.InlineKeyboardButton(
+                            text=i18n.get_text('fix_calories_btn', user_language),
+                            callback_data='action_fix_calories'
+                        )
+                    ],
+                    [
+                        types.InlineKeyboardButton(
+                            text=i18n.get_text('btn_save_to_favorites', user_language, default='⭐ Save to favorites'),
+                            callback_data='action_save_favorite'
+                        )
+                    ],
+                    [
+                        types.InlineKeyboardButton(
+                            text=i18n.get_text('btn_main_menu', user_language),
+                            callback_data='action_main_menu'
+                        )
+                    ]
+                ])
+                final_text = f"{analysis_text}\n\n{i18n.get_text('credits_remaining', user_language)} {credits} {i18n.get_text('credits', user_language)} {i18n.get_text('left', user_language)}! 💪"
+                sanitized_final_text = sanitize_markdown_text(final_text)
+                await processing_msg.edit_text(
+                    sanitized_final_text,
+                    parse_mode="Markdown",
+                    reply_markup=keyboard
+                )
+                return
             
             # Prepare form data for ML service
             files = {"photo": ("photo.jpg", photo_bytes, "image/jpeg")}
@@ -376,6 +426,13 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
                 return
             
             result = response.json()
+            # Attach meta for cache provenance and hash
+            try:
+                if isinstance(result, dict):
+                    result.setdefault('meta', {})
+                    result['meta'].update({'cache_hit': False, 'source': 'llm', 'image_hash': image_hash})
+            except Exception:
+                pass
             logger.info(f"✅ ML service result received: {len(str(result))} chars")
             logger.info(f"🔍 ML service result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             logger.info(f"🔍 ML service result content: {result}")
@@ -383,6 +440,12 @@ async def process_nutrition_analysis(message: types.Message, state: FSMContext):
         # Format and send result
         analysis_text = format_analysis_result(result, user_language)
         
+        # Save to Redis cache (14 days)
+        try:
+            await cache_set_json(cache_key, result, ttl_seconds=14 * 24 * 3600)
+        except Exception:
+            pass
+
         # Decrement credits
         await decrement_credits(telegram_user_id)
         
