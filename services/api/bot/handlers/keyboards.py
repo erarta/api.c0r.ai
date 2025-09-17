@@ -69,11 +69,15 @@ def create_main_menu_text(language: str = "en", has_profile: bool = False):
                 callback_data="action_recipe"
             )
         ],
-        # Second row: Food analysis (2 columns)
+        # Second row: Food analysis + Food plan (2 columns)
         [
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_analyze_food", language),
                 callback_data="action_analyze_info"
+            ),
+            types.InlineKeyboardButton(
+                text=i18n.get_text("btn_daily_plan", language),
+                callback_data="action_daily"
             )
         ],
         # Third row: Buy credits (2 columns)
@@ -107,10 +111,6 @@ def create_main_menu_text(language: str = "en", has_profile: bool = False):
             types.InlineKeyboardButton(
                 text=i18n.get_text("btn_my_profile", language),
                 callback_data="action_profile"
-            ),
-            types.InlineKeyboardButton(
-                text=i18n.get_text("btn_daily_plan", language),
-                callback_data="action_daily"
             )
         ],
         [
