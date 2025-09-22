@@ -17,6 +17,7 @@ from .enhanced_payments import enhanced_payment_handler
 from services.api.bot.handlers.corrections import start_fix_calories_callback
 from services.api.bot.handlers.favorites import save_latest_analysis_to_favorites, favorites_callback_router
 from services.api.bot.handlers.scan import start_scan_barcode
+from services.api.bot.handlers.food_plan import start_food_plan_generation
 
 # /start command handler
 async def start_command(message: types.Message):
@@ -709,6 +710,8 @@ async def handle_action_callback(callback: types.CallbackQuery, state: FSMContex
             # Handle daily plan callback
             from .daily import daily_callback
             await daily_callback(callback)
+        elif action == "food_plan":
+            await start_food_plan_generation(callback)
         elif action == "nutrition_insights":
             # Handle nutrition insights callback
             from .nutrition import nutrition_insights_callback

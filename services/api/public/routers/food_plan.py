@@ -2,14 +2,15 @@ import os
 from datetime import datetime, timedelta
 import json
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from common.db.supabase_service import supabase_service
 from deps import require_auth_context, AuthContext, require_internal_auth
 from common.cache.redis_client import get_async_redis, make_cache_key
 from common.config.feature_flags import feature_flags
+
 try:
-from llm.food_plan_generator import FoodPlanGenerator as FoodPlanGenerator
+    from llm.food_plan_generator import FoodPlanGenerator as FoodPlanGenerator
 except Exception:
     from llm.meal_plan_generator import MealPlanGenerator
 
@@ -118,7 +119,8 @@ async def generate_food_plan(payload: GenerateFoodPlanRequest, auth: AuthContext
 
 
 @router.post("/food-plan/generate-internal", response_model=dict)
-async def generate_food_plan_internal(payload: GenerateFoodPlanRequest, auth: dict = Depends(require_internal_auth)):
+@require_internal_auth
+async def generate_food_plan_internal(request: Request, payload: GenerateFoodPlanRequest):
     """Internal endpoint for bot to generate meal plan using centralized service"""
     
     user_id = payload.user_id

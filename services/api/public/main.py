@@ -50,7 +50,7 @@ async def health():
 
 
 # Routers
-from services.api.public.routers.food_plan import router as food_plan_router  # noqa: E402
+from routers.food_plan import router as food_plan_router  # noqa: E402
 
 app.include_router(food_plan_router)
 

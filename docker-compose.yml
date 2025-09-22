@@ -4,6 +4,11 @@ services:
       context: .
       dockerfile: services/api/bot/Dockerfile
     env_file: .env
+    environment:
+      # Service discovery via docker network
+      - ML_SERVICE_URL=http://ml:8001
+      - PAY_SERVICE_URL=http://pay:8002
+      - REDIS_URL=redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:
@@ -63,6 +68,19 @@ services:
     env_file: .env
     ports:
       - "8002:8002"
+  api_public:
+    build:
+      context: .
+      dockerfile: services/api/public/Dockerfile
+    env_file: .env
+    environment:
+      - ML_SERVICE_URL=http://ml:8001
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - ml
+      - redis
+    ports:
+      - "8020:8020"
     networks:
       - c0r-network
     mem_limit: 384m

@@ -38,6 +38,7 @@ WORKDIR /app
 COPY services/api/public/ .
 COPY common/ ./common/
 COPY shared/ ./shared/
+COPY deps.py .
 
 # Set proper permissions
 RUN chown -R apiuser:apiuser /app
