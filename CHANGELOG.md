@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-09-30
+
+See detailed notes in `changelogs/v0.5.x.md`.
+
+### 🚀 **Major Release: Enhanced Nutrition System**
+- **Complete AI-powered personalization** with Nutrition DNA profiling and behavioral analysis
+- **Personalized onboarding questionnaire** with 7-step food preference setup
+- **Intelligent 3-day meal plans** with conversational analysis and smart recommendations
+- **Dynamic food analysis** with context-aware dish naming and health scoring
+- **Enhanced visual formatting** with clean, readable multi-message display
+
+### 🔧 **Technical Highlights**
+- **Database schema updates** for food_plans and nutrition_onboarding
+- **Supabase service integration** with dynamic user data retrieval
+- **GPT-4o integration** for advanced food analysis and recipe generation
+- **Markdown parsing fixes** and improved container optimization
+
 ## [0.4.2] - 2025-08-10
 
 See detailed notes in `changelogs/v0.4.x.md`.

@@ -61,6 +61,7 @@ async def generate_food_plan(payload: GenerateFoodPlanRequest, auth: AuthContext
     profile = context['profile']
     food_history = context['food_history']
     history_summary = context['history_summary']
+    history_by_day = context.get('history_by_day')
     
     # 2) Check unlock status
     unlock_status = await supabase_service.check_food_plan_unlock_status(
@@ -104,6 +105,7 @@ async def generate_food_plan(payload: GenerateFoodPlanRequest, auth: AuthContext
         "end_date": str(end_date),
         "plan_json": generated_plan.get("plan_json", {}),
         "shopping_list_json": generated_plan.get("shopping_list_json", {}),
+        "intro_summary": generated_plan.get("intro_summary"),
         "generated_from": "llm_generated"
     }
     
@@ -154,9 +156,12 @@ async def generate_food_plan_internal(request: Request, payload: GenerateFoodPla
     
     # 3) Cache history summary
     redis = await get_async_redis()
-    cache_key = make_cache_key("meal_history_30d", {"user": user_id})
+    cache_key = make_cache_key("meal_history_7d", {"user": user_id})
     try:
-        await redis.setex(cache_key, 48 * 3600, json.dumps(history_summary, ensure_ascii=False))
+        await redis.setex(cache_key, 48 * 3600, json.dumps({
+            "summary": history_summary,
+            "by_day": history_by_day,
+        }, ensure_ascii=False))
     except Exception:
         pass
     
@@ -177,6 +182,7 @@ async def generate_food_plan_internal(request: Request, payload: GenerateFoodPla
         "end_date": str(end_date),
         "plan_json": generated_plan.get("plan_json", {}),
         "shopping_list_json": generated_plan.get("shopping_list_json", {}),
+        "intro_summary": generated_plan.get("intro_summary"),
         "generated_from": "llm_generated"
     }
     

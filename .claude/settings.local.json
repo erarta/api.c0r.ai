@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(psql:*)",
+      "Bash(python run_migration_simple.py:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker restart:*)",
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker image rm:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker cp:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

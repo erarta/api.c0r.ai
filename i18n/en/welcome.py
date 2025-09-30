@@ -1,17 +1,19 @@
 # English translations - Welcome and main menu
 TRANSLATIONS = {
     # Welcome messages
-    "welcome_title": "🟢 Welcome to C0R AI (Nutrition Bot)",
+    "welcome_title": "✨ Welcome to Zer0 - AI Dietologist",
     "welcome_greeting": "👋 Hello there, {name}!",
-    "welcome_subtitle": "This is a private environment for testing the next generation of AI-powered nutrition tools 🍎🤖",
+    "welcome_subtitle": "Your personal AI dietologist with c0r AI Vision engine 👗🤖",
     "welcome_description": "Here you can:",
-    "welcome_feature_1": "🧪 **Analyze food photos** - Get instant nutrition insights",
-    "welcome_feature_2": "🧠 **AI Nutrition Assistant** - Personalized dietary advice",
-    "welcome_feature_3": "💬 **Smart meal tracking** - Monitor your daily nutrition",
+    "welcome_feature_1": "🍎 **Food Photo Analysis** - Get instant nutrition insights with AI vision",
+    "welcome_feature_2": "🧠 **AI Personal Dietologist** - Get personalized dietary advice",
+    "welcome_feature_3": "📊 **Smart Nutrition Tracking** - Monitor your daily nutrition goals",
     "welcome_credits": "💳 You have **{credits} credits** remaining",
-    "welcome_warning": "⚠️ This is a test version and may behave unexpectedly. Your feedback helps us make it better.",
-    "welcome_terms": "By continuing, you accept you agree to the Test Terms & License",
-    "welcome_ready": "🚀 **Ready to start your nutrition journey?** Choose what you'd like to do:",
+    "welcome_website": "🌐 Website: https://c0r.ai",
+    "welcome_support": "📧 Support: team@c0r.ai",
+    "welcome_terms": "By continuing, you accept Terms of Use and Privacy Policy",
+    "welcome_privacy": "⚠️ Photo privacy notice: You are fully responsible for the privacy and security of uploaded photos. We are not responsible for any issues related to your uploaded photos.",
+    "welcome_ready": "🎉 **Ready to transform your nutrition?** Choose what you'd like to do:",
 
     # Menu buttons
     "btn_analyze_food": "🍕 Analyze Food from My Photo",

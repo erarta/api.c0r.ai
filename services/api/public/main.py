@@ -51,7 +51,9 @@ async def health():
 
 # Routers
 from routers.food_plan import router as food_plan_router  # noqa: E402
+from routers.nutrition_onboarding import router as nutrition_onboarding_router  # noqa: E402
 
 app.include_router(food_plan_router)
+app.include_router(nutrition_onboarding_router)
 
 

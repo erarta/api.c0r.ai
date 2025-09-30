@@ -1,0 +1,266 @@
+# AWS Deployment Configuration for Enhanced Nutrition System
+# Integrates automatic database migrations into deployment pipeline
+
+version: 0.1
+
+# Environment Variables for Enhanced Features
+environment_variables:
+  # Core Enhanced AI Settings
+  USE_ENHANCED_AI: "true"              # Enable AI-powered nutrition system with DNA profiling
+  DNA_CONFIDENCE_THRESHOLD: "0.6"      # Minimum confidence score for reliable DNA generation (0.0-1.0)
+  PREDICTION_HORIZON_DAYS: "7"         # Number of days ahead for behavioral predictions
+
+  # External ML Service (Optional)
+  ML_SERVICE_URL: "http://ml-service:8000"    # Advanced machine learning service for complex analytics
+  ML_SERVICE_TIMEOUT: "60"                    # Timeout for ML service requests in seconds
+
+  # Feature Flags - Control individual enhanced features
+  ENABLE_BEHAVIOR_PREDICTION: "true"    # Predictive analytics for eating behavior patterns
+  ENABLE_CONTEXTUAL_ANALYSIS: "true"    # Context-aware recommendations (weather, stress, social)
+  ENABLE_VISUALIZATION: "true"          # Enhanced UI with nutrition insights and charts
+  COLLECT_ENHANCED_DATA: "true"         # Store detailed behavioral data for personalization
+
+  # Database Connection
+  DATABASE_URL: "postgresql://postgres.cadeererdjwemspkeriq:xuoO4|LSaaGX5@aws-0-eu-north-1.pooler.supabase.com:6543/postgres"
+
+# Deployment Hooks
+hooks:
+  # Pre-deployment: Run database migrations
+  pre_deploy:
+    - name: "Database Migrations"
+      command: "deploy/pre-deploy-migrations.sh"
+      timeout: 300  # 5 minutes timeout
+      on_failure: "abort"  # Stop deployment if migrations fail
+      environment:
+        DATABASE_URL: $DATABASE_URL
+        API_URL: $API_URL
+
+  # Post-deployment: Verify enhanced features
+  post_deploy:
+    - name: "Health Check Enhanced Features"
+      command: "deploy/post-deploy-verification.sh"
+      timeout: 120  # 2 minutes timeout
+      on_failure: "warn"  # Continue deployment but log warning
+      environment:
+        API_URL: $API_URL
+        DATABASE_URL: $DATABASE_URL
+
+# Application Configuration
+application:
+  # Health checks with enhanced endpoints
+  health_checks:
+    - path: "/health"
+      interval: 30
+      timeout: 10
+      unhealthy_threshold: 3
+
+    - path: "/health/nutrition-dna"
+      interval: 60
+      timeout: 15
+      unhealthy_threshold: 2
+
+    - path: "/health/nutrition-system"
+      interval: 120
+      timeout: 20
+      unhealthy_threshold: 2
+
+  # Resource requirements for enhanced features
+  resources:
+    memory: 1024  # Increased memory for AI processing
+    cpu: 512      # Enhanced CPU for DNA generation
+
+# Rollback Strategy
+rollback:
+  # Automatic rollback triggers
+  triggers:
+    - condition: "health_check_failures > 5"
+      action: "rollback_with_db"
+
+    - condition: "error_rate > 10%"
+      action: "rollback_with_db"
+
+  # Database rollback commands
+  database_rollback:
+    - command: "python3 scripts/run_migrations.py --rollback 2025-09-25_enhanced_nutrition_system.sql --database-url $DATABASE_URL"
+      description: "Rollback enhanced nutrition features"
+
+# Monitoring and Alerts
+monitoring:
+  # Enhanced nutrition specific metrics
+  custom_metrics:
+    - name: "dna_generation_success_rate"
+      query: "SELECT COUNT(*) FROM nutrition_dna WHERE confidence_score >= 0.6"
+      threshold: 0.95
+      alert_on: "below"
+
+    - name: "onboarding_completion_rate"
+      query: "SELECT COUNT(*) FROM user_profiles WHERE onboarding_completed = true"
+      threshold: 0.80
+      alert_on: "below"
+
+    - name: "meal_recommendation_rating"
+      query: "SELECT AVG(user_feedback) FROM meal_recommendations WHERE user_feedback IS NOT NULL"
+      threshold: 4.0
+      alert_on: "below"
+
+  # Alert channels
+  alerts:
+    - type: "slack"
+      webhook: "$SLACK_WEBHOOK_URL"
+      events: ["deployment_failed", "health_check_failed", "metric_threshold_breach"]
+
+    - type: "email"
+      recipients: ["dev-team@c0r.ai"]
+      events: ["deployment_failed", "database_migration_failed"]
+
+# Feature Flags Management
+feature_flags:
+  # Gradual rollout strategy
+  enhanced_ai_rollout:
+    environments:
+      staging: 100%      # Full features in staging
+      production: 100%   # Start with 10%, scale to 100%
+
+  # Individual feature controls
+  features:
+    behavior_prediction:
+      default: true
+      environments:
+        production: true
+
+    contextual_analysis:
+      default: true
+      environments:
+        production: true
+
+    advanced_visualizations:
+      default: true
+      environments:
+        production: false  # Enable after UI deployment
+
+# Performance Optimization
+performance:
+  # Caching strategy for enhanced features
+  caching:
+    nutrition_dna:
+      ttl: 3600  # 1 hour cache for DNA profiles
+      invalidate_on: ["user_profile_update", "food_log_addition"]
+
+    meal_recommendations:
+      ttl: 1800  # 30 minute cache for recommendations
+      invalidate_on: ["preference_update", "context_change"]
+
+  # Database connection pooling
+  database:
+    pool_size: 20
+    max_overflow: 30
+    pool_timeout: 30
+
+# Security Configuration
+security:
+  # Enhanced features access control
+  api_access:
+    nutrition_dna:
+      requires_auth: true
+      rate_limit: "100/hour"
+
+    onboarding:
+      requires_auth: true
+      rate_limit: "10/hour"  # Prevent abuse of questionnaire
+
+  # Data privacy for enhanced features
+  data_privacy:
+    nutrition_preferences:
+      retention_days: 2555  # 7 years for health data compliance
+      anonymization: true
+
+    behavioral_data:
+      retention_days: 1095  # 3 years for analytics
+      anonymization: true
+
+# Backup Strategy
+backup:
+  # Enhanced nutrition data backup
+  tables:
+    critical:
+      - nutrition_dna
+      - user_profiles
+      - nutrition_questionnaire_responses
+
+    important:
+      - meal_recommendations
+      - user_food_analysis_enhanced
+
+  schedule:
+    full_backup: "daily at 02:00 UTC"
+    incremental: "every 4 hours"
+
+  retention:
+    daily: 30   # Keep 30 daily backups
+    weekly: 12  # Keep 12 weekly backups
+    monthly: 12 # Keep 12 monthly backups
+
+# Testing Strategy
+testing:
+  # Integration tests for enhanced features
+  pre_deploy_tests:
+    - name: "Enhanced API Endpoints"
+      command: "pytest tests/test_enhanced_nutrition_api.py -v"
+      required: true
+
+    - name: "DNA Generation"
+      command: "pytest tests/test_nutrition_dna.py -v"
+      required: true
+
+    - name: "Database Schema"
+      command: "pytest tests/test_enhanced_schema.py -v"
+      required: true
+
+  # Post-deploy smoke tests
+  smoke_tests:
+    - endpoint: "/nutrition-onboarding/questionnaire-summary"
+      expected_status: 200
+      timeout: 10
+
+    - endpoint: "/health/nutrition-dna"
+      expected_status: 200
+      timeout: 15
+
+# Documentation References
+documentation:
+  deployment_guide: "docs/enhanced-nutrition-features.md"
+  user_stories: "docs/user-stories/"
+  api_documentation: "docs/api/enhanced-nutrition.md"
+  troubleshooting: "docs/troubleshooting/enhanced-features.md"
+
+# Change Log Integration
+changelog:
+  # Automatic changelog entry for enhanced features
+  template: |
+    ## Enhanced Nutrition System Deployment
+
+    ### New Features
+    - 🧬 Nutrition DNA profiling with 8 personality archetypes
+    - 🎯 Personalized onboarding questionnaire (25+ preference fields)
+    - 🍽️ Adaptive meal recommendations with context awareness
+    - 📊 Behavioral prediction engine for proactive suggestions
+    - 📈 Enhanced analytics and visualization
+
+    ### Database Changes
+    - New tables: nutrition_dna, meal_recommendations, questionnaire_responses
+    - Extended user_profiles with 20+ preference columns
+    - Enhanced meal_plans with personalization tracking
+
+    ### Configuration
+    - Enhanced AI features: ${USE_ENHANCED_AI}
+    - DNA confidence threshold: ${DNA_CONFIDENCE_THRESHOLD}
+    - Behavioral predictions: ${ENABLE_BEHAVIOR_PREDICTION}
+    - Contextual analysis: ${ENABLE_CONTEXTUAL_ANALYSIS}
+
+    ### Metrics to Monitor
+    - DNA generation success rate (target: >95%)
+    - Onboarding completion rate (target: >80%)
+    - User satisfaction ratings (target: >4.0/5.0)
+    - Plan adherence improvement (target: >25%)
+
+    For detailed documentation, see: docs/enhanced-nutrition-features.md

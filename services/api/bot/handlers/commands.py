@@ -61,9 +61,10 @@ async def start_command(message: types.Message):
             f"• {i18n.get_text('welcome_feature_1', user_language)}\n"
             f"• {i18n.get_text('welcome_feature_2', user_language)}\n"
             f"• {i18n.get_text('welcome_feature_3', user_language)}\n\n"
-            f"{i18n.get_text('welcome_credits', user_language, credits=user['credits_remaining'])}\n\n"
-            f"{i18n.get_text('welcome_warning', user_language)}\n\n"
+            f"{i18n.get_text('welcome_website', user_language)}\n"
+            f"{i18n.get_text('welcome_support', user_language)}\n\n"
             f"{i18n.get_text('welcome_terms', user_language)}\n\n"
+            f"{i18n.get_text('welcome_privacy', user_language)}\n\n"
             f"{i18n.get_text('welcome_ready', user_language)}"
         )
         

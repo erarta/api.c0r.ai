@@ -26,6 +26,164 @@ from .nutrition import sanitize_markdown_text
 # All values must be set in .env file
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL")
 
+def _generate_smart_dish_name(food_names: List[str], user_language: str) -> str:
+    """Generate intelligent dish name based on ingredients"""
+    # Convert to lowercase for easier matching
+    foods = [name.lower() for name in food_names]
+
+    if user_language == "ru":
+        # Soup indicators
+        if any(word in " ".join(foods) for word in ["бульон", "суп", "щи", "борщ", "солянка"]):
+            return f"суп с {', '.join(food_names[:2])}"
+
+        # Pasta/grain dishes
+        elif any(word in " ".join(foods) for word in ["паста", "макарон", "спагетти", "пенне", "фарфалле"]):
+            return f"паста с {', '.join([f for f in food_names if not any(p in f.lower() for p in ['паста', 'макарон', 'спагетти'])][:2])}"
+
+        elif any(word in " ".join(foods) for word in ["рис", "плов", "ризотто"]):
+            return f"рис с {', '.join([f for f in food_names if 'рис' not in f.lower()][:2])}"
+
+        elif any(word in " ".join(foods) for word in ["гречка", "каша", "овсянка"]):
+            return f"каша с {', '.join([f for f in food_names if not any(k in f.lower() for k in ['гречка', 'каша', 'овсянка'])][:2])}"
+
+        # Meat dishes
+        elif any(word in " ".join(foods) for word in ["стейк", "говядина", "свинина", "баранина", "котлет"]):
+            meat = next((f for f in food_names if any(m in f.lower() for m in ['стейк', 'говядина', 'свинина', 'баранина', 'котлет'])), "")
+            others = [f for f in food_names if f != meat][:2]
+            return f"{meat} с {', '.join(others)}" if others else meat
+
+        # Fish dishes
+        elif any(word in " ".join(foods) for word in ["лосось", "семга", "тунец", "треска", "окунь", "рыба"]):
+            fish = next((f for f in food_names if any(fi in f.lower() for fi in ['лосось', 'семга', 'тунец', 'треска', 'окунь', 'рыба'])), "")
+            others = [f for f in food_names if f != fish][:2]
+            return f"{fish} с {', '.join(others)}" if others else fish
+
+        # Salad indicators (green leaves, vegetables)
+        elif any(word in " ".join(foods) for word in ["салат", "листья", "руккола", "шпинат", "айсберг"]) or \
+             len([f for f in foods if any(veg in f for veg in ["помидор", "огурец", "перец", "морковь", "свекла"])]) >= 2:
+            return f"салат с {', '.join(food_names[:3])}"
+
+        # Sandwich/toast
+        elif any(word in " ".join(foods) for word in ["хлеб", "тост", "багет", "булка", "сэндвич"]):
+            bread = next((f for f in food_names if any(b in f.lower() for b in ['хлеб', 'тост', 'багет', 'булка'])), "")
+            others = [f for f in food_names if f != bread][:2]
+            return f"тост с {', '.join(others)}" if others else "тост"
+
+        # Default fallback
+        else:
+            return f"блюдо с {', '.join(food_names[:3])}"
+
+    else:  # English
+        # Similar logic for English
+        foods_joined = " ".join(foods)
+
+        if any(word in foods_joined for word in ["soup", "broth", "chowder"]):
+            return f"soup with {', '.join(food_names[:2])}"
+        elif any(word in foods_joined for word in ["pasta", "spaghetti", "penne", "linguine"]):
+            return f"pasta with {', '.join([f for f in food_names if not any(p in f.lower() for p in ['pasta', 'spaghetti', 'penne'])][:2])}"
+        elif any(word in foods_joined for word in ["rice", "risotto", "pilaf"]):
+            return f"rice with {', '.join([f for f in food_names if 'rice' not in f.lower()][:2])}"
+        elif any(word in foods_joined for word in ["steak", "beef", "pork", "lamb", "chicken"]):
+            meat = next((f for f in food_names if any(m in f.lower() for m in ['steak', 'beef', 'pork', 'lamb', 'chicken'])), "")
+            others = [f for f in food_names if f != meat][:2]
+            return f"{meat} with {', '.join(others)}" if others else meat
+        elif any(word in foods_joined for word in ["salmon", "tuna", "fish", "cod", "halibut"]):
+            fish = next((f for f in food_names if any(fi in f.lower() for fi in ['salmon', 'tuna', 'fish', 'cod', 'halibut'])), "")
+            others = [f for f in food_names if f != fish][:2]
+            return f"{fish} with {', '.join(others)}" if others else fish
+        elif any(word in foods_joined for word in ["lettuce", "salad", "greens", "arugula", "spinach"]) or \
+             len([f for f in foods if any(veg in f for veg in ["tomato", "cucumber", "pepper", "carrot"])]) >= 2:
+            return f"salad with {', '.join(food_names[:3])}"
+        elif any(word in foods_joined for word in ["bread", "toast", "sandwich", "bagel"]):
+            return f"toast with {', '.join([f for f in food_names if not any(b in f.lower() for b in ['bread', 'toast'])][:2])}"
+        else:
+            return f"dish with {', '.join(food_names[:3])}"
+
+
+def _calculate_dynamic_health_score(base_score: int, totals: dict, food_items: list, profile: Optional[dict]) -> int:
+    """Calculate dynamic health score based on nutritional content and user profile"""
+
+    def to_float(v) -> float:
+        try:
+            return float(v) if v is not None else 0.0
+        except:
+            return 0.0
+
+    score = max(1, min(10, int(base_score)))  # Start with LLM score, ensure 1-10 range
+
+    calories = to_float(totals.get('calories', 0))
+    protein = to_float(totals.get('proteins', 0))
+    fat = to_float(totals.get('fats', 0))
+    carbs = to_float(totals.get('carbohydrates', 0))
+
+    # Dynamic scoring adjustments
+    adjustments = 0
+
+    # Protein content scoring
+    if protein >= 25:
+        adjustments += 1  # High protein boost
+    elif protein >= 15:
+        adjustments += 0.5  # Moderate protein boost
+    elif protein < 5:
+        adjustments -= 1  # Too low protein penalty
+
+    # Calorie density scoring
+    if calories > 0:
+        cal_per_100g = calories / max(1, sum(to_float(item.get('weight_grams', 100)) for item in food_items)) * 100
+        if cal_per_100g > 300:  # Very calorie dense
+            adjustments -= 1
+        elif cal_per_100g < 150:  # Low calorie density (lots of veggies)
+            adjustments += 1
+
+    # Fat content scoring
+    if fat > 0 and calories > 0:
+        fat_percentage = (fat * 9 / calories) * 100  # % calories from fat
+        if fat_percentage > 45:  # Too high fat
+            adjustments -= 1
+        elif 20 <= fat_percentage <= 35:  # Healthy fat range
+            adjustments += 0.5
+
+    # Ingredient diversity bonus
+    ingredient_count = len(food_items)
+    if ingredient_count >= 5:
+        adjustments += 1  # Good diversity
+    elif ingredient_count <= 2:
+        adjustments -= 0.5  # Limited diversity
+
+    # Healthy ingredient bonuses
+    healthy_ingredients = ['лосось', 'семга', 'авокадо', 'брокколи', 'шпинат', 'киноа', 'овсянка', 'ягоды', 'орехи', 'оливковое масло',
+                          'salmon', 'avocado', 'broccoli', 'spinach', 'quinoa', 'oats', 'berries', 'nuts', 'olive oil']
+
+    unhealthy_ingredients = ['фри', 'чипсы', 'кола', 'пицца', 'бургер', 'майонез', 'кетчуп',
+                            'fries', 'chips', 'cola', 'pizza', 'burger', 'mayo', 'ketchup']
+
+    food_names_lower = ' '.join([item.get('name', '').lower() for item in food_items])
+
+    healthy_count = sum(1 for ingredient in healthy_ingredients if ingredient in food_names_lower)
+    unhealthy_count = sum(1 for ingredient in unhealthy_ingredients if ingredient in food_names_lower)
+
+    adjustments += healthy_count * 0.5
+    adjustments -= unhealthy_count * 1
+
+    # User profile considerations
+    if profile:
+        goal = profile.get('goal', '').lower()
+        if goal == 'похудение' or goal == 'weight_loss':
+            if calories <= 400:  # Low calorie meal for weight loss
+                adjustments += 0.5
+            elif calories >= 600:  # High calorie meal - not ideal for weight loss
+                adjustments -= 0.5
+        elif goal == 'набор массы' or goal == 'muscle_gain':
+            if protein >= 20:  # High protein good for muscle gain
+                adjustments += 0.5
+            if calories >= 500:  # Need calories for muscle gain
+                adjustments += 0.5
+
+    # Apply adjustments and clamp to 1-10 range
+    final_score = score + adjustments
+    return max(1, min(10, int(round(final_score))))
+
+
 def _is_generic_points(points: Optional[List[str]], user_language: str) -> bool:
     if not points:
         return True
@@ -38,14 +196,16 @@ def _is_generic_points(points: Optional[List[str]], user_language: str) -> bool:
     return len(points) == 1 and len(points[0]) < 16
 
 
-def _generate_personalized_points(total_nutrition: dict, profile: Optional[dict], user_language: str) -> Tuple[List[str], List[str]]:
+def _generate_personalized_points(total_nutrition: dict, profile: Optional[dict], user_language: str, food_items: list = None) -> Tuple[List[str], List[str]]:
     def t(ru: str, en: str) -> str:
         return ru if user_language == 'ru' else en
+
     def to_float(v) -> float:
         try:
             return float(v)
         except Exception:
             return 0.0
+
     cals = to_float(total_nutrition.get('calories'))
     prot = to_float(total_nutrition.get('proteins'))
     fats = to_float(total_nutrition.get('fats'))
@@ -54,39 +214,99 @@ def _generate_personalized_points(total_nutrition: dict, profile: Optional[dict]
     fiber = to_float(total_nutrition.get('fiber'))
     salt = to_float(total_nutrition.get('salt'))
     sat_fat = to_float(total_nutrition.get('saturated_fat'))
+
     goal = (profile or {}).get('goal') if profile else None
+    allergies = (profile or {}).get('allergies', []) if profile else []
+    dietary_prefs = (profile or {}).get('dietary_preferences', []) if profile else []
+
+    # Analyze current ingredients to avoid redundant suggestions
+    current_ingredients = []
+    if food_items:
+        current_ingredients = [item.get('name', '').lower() for item in food_items]
+    has_vegetables = any(veg in ' '.join(current_ingredients) for veg in
+                        ['салат', 'помидор', 'огурец', 'перец', 'брокколи', 'шпинат', 'морковь',
+                         'lettuce', 'tomato', 'cucumber', 'pepper', 'broccoli', 'spinach', 'carrot'])
+    has_protein = any(prot in ' '.join(current_ingredients) for prot in
+                     ['лосось', 'курица', 'говядина', 'творог', 'яйца', 'тунец',
+                      'salmon', 'chicken', 'beef', 'cottage', 'eggs', 'tuna'])
+    has_healthy_fats = any(fat in ' '.join(current_ingredients) for fat in
+                          ['авокадо', 'орехи', 'оливковое', 'лосось',
+                           'avocado', 'nuts', 'olive', 'salmon'])
+
     positives: List[str] = []
     improvements: List[str] = []
-    if prot >= 20:
-        positives.append(t('Высокое содержание белка — поддерживает сытость', 'High protein — supports satiety'))
-    if fiber >= 5:
-        positives.append(t('Много клетчатки — хорошо для пищеварения', 'High in fiber — good for digestion'))
-    if sugar > 0 and sugar <= 10:
-        positives.append(t('Низкое содержание сахара', 'Low sugar'))
-    if salt > 0 and salt <= 0.5:
-        positives.append(t('Низкая соль', 'Low salt'))
-    if cals <= 450:
-        positives.append(t('Умеренная калорийность блюда', 'Moderate total calories'))
-    if 15 <= fats <= 35 and 15 <= prot <= 40 and 20 <= carbs <= 60:
-        positives.append(t('Сбалансированные макроэлементы', 'Balanced macros'))
-    if sat_fat >= 12 or fats >= 40:
-        improvements.append(t('Понизь долю насыщенных жиров: меньше сыра/масла', 'Reduce saturated fat: less cheese/butter'))
-    if salt >= 2.0:
-        improvements.append(t('Слишком много соли — выбери менее солёные ингредиенты', 'Too much salt — choose lower-salt ingredients'))
-    if fiber < 5:
-        improvements.append(t('Добавь овощи/зелень для клетчатки и микронутриентов', 'Add vegetables/greens for fiber and micronutrients'))
-    if goal == 'gain_weight' and cals < 600:
-        improvements.append(t('Для набора — добавь сложные углеводы (крупы/хлеб цельнозерн.)', 'For gain — add complex carbs (grains/wholegrain bread)'))
-    if goal == 'lose_weight' and cals >= 600:
-        improvements.append(t('Для снижения веса — уменьшай порцию или калорийные добавки', 'For weight loss — reduce portion or high-calorie add‑ons'))
+
+    # Dynamic positive aspects based on actual nutritional content
+    if prot >= 25:
+        positives.append(t('Отличный источник белка — поддерживает мышцы и сытость', 'Excellent protein source — supports muscles and satiety'))
+    elif prot >= 15:
+        positives.append(t('Хорошее количество белка для восстановления', 'Good protein content for recovery'))
+
+    if fiber >= 8:
+        positives.append(t('Высокое содержание клетчатки — отлично для здоровья кишечника', 'High fiber content — great for gut health'))
+    elif fiber >= 5:
+        positives.append(t('Содержит полезную клетчатку', 'Contains beneficial fiber'))
+
+    if cals <= 300:
+        positives.append(t('Легкое блюдо — не перегружает организм', 'Light meal — won\'t overload your system'))
+    elif cals <= 450:
+        positives.append(t('Оптимальная калорийность для перекуса', 'Perfect calorie amount for a snack'))
+
+    if has_healthy_fats and fats >= 10:
+        positives.append(t('Содержит полезные жиры — важно для здоровья мозга', 'Contains healthy fats — important for brain health'))
+
+    if sugar <= 5:
+        positives.append(t('Минимум добавленного сахара', 'Minimal added sugar'))
+
+    # Smart, contextual improvement suggestions
+    if prot < 10 and not has_protein:
+        if 'веганство' in dietary_prefs or 'vegan' in dietary_prefs:
+            improvements.append(t('Добавь растительный белок: тофу, бобовые или орехи', 'Add plant protein: tofu, legumes, or nuts'))
+        else:
+            improvements.append(t('Увеличь белок: добавь яйца, рыбу или творог', 'Boost protein: add eggs, fish, or cottage cheese'))
+
+    if fiber < 3 and not has_vegetables:
+        # Don't suggest vegetables if they already have them!
+        vegetables_suggestions = []
+        if user_language == 'ru':
+            vegetables_suggestions = ['листовую зелень', 'свежие помидоры', 'хрустящий огурец', 'цветную капусту']
+        else:
+            vegetables_suggestions = ['leafy greens', 'fresh tomatoes', 'crispy cucumber', 'cauliflower']
+
+        # Filter out allergens
+        if 'помидоры' not in allergies and 'tomatoes' not in allergies:
+            improvements.append(t(f'Попробуй добавить {vegetables_suggestions[1]} для витаминов', f'Try adding {vegetables_suggestions[1]} for vitamins'))
+        else:
+            improvements.append(t(f'Добавь {vegetables_suggestions[0]} для микронутриентов', f'Add {vegetables_suggestions[0]} for micronutrients'))
+
+    if fats > 20 and sat_fat > 8:
+        improvements.append(t('Замени часть жирных ингредиентов на более легкие', 'Replace some fatty ingredients with lighter alternatives'))
+
+    if carbs > 40 and goal in ['похудение', 'weight_loss']:
+        improvements.append(t('Для похудения — уменьши углеводы, увеличь овощи', 'For weight loss — reduce carbs, increase vegetables'))
+
+    if cals < 300 and goal in ['набор массы', 'muscle_gain']:
+        improvements.append(t('Для набора массы добавь сложные углеводы: киноа или коричневый рис', 'For muscle gain add complex carbs: quinoa or brown rice'))
+
+    if salt > 1.5:
+        improvements.append(t('Попробуй заменить соль травами и специями', 'Try replacing salt with herbs and spices'))
+
+    # Goal-specific suggestions
+    if goal == 'спорт' or goal == 'fitness':
+        if prot < 20:
+            improvements.append(t('Для спорта увеличь белок до 20-25г на порцию', 'For fitness increase protein to 20-25g per serving'))
+
     def dedup(items: List[str]) -> List[str]:
-        seen = set(); out: List[str] = []
+        seen = set()
+        out: List[str] = []
         for it in items:
             k = it.lower()
             if k in seen:
                 continue
-            seen.add(k); out.append(it)
+            seen.add(k)
+            out.append(it)
         return out[:3]
+
     return dedup(positives), dedup(improvements)
 
 
@@ -120,7 +340,8 @@ def format_analysis_result(result: dict, user_language: str = 'en', profile: Opt
                 if "food_items" in analysis and analysis["food_items"]:
                     food_names = [item.get("name", "").lower() for item in analysis["food_items"][:3] if item.get("name")]
                     if food_names:
-                        dish_type = (f"салат с {', '.join(food_names)}" if user_language == "ru" else f"salad with {', '.join(food_names)}")
+                        # Smart dish naming based on ingredients
+                        dish_type = _generate_smart_dish_name(food_names, user_language)
                         regional_info["dish_identification"] = dish_type
             confidence = regional_info.get("regional_match_confidence", 0)
             
@@ -202,7 +423,14 @@ def format_analysis_result(result: dict, user_language: str = 'en', profile: Opt
             else:
                 message_parts.append("🧬 Nutrition Analysis:")
             
-            health_score = nutrition_analysis.get("health_score", 5)
+            # Calculate dynamic health score
+            base_health_score = nutrition_analysis.get("health_score", 7)
+            totals = analysis.get("total_nutrition", {})
+            food_items = analysis.get("food_items", [])
+
+            # Enhance health score with dynamic calculation
+            health_score = _calculate_dynamic_health_score(base_health_score, totals, food_items, profile)
+
             if user_language == "ru":
                 message_parts.append(f"📊 Рейтинг здоровости: {health_score}/10")
             else:
@@ -228,8 +456,9 @@ def format_analysis_result(result: dict, user_language: str = 'en', profile: Opt
                 
                 # If generic, replace with personalized suggestions based on totals and profile
                 totals = analysis.get("total_nutrition", {})
+                food_items = analysis.get("food_items", [])
                 if _is_generic_points(aspects, user_language):
-                    gen_pos, _ = _generate_personalized_points(totals, profile, user_language)
+                    gen_pos, _ = _generate_personalized_points(totals, profile, user_language, food_items)
                     aspects = gen_pos or aspects
                 for aspect in aspects[:5]:
                     message_parts.append(f"• {aspect}")
@@ -252,8 +481,9 @@ def format_analysis_result(result: dict, user_language: str = 'en', profile: Opt
                     suggestions = improvement_suggestions
                 # If generic, replace with personalized improvements
                 totals = analysis.get("total_nutrition", {})
+                food_items = analysis.get("food_items", [])
                 if _is_generic_points(suggestions, user_language):
-                    _, gen_imp = _generate_personalized_points(totals, profile, user_language)
+                    _, gen_imp = _generate_personalized_points(totals, profile, user_language, food_items)
                     suggestions = gen_imp or suggestions
                 for s in suggestions[:5]:
                     message_parts.append(f"• {s}")
