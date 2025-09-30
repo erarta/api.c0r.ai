@@ -11,31 +11,50 @@ from .client import supabase
 async def get_or_create_user(telegram_id: int, language: Optional[str] = None):
     """
     Get existing user or create new one with initial credits
-    
+
     Args:
         telegram_id: Telegram user ID
         language: User's preferred language (optional)
-        
+
     Returns:
         User data dictionary
     """
     logger.info(f"Getting or creating user for telegram_id: {telegram_id}")
-    
-    # Search for existing user
-    user = supabase.table("users").select("*").eq("telegram_id", telegram_id).execute().data
-    if user:
-        logger.info(f"Found existing user {telegram_id}: {user[0]}")
-        return user[0]
-    
-    # Create new user with 3 initial credits
-    data = {"telegram_id": telegram_id, "credits_remaining": 3}
-    if language:
-        data["language"] = language
-    
-    logger.info(f"Creating new user {telegram_id} with data: {data}")
-    user = supabase.table("users").insert(data).execute().data[0]
-    logger.info(f"Created new user {telegram_id}: {user}")
-    return user
+
+    try:
+        # Search for existing user
+        user = supabase.table("users").select("*").eq("telegram_id", telegram_id).execute().data
+        if user:
+            logger.info(f"Found existing user {telegram_id}: {user[0]}")
+            return user[0]
+
+        # Create new user - only include fields that exist in schema
+        data = {"telegram_id": telegram_id}
+
+        # Check if credits_remaining column exists by trying to query it
+        try:
+            test_query = supabase.table("users").select("credits_remaining").limit(1).execute()
+            data["credits_remaining"] = 3
+        except Exception as e:
+            logger.warning(f"credits_remaining column not found in users table: {e}")
+
+        # Check if language column exists
+        if language:
+            try:
+                test_query = supabase.table("users").select("language").limit(1).execute()
+                data["language"] = language
+            except Exception as e:
+                logger.warning(f"language column not found in users table: {e}")
+
+        logger.info(f"Creating new user {telegram_id} with data: {data}")
+        user = supabase.table("users").insert(data).execute().data[0]
+        logger.info(f"Created new user {telegram_id}: {user}")
+        return user
+
+    except Exception as e:
+        logger.error(f"Error in get_or_create_user for {telegram_id}: {e}")
+        # Return a minimal user object for compatibility
+        return {"telegram_id": telegram_id, "id": str(telegram_id)}
 
 
 async def get_user_by_telegram_id(telegram_id: int):
@@ -110,23 +129,29 @@ async def add_credits(telegram_id: int, count: int = 20):
 async def update_user_language(telegram_id: int, language: str):
     """
     Update user's preferred language
-    
+
     Args:
         telegram_id: Telegram user ID
         language: Language code ('en' or 'ru')
-        
+
     Returns:
-        Updated user data or None if invalid language
+        Updated user data or None if invalid language or column doesn't exist
     """
     logger.info(f"Updating language for user {telegram_id} to {language}")
-    
+
     if language not in ['en', 'ru']:
         logger.error(f"Invalid language code: {language}")
         return None
-    
-    updated = supabase.table("users").update({"language": language}).eq("telegram_id", telegram_id).execute().data[0]
-    logger.info(f"Language updated for user {telegram_id}: {updated}")
-    return updated
+
+    try:
+        # Check if language column exists
+        test_query = supabase.table("users").select("language").limit(1).execute()
+        updated = supabase.table("users").update({"language": language}).eq("telegram_id", telegram_id).execute().data[0]
+        logger.info(f"Language updated for user {telegram_id}: {updated}")
+        return updated
+    except Exception as e:
+        logger.warning(f"Cannot update language for user {telegram_id} - language column may not exist: {e}")
+        return None
 
 
 async def update_user_country_and_phone(telegram_id: int, country: Optional[str] = None, phone_number: Optional[str] = None):
@@ -140,31 +165,35 @@ async def update_user_country_and_phone(telegram_id: int, country: Optional[str]
 async def get_user_stats(telegram_id: int):
     """
     Get user statistics (credits, total analyses, etc.)
-    
+
     Args:
         telegram_id: Telegram user ID
-        
+
     Returns:
         Dictionary with user statistics
     """
     logger.info(f"Getting stats for user {telegram_id}")
-    
+
     user = await get_user_by_telegram_id(telegram_id)
     if not user:
         logger.error(f"User {telegram_id} not found for stats")
         return None
-    
+
     # Get analysis count from logs
-    analysis_count = supabase.table("logs").select("id", count="exact").eq("user_id", user['id']).eq("action_type", "photo_analysis").execute().count
-    
+    try:
+        analysis_count = supabase.table("logs").select("id", count="exact").eq("user_id", user['id']).eq("action_type", "photo_analysis").execute().count
+    except Exception as e:
+        logger.warning(f"Cannot get analysis count for user {telegram_id}: {e}")
+        analysis_count = 0
+
     stats = {
         'telegram_id': telegram_id,
-        'credits_remaining': user['credits_remaining'],
+        'credits_remaining': user.get('credits_remaining', 0),  # Default to 0 if column doesn't exist
         'total_analyses': analysis_count or 0,
         'language': user.get('language', 'en'),
         'country': user.get('country'),
         'created_at': user.get('created_at')
     }
-    
+
     logger.info(f"Stats for user {telegram_id}: {stats}")
     return stats

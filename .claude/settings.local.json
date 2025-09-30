@@ -18,7 +18,15 @@
       "Bash(docker image rm:*)",
       "Bash(docker-compose:*)",
       "Bash(docker cp:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(ssh:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(git commit:*)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": [],
     "ask": []
