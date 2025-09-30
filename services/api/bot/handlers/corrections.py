@@ -59,6 +59,26 @@ async def process_fix_calories_input(message: types.Message, state: FSMContext):
             await message.answer(i18n.get_text('error_general', user_language))
             await state.clear()
             return
+        # Try to refresh Redis cache for this image if metadata contains image hash
+        try:
+            from common.db.logs import get_log_by_id
+            from common.cache.redis_client import make_cache_key, cache_set_json
+            row = get_log_by_id(user_db_id, log_id)
+            meta = (row or {}).get('metadata') or {}
+            image_hash = meta.get('image_hash') or meta.get('photo_hash')
+            if image_hash:
+                # Build a minimal cached payload indicating corrected calories for downstream callers
+                cached_payload = meta.get('analysis') or {}
+                # Attach meta to indicate cache provenance
+                cached_payload_meta = {"cache_hit": True, "source": "cache", "corrected_total_calories": float(value)}
+                if isinstance(cached_payload, dict):
+                    cached_payload.setdefault('meta', {}).update(cached_payload_meta)
+                else:
+                    cached_payload = {"analysis": {}, "meta": cached_payload_meta}
+                cache_key = make_cache_key("analysis", {"user": user_db_id, "image_hash": image_hash})
+                await cache_set_json(cache_key, cached_payload, ttl_seconds=14 * 24 * 3600)
+        except Exception as _e:
+            logger.debug(f"Failed to refresh analysis cache on correction: {_e}")
         # Build informative confirmation with delta and new daily total
         delta = result.get('delta', 0.0)
         new_total = result.get('new_total', 0.0)

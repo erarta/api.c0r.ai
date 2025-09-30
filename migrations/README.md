@@ -78,9 +78,10 @@ All migration files follow the pattern: `YYYY-MM-DD_description.sql`
 
 | Date | Migration | Description | Status |
 |------|-----------|-------------|--------|
+| 2025-09-25 | enhanced_nutrition_system | Enhanced AI nutrition features with DNA profiling | 🚀 Ready |
+| 2025-08-10 | user_profiles_avatar_fullname | User profile enhancements | ✅ Applied |
+| 2025-08-08 | features_favorites_plans_recipes | Core features and favorites | ✅ Applied |
 | 2025-01-26 | schema_migrations | Migration tracking system | ✅ Applied |
-| 2025-01-21 | multilingual | Multilingual support | ✅ Applied |
-| 2025-01-21 | constraints | Database constraints | ✅ Applied |
 
 ## ✅ Best Practices
 

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from io import BytesIO
 from collections import defaultdict, deque
 import uuid
@@ -630,6 +630,348 @@ async def label_analyze_perplexity(
     except Exception as e:
         logger.error(f"Perplexity label analyze error: {e}")
         raise HTTPException(status_code=500, detail="Perplexity label analysis failed")
+
+
+class FoodPlanRequest(BaseModel):
+    profile: Dict[str, Any] = Field(default_factory=dict)
+    food_history: List[Dict[str, Any]] = Field(default_factory=list)
+    days: int = Field(default=3, ge=1, le=7)
+
+
+@app.post("/api/v1/food-plan/generate", response_model=Dict[str, Any])
+@require_internal_auth
+async def ml_generate_food_plan(request: Request, payload: FoodPlanRequest):
+    """Generate food plan per docs/food-plan/llm_prompt.md.
+    Returns intro_summary, plan_json, shopping_list_json, confidence, model_used.
+    Deterministic, diversified fallback until full LLM integration.
+    """
+    try:
+        profile = payload.profile or {}
+        days = int(payload.days)
+        target = profile.get("daily_calories_target") or 2000
+        try:
+            target = int(target)
+        except Exception:
+            target = 2000
+        # Enhanced intro summary with detailed analysis
+        goal = (profile.get("goal") or "поддержание здоровья").lower()
+        prefs = ", ".join(profile.get("dietary_preferences", []) or [])
+        allergies = ", ".join(profile.get("allergies", []) or [])
+
+        # Enhanced analysis of food history for detailed patterns and habits
+        food_history = payload.food_history or []
+
+        # Detailed analysis of last 14 days
+        daily_calories = []
+        daily_protein = []
+        meal_times = []
+        overeating_days = []
+        undereating_days = []
+        breakfast_days = 0
+        dinner_late_days = 0
+        total_analyses = len(food_history[-14:])
+
+        # Food categorization with examples
+        breakfast_items = []
+        protein_foods = []
+        carb_foods = []
+        healthy_foods = []
+        unhealthy_foods = []
+
+        # Process last 14 entries with detailed analysis
+        for entry in food_history[-14:]:
+            analysis = entry.get("analysis", {})
+            timestamp = entry.get("timestamp", "")
+
+            # Extract nutrition data
+            nutrition = analysis.get("total_nutrition", {})
+            calories = nutrition.get("calories", 0)
+            protein = nutrition.get("proteins", 0)
+
+            if calories > 0:
+                daily_calories.append(calories)
+                daily_protein.append(protein)
+
+                # Analyze meal timing from timestamp
+                try:
+                    if timestamp:
+                        hour = int(timestamp.split("T")[1].split(":")[0]) if "T" in timestamp else 12
+                        meal_times.append(hour)
+
+                        # Count breakfast (6-11) and late dinners (21-23)
+                        if 6 <= hour <= 11:
+                            breakfast_days += 1
+                        elif 21 <= hour <= 23:
+                            dinner_late_days += 1
+                except:
+                    pass
+
+                # Analyze overeating/undereating
+                target_cal = target or 2000
+                if calories > target_cal * 1.3:  # 30% over target
+                    overeating_days.append(calories)
+                elif calories < target_cal * 0.6:  # 40% under target
+                    undereating_days.append(calories)
+
+            # Categorize foods with more detail
+            food_items = analysis.get("food_items", [])
+            for item in food_items:
+                item_name = item.get("name", "")
+                item_name_lower = item_name.lower()
+
+                # Breakfast foods
+                if any(word in item_name_lower for word in ["овсянка", "каша", "мюсли", "яйц", "омлет", "йогурт", "творог", "тост", "хлопья"]):
+                    if item_name not in breakfast_items:
+                        breakfast_items.append(item_name)
+
+                # Protein sources
+                if any(word in item_name_lower for word in ["курица", "говядина", "рыба", "лосось", "тунец", "яйц", "творог", "сыр", "индейка", "свинина", "треска"]):
+                    if item_name not in protein_foods:
+                        protein_foods.append(item_name)
+
+                # Carbohydrate sources
+                if any(word in item_name_lower for word in ["рис", "гречка", "макарон", "хлеб", "картофель", "овсянка", "киноа", "паста"]):
+                    if item_name not in carb_foods:
+                        carb_foods.append(item_name)
+
+                # Healthy foods
+                if any(word in item_name_lower for word in ["овощи", "салат", "брокколи", "шпинат", "помидор", "огурец", "ягоды", "фрукт", "авокадо", "листья"]):
+                    if item_name not in healthy_foods:
+                        healthy_foods.append(item_name)
+
+                # Unhealthy foods
+                if any(word in item_name_lower for word in ["пицца", "бургер", "фри", "чипсы", "кола", "торт", "пирожное", "конфеты"]):
+                    if item_name not in unhealthy_foods:
+                        unhealthy_foods.append(item_name)
+
+        # Calculate averages and patterns
+        avg_calories = sum(daily_calories) / len(daily_calories) if daily_calories else target
+        avg_protein = sum(daily_protein) / len(daily_protein) if daily_protein else 0
+        breakfast_frequency = (breakfast_days / total_analyses * 100) if total_analyses > 0 else 0
+
+        # Build friendly, conversational analysis
+        summary_parts = []
+
+        # Opening greeting
+        if total_analyses > 0:
+            summary_parts.append(f"Привет! Проанализировал твое питание за последние 2 недели. У нас есть {total_analyses} анализов - отличная основа для работы!")
+        else:
+            summary_parts.append(f"Привет! Пока у нас мало данных, но давай создадим план на основе твоих целей.")
+
+        # Calorie analysis with personal touch
+        if daily_calories:
+            summary_parts.append(f"\nСмотрю на калории: ты получаешь около {int(avg_calories)} ккал в день, а твоя цель - {target}. ")
+
+            # Overeating/undereating with advice
+            if overeating_days:
+                avg_overeating = int(sum(overeating_days) / len(overeating_days))
+                summary_parts.append(f"Заметил, что в {len(overeating_days)} днях было переедание на {avg_overeating} ккал. Ничего страшного - главное следить за размером порций!")
+            elif undereating_days:
+                avg_undereating = int(sum(undereating_days) / len(undereating_days))
+                summary_parts.append(f"Вижу недоедание в {len(undereating_days)} днях на {avg_undereating} ккал. Твоему организму нужно больше энергии для нормальной работы.")
+
+        # Breakfast habits with encouragement
+        if total_analyses > 0:
+            if breakfast_frequency > 70:
+                summary_parts.append(f"\nЗавтраки у тебя на высоте - {breakfast_frequency:.0f}% дней! Это здорово запускает метаболизм с утра.")
+            elif breakfast_frequency > 40:
+                summary_parts.append(f"\nЗавтракаешь в {breakfast_frequency:.0f}% случаев - неплохо, но можно чаще. Утренний прием пищи даст больше энергии на весь день.")
+            else:
+                summary_parts.append(f"\nЗавтраки пропускаешь в {100-breakfast_frequency:.0f}% случаев. Понимаю, утром времени мало, но хотя бы что-то легкое поможет.")
+
+        # Food analysis with personality
+        food_insights = []
+        if protein_foods:
+            protein_examples = ", ".join(protein_foods[:3])
+            if avg_protein > 0:
+                protein_per_kg = avg_protein / (profile.get("weight_kg", 70) or 70)
+                if protein_per_kg < 0.8:
+                    food_insights.append(f"По белкам: вижу {protein_examples}, но тебе нужно больше - около {int((profile.get('weight_kg', 70) or 70) * 1.2)}г в день для твоих целей.")
+                else:
+                    food_insights.append(f"С белками все отлично: {protein_examples} - качественные источники!")
+
+        if breakfast_items:
+            breakfast_examples = ", ".join(breakfast_items[:2])
+            food_insights.append(f"На завтрак предпочитаешь {breakfast_examples} - хороший выбор для энергии.")
+
+        if healthy_foods:
+            healthy_examples = ", ".join(healthy_foods[:3])
+            food_insights.append(f"Радует выбор полезных продуктов: {healthy_examples}. Видно, что заботишься о здоровье!")
+
+        if food_insights:
+            summary_parts.append(f"\n{' '.join(food_insights)}")
+
+        # Goal with motivation
+        goal_benefits = {
+            "lose_weight": "снижение веса",
+            "gain_weight": "набор веса",
+            "maintain_weight": "поддержание формы",
+            "build_muscle": "набор мышц",
+            "improve_health": "улучшение здоровья"
+        }
+        goal_text = goal_benefits.get(goal, "сбалансированный подход")
+        summary_parts.append(f"\nТвоя цель - {goal_text}. Создаю план, который поможет этого достичь с учетом твоих предпочтений!")
+
+        intro_summary = "".join(summary_parts)
+
+        # Diversified menu options
+        breakfasts = [
+            ("Овсянка с ягодами", "Мягкий старт дня: сложные углеводы и клетчатка для стабильной энергии.", [
+                {"name": "овсянка", "amount": 60, "unit": "г", "category": "Злаки"},
+                {"name": "молоко/альтернатива", "amount": 200, "unit": "мл", "category": "Молочка/замены"},
+                {"name": "ягоды", "amount": 100, "unit": "г", "category": "Фрукты"},
+                {"name": "миндаль", "amount": 20, "unit": "г", "category": "Белки"},
+                {"name": "мёд", "amount": 5, "unit": "г", "category": "Специи"},
+            ]),
+            ("Омлет с овощами", "Белки для восстановления и лёгкие овощи для микронутриентов.", [
+                {"name": "яйца", "amount": 2, "unit": "шт", "category": "Белки"},
+                {"name": "молоко/альтернатива", "amount": 30, "unit": "мл", "category": "Молочка/замены"},
+                {"name": "овощи (помидор, перец)", "amount": 120, "unit": "г", "category": "Овощи"},
+                {"name": "оливковое масло", "amount": 5, "unit": "г", "category": "Специи"},
+            ]),
+            ("Тосты с авокадо и яйцом", "Полезные жиры и белок для долгого насыщения.", [
+                {"name": "хлеб цельнозерновой", "amount": 80, "unit": "г", "category": "Злаки"},
+                {"name": "авокадо", "amount": 100, "unit": "г", "category": "Овощи"},
+                {"name": "яйца", "amount": 1, "unit": "шт", "category": "Белки"},
+                {"name": "лимонный сок/специи", "amount": 5, "unit": "г", "category": "Специи"},
+            ]),
+            ("Греческий йогурт с орехами", "Лёгкий белковый завтрак, поддерживающий микрофлору.", [
+                {"name": "греческий йогурт", "amount": 200, "unit": "г", "category": "Молочка/замены"},
+                {"name": "орехи", "amount": 25, "unit": "г", "category": "Белки"},
+                {"name": "ягоды", "amount": 80, "unit": "г", "category": "Фрукты"},
+            ]),
+            ("Смузи с шпинатом и бананом", "Быстрое питание с витаминами и калием.", [
+                {"name": "банан", "amount": 120, "unit": "г", "category": "Фрукты"},
+                {"name": "шпинат", "amount": 50, "unit": "г", "category": "Овощи"},
+                {"name": "молоко/альтернатива", "amount": 250, "unit": "мл", "category": "Молочка/замены"},
+                {"name": "семена чиа/льна", "amount": 10, "unit": "г", "category": "Специи"},
+            ]),
+        ]
+        lunches = [
+            ("Куриное филе с гречкой и овощами", "Сбалансированное блюдо для энергии и восстановления.", [
+                {"name": "куриная грудка", "amount": 180, "unit": "г", "category": "Белки"},
+                {"name": "гречка (сухая)", "amount": 90, "unit": "г", "category": "Злаки"},
+                {"name": "овощи (салат)", "amount": 150, "unit": "г", "category": "Овощи"},
+                {"name": "оливковое масло", "amount": 10, "unit": "г", "category": "Специи"},
+            ]),
+            ("Индейка с киноа и салатом", "Постный белок и цельные зёрна для продуктивного дня.", [
+                {"name": "индейка", "amount": 180, "unit": "г", "category": "Белки"},
+                {"name": "киноа (сухая)", "amount": 80, "unit": "г", "category": "Злаки"},
+                {"name": "овощи (салат)", "amount": 150, "unit": "г", "category": "Овощи"},
+            ]),
+            ("Лосось с рисом и брокколи", "Омега‑3 и качественные углеводы для концентрации.", [
+                {"name": "лосось", "amount": 170, "unit": "г", "category": "Белки"},
+                {"name": "рис (сухой)", "amount": 90, "unit": "г", "category": "Злаки"},
+                {"name": "брокколи", "amount": 150, "unit": "г", "category": "Овощи"},
+            ]),
+            ("Тунец с картофелем и овощами", "Белок и калий для выносливости.", [
+                {"name": "тунец", "amount": 150, "unit": "г", "category": "Белки"},
+                {"name": "картофель", "amount": 200, "unit": "г", "category": "Овощи"},
+                {"name": "овощи", "amount": 120, "unit": "г", "category": "Овощи"},
+            ]),
+            ("Чили из фасоли с рисом", "Растительный белок и клетчатка для сытости.", [
+                {"name": "фасоль", "amount": 160, "unit": "г", "category": "Белки"},
+                {"name": "рис (сухой)", "amount": 80, "unit": "г", "category": "Злаки"},
+                {"name": "томатная паста/специи", "amount": 20, "unit": "г", "category": "Специи"},
+            ]),
+        ]
+        dinners = [
+            ("Треска с овощами на пару", "Лёгкий ужин для восстановления без тяжести.", [
+                {"name": "треска", "amount": 160, "unit": "г", "category": "Белки"},
+                {"name": "овощи (смесь)", "amount": 200, "unit": "г", "category": "Овощи"},
+            ]),
+            ("Курица терияки с рисом", "Умеренно насыщающее блюдо после активного дня.", [
+                {"name": "курица", "amount": 170, "unit": "г", "category": "Белки"},
+                {"name": "соус терияки", "amount": 25, "unit": "г", "category": "Специи"},
+                {"name": "рис (сухой)", "amount": 70, "unit": "г", "category": "Злаки"},
+            ]),
+            ("Паста из цельнозерновой муки с индейкой", "Углеводы медленного высвобождения и белок.", [
+                {"name": "паста цельнозерновая (сухая)", "amount": 90, "unit": "г", "category": "Злаки"},
+                {"name": "индейка", "amount": 150, "unit": "г", "category": "Белки"},
+                {"name": "томатный соус/специи", "amount": 50, "unit": "г", "category": "Специи"},
+            ]),
+            ("Овощное рагу с чечевицей", "Тёплый растительный ужин с железом и белком.", [
+                {"name": "чечевица (сухая)", "amount": 80, "unit": "г", "category": "Белки"},
+                {"name": "овощи (смесь)", "amount": 250, "unit": "г", "category": "Овощи"},
+                {"name": "специи", "amount": 5, "unit": "г", "category": "Специи"},
+            ]),
+            ("Креветки с киноа и салатом", "Лёгкие белки и полезные углеводы для сна.", [
+                {"name": "креветки", "amount": 160, "unit": "г", "category": "Белки"},
+                {"name": "киноа (сухая)", "amount": 70, "unit": "г", "category": "Злаки"},
+                {"name": "овощи (салат)", "amount": 150, "unit": "г", "category": "Овощи"},
+            ]),
+        ]
+
+        # Calorie variance per day ±150..200
+        deltas = [-150, 0, 150, -200, 200, -100, 100]
+        plan: Dict[str, Any] = {}
+        # Aggregate shopping list by categories
+        shopping_totals: Dict[str, Dict[str, Dict[str, float]]] = {}
+        category_order = ["Злаки", "Белки", "Овощи", "Фрукты", "Молочка/замены", "Специи", "Прочее"]
+
+        def macros_from_calories(cals: int) -> Dict[str, int]:
+            # Approx 20% protein, 30% fat, 50% carbs
+            protein = int(round(cals * 0.20 / 4))
+            fats = int(round(cals * 0.30 / 9))
+            carbs = int(round(cals * 0.50 / 4))
+            return {"protein": protein, "fats": fats, "carbs": carbs}
+
+        for d in range(1, days + 1):
+            daily_total = max(1200, int(target + deltas[(d - 1) % len(deltas)]))
+            b_cal = int(round(daily_total * 0.30))
+            l_cal = int(round(daily_total * 0.40))
+            d_cal = daily_total - b_cal - l_cal
+
+            b_name, b_desc, b_ingredients = breakfasts[(d - 1) % len(breakfasts)]
+            l_name, l_desc, l_ingredients = lunches[(d - 1) % len(lunches)]
+            dn_name, dn_desc, dn_ingredients = dinners[(d - 1) % len(dinners)]
+
+            b_mac = macros_from_calories(b_cal)
+            l_mac = macros_from_calories(l_cal)
+            dn_mac = macros_from_calories(d_cal)
+
+            day_data = {
+                "breakfast": {"calories": b_cal, **b_mac, "text": f"{b_name} — {b_desc}", "ingredients": b_ingredients},
+                "lunch": {"calories": l_cal, **l_mac, "text": f"{l_name} — {l_desc}", "ingredients": l_ingredients},
+                "dinner": {"calories": d_cal, **dn_mac, "text": f"{dn_name} — {dn_desc}", "ingredients": dn_ingredients},
+                "summary": {},
+            }
+            plan[f"day_{d}"] = day_data
+            # aggregate ingredients
+            for meal_key in ("breakfast", "lunch", "dinner"):
+                for ing in day_data[meal_key].get("ingredients", []):
+                    cat = ing.get("category") or "Прочее"
+                    name = ing.get("name")
+                    amount = float(ing.get("amount") or 0)
+                    unit = ing.get("unit") or "г"
+                    shopping_totals.setdefault(cat, {})
+                    if name not in shopping_totals[cat]:
+                        shopping_totals[cat][name] = {"amount": 0.0, "unit": unit}
+                    # if units mismatch, keep first unit and just sum as is (simple fallback)
+                    shopping_totals[cat][name]["amount"] += amount
+
+        # Build categorized list preserving order
+        shopping: Dict[str, Any] = {}
+        for cat in category_order:
+            if cat in shopping_totals:
+                items = []
+                for name, meta in sorted(shopping_totals[cat].items()):
+                    amt = int(round(meta["amount"])) if meta["unit"] in ("г", "мл") else int(round(meta["amount"]))
+                    items.append({"name": name, "amount": amt, "unit": meta["unit"]})
+                if items:
+                    shopping[cat] = items
+        if not shopping:
+            shopping = {"Прочее": [{"name": "овсянка", "amount": 300, "unit": "г"}]}
+        return {
+            "intro_summary": intro_summary,
+            "plan_json": plan,
+            "shopping_list_json": shopping,
+            "confidence": 0.6,
+            "model_used": llm_factory.get_current_provider(),
+        }
+    except Exception as e:
+        logger.error(f"ML food plan generation error: {e}")
+        raise HTTPException(status_code=500, detail="Food plan generation failed")
 
 async def analyze_food_with_openai(image_bytes: bytes, user_language: str = "en", use_premium_model: bool = False) -> dict:
     """

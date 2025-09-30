@@ -44,8 +44,29 @@ def get_client() -> Client:
 def is_client_available() -> bool:
     """
     Check if Supabase client is available
-    
+
     Returns:
         True if client is initialized, False otherwise
     """
     return supabase is not None
+
+def initialize_supabase() -> Client:
+    """
+    Initialize or reinitialize Supabase client
+
+    Returns:
+        Supabase client instance or None if initialization fails
+    """
+    global supabase
+
+    try:
+        if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+            supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            logger.info("Supabase client re-initialized successfully")
+            return supabase
+        else:
+            logger.error("Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables")
+            return None
+    except Exception as e:
+        logger.error(f"Failed to initialize Supabase client: {e}")
+        return None

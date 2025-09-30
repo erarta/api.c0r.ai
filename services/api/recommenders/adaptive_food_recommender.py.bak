@@ -1,0 +1,712 @@
+"""
+Adaptive Food Recommendation System.
+Generates personalized food recommendations that adapt to user's DNA, context, and real-time needs.
+"""
+from __future__ import annotations
+
+import random
+from datetime import datetime, time, date, timedelta
+from typing import Dict, List, Optional, Any, Tuple
+
+from loguru import logger
+
+from ..models.nutrition_profile import (
+    NutritionDNA, EatingPersonality, PersonalizedFoodRecommendation
+)
+from ..predictors.behavior_predictor import BehaviorPredictor
+
+
+class AdaptiveFoodRecommender:
+    """
+    Generates highly personalized food recommendations based on:
+    - User's Nutrition DNA
+    - Current context (time, mood, situation)
+    - Predicted behaviors and needs
+    - Real-time feedback loop
+    """
+
+    # Meal templates organized by characteristics
+    MEAL_TEMPLATES = {
+        'quick_protein': {
+            'breakfast': [
+                {'name': 'Греческий йогурт с орехами', 'prep_time': 3, 'protein_ratio': 0.25},
+                {'name': 'Омлет из 2 яиц', 'prep_time': 5, 'protein_ratio': 0.30},
+                {'name': 'Творожная запеканка', 'prep_time': 2, 'protein_ratio': 0.28}
+            ],
+            'lunch': [
+                {'name': 'Куриная грудка с салатом', 'prep_time': 10, 'protein_ratio': 0.35},
+                {'name': 'Рыба с овощами на пару', 'prep_time': 15, 'protein_ratio': 0.32},
+                {'name': 'Чечевичный суп', 'prep_time': 8, 'protein_ratio': 0.20}
+            ],
+            'dinner': [
+                {'name': 'Запеченная индейка с овощами', 'prep_time': 25, 'protein_ratio': 0.30},
+                {'name': 'Тофу с брокколи', 'prep_time': 12, 'protein_ratio': 0.25},
+                {'name': 'Творог с зеленью', 'prep_time': 3, 'protein_ratio': 0.35}
+            ]
+        },
+        'comfort_healthy': {
+            'breakfast': [
+                {'name': 'Овсянка с ягодами и медом', 'prep_time': 8, 'comfort_level': 0.8},
+                {'name': 'Банановые оладьи из овсянки', 'prep_time': 12, 'comfort_level': 0.7},
+                {'name': 'Теплая каша с корицей', 'prep_time': 10, 'comfort_level': 0.9}
+            ],
+            'lunch': [
+                {'name': 'Суп-пюре из тыквы', 'prep_time': 20, 'comfort_level': 0.8},
+                {'name': 'Ризотто с грибами', 'prep_time': 25, 'comfort_level': 0.7},
+                {'name': 'Запеканка из овощей', 'prep_time': 30, 'comfort_level': 0.9}
+            ],
+            'dinner': [
+                {'name': 'Паста из цельной пшеницы с томатами', 'prep_time': 15, 'comfort_level': 0.8},
+                {'name': 'Овощное рагу', 'prep_time': 20, 'comfort_level': 0.7},
+                {'name': 'Киноа с запеченными овощами', 'prep_time': 25, 'comfort_level': 0.6}
+            ]
+        },
+        'energy_boosting': {
+            'breakfast': [
+                {'name': 'Смузи с бананом и шпинатом', 'prep_time': 5, 'energy_level': 0.8},
+                {'name': 'Авокадо тост с яйцом', 'prep_time': 7, 'energy_level': 0.7},
+                {'name': 'Гранола с йогуртом', 'prep_time': 3, 'energy_level': 0.6}
+            ],
+            'lunch': [
+                {'name': 'Салат с киноа и авокадо', 'prep_time': 10, 'energy_level': 0.7},
+                {'name': 'Боул с лососем и овощами', 'prep_time': 15, 'energy_level': 0.8},
+                {'name': 'Гречка с овощами и орехами', 'prep_time': 12, 'energy_level': 0.6}
+            ],
+            'dinner': [
+                {'name': 'Салат с курицей и орехами', 'prep_time': 8, 'energy_level': 0.6},
+                {'name': 'Рыба с зеленым салатом', 'prep_time': 12, 'energy_level': 0.7},
+                {'name': 'Овощи на гриле с хумусом', 'prep_time': 15, 'energy_level': 0.5}
+            ]
+        },
+        'social_friendly': {
+            'lunch': [
+                {'name': 'Красивая тарелка с киноа', 'prep_time': 15, 'social_appeal': 0.8},
+                {'name': 'Цветной салат с семенами', 'prep_time': 10, 'social_appeal': 0.9},
+                {'name': 'Боул Будда', 'prep_time': 20, 'social_appeal': 0.9}
+            ],
+            'dinner': [
+                {'name': 'Паста с морепродуктами', 'prep_time': 25, 'social_appeal': 0.8},
+                {'name': 'Стейк из тунца с салатом', 'prep_time': 20, 'social_appeal': 0.9},
+                {'name': 'Фаршированные перцы', 'prep_time': 30, 'social_appeal': 0.7}
+            ]
+        }
+    }
+
+    @classmethod
+    def recommend_meal(
+        cls,
+        nutrition_dna: NutritionDNA,
+        meal_type: str,  # breakfast, lunch, dinner, snack
+        context: Dict[str, Any] = None,
+        constraints: Dict[str, Any] = None,
+        enhanced_profile: Dict[str, Any] = None  # Added enhanced profile support
+    ) -> PersonalizedMealRecommendation:
+        """Generate a single personalized meal recommendation"""
+
+        context = context or {}
+        constraints = constraints or {}
+        enhanced_profile = enhanced_profile or {}
+
+        # Determine meal characteristics based on DNA, context, and enhanced preferences
+        meal_characteristics = cls._determine_meal_characteristics(
+            nutrition_dna, meal_type, context, enhanced_profile
+        )
+
+        # Find matching meal template
+        meal_template = cls._select_meal_template(meal_characteristics, meal_type, constraints)
+
+        # Calculate nutrition values
+        nutrition = cls._calculate_meal_nutrition(meal_template, nutrition_dna, meal_type)
+
+        # Determine optimal timing
+        optimal_time = cls._calculate_optimal_timing(nutrition_dna, meal_type, context)
+
+        # Generate reasoning
+        reasoning = cls._generate_meal_reasoning(nutrition_dna, meal_template, context, meal_characteristics)
+
+        return PersonalizedMealRecommendation(
+            meal_type=meal_type,
+            recommended_time=optimal_time,
+            matches_energy_level=meal_characteristics.get('energy_match', False),
+            addresses_typical_craving=meal_characteristics.get('craving_match', False),
+            fits_schedule_pattern=meal_characteristics.get('schedule_match', True),
+            supports_current_goal=meal_characteristics.get('goal_match', True),
+            dish_name=meal_template['name'],
+            description=cls._generate_meal_description(meal_template, meal_characteristics),
+            reasoning=reasoning,
+            calories=nutrition['calories'],
+            protein=nutrition['protein'],
+            fats=nutrition['fats'],
+            carbs=nutrition['carbs'],
+            fiber=nutrition.get('fiber'),
+            prep_time_minutes=meal_template['prep_time'],
+            difficulty_level=cls._assess_difficulty(meal_template, nutrition_dna),
+            ingredients=cls._generate_ingredients_list(meal_template, nutrition['calories'])
+        )
+
+    @classmethod
+    def _determine_meal_characteristics(
+        cls,
+        nutrition_dna: NutritionDNA,
+        meal_type: str,
+        context: Dict[str, Any],
+        enhanced_profile: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """Determine what characteristics the meal should have"""
+
+        characteristics = {}
+        enhanced_profile = enhanced_profile or {}
+        preference_flags = enhanced_profile.get('preference_flags', {})
+        enhanced_preferences = enhanced_profile.get('enhanced_preferences', {})
+
+        # Time-based characteristics
+        current_time = context.get('current_time', datetime.now().time())
+        current_hour = current_time.hour
+
+        # Enhanced preference-based constraints
+        dietary_restrictions = enhanced_profile.get('dietary_preferences', [])
+        allergies = enhanced_profile.get('allergies', [])
+        disliked_foods = enhanced_profile.get('disliked_foods', [])
+        favorite_foods = enhanced_profile.get('favorite_foods', [])
+        preferred_cuisines = enhanced_profile.get('preferred_cuisines', [])
+
+        # Apply dietary restrictions and allergies as hard constraints
+        if dietary_restrictions:
+            characteristics['dietary_restrictions'] = dietary_restrictions
+        if allergies:
+            characteristics['allergies'] = allergies
+        if disliked_foods:
+            characteristics['avoid_foods'] = disliked_foods
+
+        # Preference-based meal characteristics
+        if preference_flags.get('prefers_quick_meals'):
+            characteristics['max_prep_time'] = 10
+            characteristics['complexity'] = 'simple'
+        elif preference_flags.get('advanced_cooking_skills'):
+            characteristics['complexity'] = 'advanced'
+            characteristics['max_prep_time'] = 45
+        else:
+            characteristics['max_prep_time'] = 25
+            characteristics['complexity'] = 'moderate'
+
+        # Meal prep preferences
+        if preference_flags.get('meal_prep_enthusiast') and context.get('is_weekend'):
+            characteristics['batch_cookable'] = True
+            characteristics['meal_prep_friendly'] = True
+
+        # Social eating preferences
+        if preference_flags.get('social_eater') and context.get('social_plans'):
+            characteristics['presentation_important'] = True
+            characteristics['shareable'] = True
+
+        # Energy level matching with enhanced preferences
+        if meal_type == 'breakfast':
+            # Match morning appetite level
+            if nutrition_dna.energy_patterns.morning_appetite > 0.6:
+                characteristics['energy_requirement'] = 'high'
+            elif nutrition_dna.energy_patterns.morning_appetite < 0.3:
+                characteristics['energy_requirement'] = 'light'
+            else:
+                characteristics['energy_requirement'] = 'moderate'
+
+        # Stress-sensitive preferences
+        if preference_flags.get('stress_sensitive'):
+            characteristics['stress_level'] = context.get('stress_level', 'moderate')
+            if characteristics['stress_level'] == 'high':
+                characteristics['meal_style'] = 'comfort_healthy'
+                characteristics['avoid_complex'] = True
+            else:
+                characteristics['meal_style'] = 'balanced'
+
+        # Weekend flexibility
+        if preference_flags.get('weekend_flexible') and context.get('is_weekend'):
+            characteristics['flexible_portions'] = True
+            characteristics['allow_indulgence'] = True
+
+        # Cuisine preferences
+        if preferred_cuisines:
+            characteristics['preferred_cuisines'] = preferred_cuisines
+
+        # Favorite foods boost
+        if favorite_foods:
+            characteristics['preferred_ingredients'] = favorite_foods
+
+        # Archetype-based characteristics (enhanced)
+        if nutrition_dna.archetype == EatingPersonality.STRESS_DRIVEN:
+            characteristics['stress_level'] = context.get('stress_level', 'moderate')
+            if characteristics['stress_level'] == 'high':
+                characteristics['meal_style'] = 'comfort_healthy'
+            else:
+                characteristics['meal_style'] = 'balanced'
+
+        elif nutrition_dna.archetype == EatingPersonality.BUSY_PROFESSIONAL:
+            characteristics['time_constraint'] = context.get('available_time', 'limited')
+            if characteristics['time_constraint'] == 'limited':
+                characteristics['meal_style'] = 'quick_protein'
+            else:
+                characteristics['meal_style'] = 'balanced'
+
+        elif nutrition_dna.archetype == EatingPersonality.SOCIAL_EATER:
+            characteristics['social_context'] = context.get('eating_alone', True)
+            if not characteristics['social_context']:  # eating with others
+                characteristics['meal_style'] = 'social_friendly'
+            else:
+                characteristics['meal_style'] = 'balanced'
+
+        elif nutrition_dna.archetype == EatingPersonality.EARLY_BIRD_PLANNER:
+            characteristics['meal_style'] = 'energy_boosting' if meal_type == 'breakfast' else 'balanced'
+
+        elif nutrition_dna.archetype == EatingPersonality.WEEKEND_WARRIOR:
+            is_weekend = context.get('is_weekend', False)
+            if is_weekend:
+                characteristics['meal_style'] = 'comfort_healthy'
+            else:
+                characteristics['meal_style'] = 'balanced'
+
+        # Context-based adjustments
+        weather = context.get('weather', '').lower()
+        if 'cold' in weather or 'rain' in weather:
+            characteristics['temperature_preference'] = 'warm'
+
+        # Predicted behavior adjustments
+        predictions = context.get('predictions', [])
+        for prediction in predictions:
+            if 'comfort' in prediction.event and prediction.probability > 0.6:
+                characteristics['comfort_need'] = True
+                characteristics['meal_style'] = 'comfort_healthy'
+            elif 'stress' in prediction.event and prediction.probability > 0.6:
+                characteristics['stress_management'] = True
+
+        # Default meal style if not set
+        if 'meal_style' not in characteristics:
+            characteristics['meal_style'] = 'balanced'
+
+        return characteristics
+
+    @classmethod
+    def _select_meal_template(
+        cls,
+        characteristics: Dict[str, Any],
+        meal_type: str,
+        constraints: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Select appropriate meal template based on characteristics"""
+
+        meal_style = characteristics.get('meal_style', 'balanced')
+
+        # Get templates for the meal style
+        style_templates = cls.MEAL_TEMPLATES.get(meal_style, {})
+        meal_options = style_templates.get(meal_type, [])
+
+        # If no specific style templates, use quick_protein as fallback
+        if not meal_options:
+            meal_options = cls.MEAL_TEMPLATES.get('quick_protein', {}).get(meal_type, [])
+
+        # Apply constraints
+        filtered_options = []
+        max_prep_time = constraints.get('max_prep_time', 60)  # minutes
+
+        for option in meal_options:
+            if option['prep_time'] <= max_prep_time:
+                # Check dietary restrictions
+                dietary_restrictions = constraints.get('dietary_restrictions', [])
+                option_name = option['name'].lower()
+
+                skip_option = False
+                for restriction in dietary_restrictions:
+                    restriction = restriction.lower()
+                    if restriction == 'vegetarian' and any(meat in option_name for meat in ['курица', 'рыба', 'индейка', 'мясо']):
+                        skip_option = True
+                    elif restriction == 'vegan' and any(animal in option_name for animal in ['йогурт', 'творог', 'яйц', 'сыр']):
+                        skip_option = True
+
+                if not skip_option:
+                    filtered_options.append(option)
+
+        # Select best option
+        if filtered_options:
+            # Prefer options that match current energy needs
+            energy_req = characteristics.get('energy_requirement', 'moderate')
+            if energy_req == 'light':
+                # Prefer lower prep time for light meals
+                filtered_options.sort(key=lambda x: x['prep_time'])
+            elif energy_req == 'high':
+                # Prefer higher protein for high energy meals
+                filtered_options.sort(key=lambda x: x.get('protein_ratio', 0.2), reverse=True)
+
+            selected = filtered_options[0]
+        else:
+            # Ultimate fallback
+            selected = {
+                'name': 'Легкий салат с белком',
+                'prep_time': 5,
+                'protein_ratio': 0.25
+            }
+
+        return selected
+
+    @classmethod
+    def _calculate_meal_nutrition(
+        cls,
+        meal_template: Dict[str, Any],
+        nutrition_dna: NutritionDNA,
+        meal_type: str
+    ) -> Dict[str, int]:
+        """Calculate nutritional values for the meal"""
+
+        # Base calorie targets by meal type
+        meal_calorie_ratios = {
+            'breakfast': 0.25,
+            'lunch': 0.35,
+            'dinner': 0.30,
+            'snack': 0.10
+        }
+
+        # Get user's daily calorie target (use DNA patterns to estimate if not available)
+        daily_calories = 2000  # default
+
+        # Adjust based on archetype and goals
+        if nutrition_dna.archetype == EatingPersonality.BUSY_PROFESSIONAL:
+            daily_calories = 2200  # Higher energy needs
+        elif nutrition_dna.archetype == EatingPersonality.EARLY_BIRD_PLANNER:
+            daily_calories = 1900  # More controlled intake
+
+        # Calculate meal calories
+        meal_calories = int(daily_calories * meal_calorie_ratios.get(meal_type, 0.25))
+
+        # Adjust for meal characteristics
+        protein_ratio = meal_template.get('protein_ratio', 0.25)
+
+        # Calculate macronutrients
+        protein_calories = meal_calories * protein_ratio
+        protein_grams = int(protein_calories / 4)  # 4 calories per gram of protein
+
+        fat_calories = meal_calories * 0.30  # 30% from fats
+        fat_grams = int(fat_calories / 9)  # 9 calories per gram of fat
+
+        carb_calories = meal_calories - protein_calories - fat_calories
+        carb_grams = int(carb_calories / 4)  # 4 calories per gram of carbs
+
+        # Fiber estimate (roughly 12-15g per 1000 calories)
+        fiber_grams = int(meal_calories / 1000 * 13)
+
+        return {
+            'calories': meal_calories,
+            'protein': protein_grams,
+            'fats': fat_grams,
+            'carbs': carb_grams,
+            'fiber': fiber_grams
+        }
+
+    @classmethod
+    def _calculate_optimal_timing(
+        cls,
+        nutrition_dna: NutritionDNA,
+        meal_type: str,
+        context: Dict[str, Any]
+    ) -> time:
+        """Calculate optimal time for this meal"""
+
+        # Use temporal patterns as base
+        if meal_type == 'breakfast':
+            base_time = nutrition_dna.temporal_patterns.preferred_breakfast_time
+        elif meal_type == 'lunch':
+            base_time = nutrition_dna.temporal_patterns.preferred_lunch_time
+        elif meal_type == 'dinner':
+            base_time = nutrition_dna.temporal_patterns.preferred_dinner_time
+        else:  # snack
+            # Suggest snack time based on energy patterns
+            if nutrition_dna.energy_patterns.afternoon_hunger > 0.6:
+                base_time = time(15, 30)  # Afternoon snack
+            else:
+                base_time = time(10, 30)  # Morning snack
+
+        # Adjust for context
+        schedule = context.get('schedule', {})
+        if meal_type in schedule:
+            # If user has specific schedule constraints, respect them
+            scheduled_time = schedule[meal_type]
+            if isinstance(scheduled_time, str):
+                try:
+                    base_time = datetime.strptime(scheduled_time, '%H:%M').time()
+                except ValueError:
+                    pass  # Keep base_time
+
+        # Adjust for archetype
+        if nutrition_dna.archetype == EatingPersonality.LATE_STARTER_IMPULSIVE:
+            # Shift breakfast later
+            if meal_type == 'breakfast' and base_time.hour < 8:
+                base_time = time(8, 30)
+
+        elif nutrition_dna.archetype == EatingPersonality.EARLY_BIRD_PLANNER:
+            # Shift breakfast earlier
+            if meal_type == 'breakfast' and base_time.hour > 8:
+                base_time = time(7, 30)
+
+        return base_time
+
+    @classmethod
+    def _generate_meal_reasoning(
+        cls,
+        nutrition_dna: NutritionDNA,
+        meal_template: Dict[str, Any],
+        context: Dict[str, Any],
+        characteristics: Dict[str, Any]
+    ) -> str:
+        """Generate reasoning for why this meal is recommended"""
+
+        reasons = []
+
+        # Archetype-based reasoning
+        archetype_reasoning = {
+            EatingPersonality.STRESS_DRIVEN: "Это блюдо поможет справиться с стрессом, не нарушая ваши цели",
+            EatingPersonality.BUSY_PROFESSIONAL: "Быстро готовится и обеспечивает стабильную энергию на весь день",
+            EatingPersonality.EARLY_BIRD_PLANNER: "Идеально вписывается в ваш утренний ритм и дает энергию",
+            EatingPersonality.SOCIAL_EATER: "Выглядит привлекательно и подходит для социальных ситуаций",
+            EatingPersonality.WEEKEND_WARRIOR: "Сбалансированный выбор, который не нарушит ваш прогресс",
+            EatingPersonality.LATE_STARTER_IMPULSIVE: "Простое в приготовлении блюдо для быстрого решения",
+            EatingPersonality.INTUITIVE_GRAZER: "Подходящий размер порции, который не перегрузит организм"
+        }
+
+        base_reason = archetype_reasoning.get(
+            nutrition_dna.archetype,
+            "Соответствует вашему профилю питания"
+        )
+        reasons.append(base_reason)
+
+        # Context-based reasoning
+        if characteristics.get('stress_management'):
+            reasons.append("особенно важно в стрессовые дни")
+
+        if characteristics.get('comfort_need'):
+            reasons.append("обеспечит комфорт без вреда для здоровья")
+
+        # Nutritional reasoning
+        protein_ratio = meal_template.get('protein_ratio', 0.2)
+        if protein_ratio > 0.28:
+            reasons.append("высокое содержание белка поддержит сытость")
+
+        # Timing reasoning
+        current_time = context.get('current_time', datetime.now().time())
+        if current_time.hour >= 18:  # Evening
+            if nutrition_dna.temporal_patterns.late_night_eating_frequency > 0.3:
+                reasons.append("легкий ужин поможет избежать поздних перекусов")
+
+        return f"{reasons[0]}, {', '.join(reasons[1:])}" if len(reasons) > 1 else reasons[0]
+
+    @classmethod
+    def _generate_meal_description(cls, meal_template: Dict[str, Any], characteristics: Dict[str, Any]) -> str:
+        """Generate appealing description of the meal"""
+
+        name = meal_template['name']
+        prep_time = meal_template['prep_time']
+
+        descriptions = {
+            'comfort_healthy': f"Уютное и полезное блюдо {name}, которое согреет и насытит",
+            'quick_protein': f"Питательное {name} - быстро, просто и очень полезно",
+            'energy_boosting': f"Энергодающее {name} для активного дня",
+            'social_friendly': f"Красивое и вкусное {name}, которым не стыдно угостить гостей"
+        }
+
+        meal_style = characteristics.get('meal_style', 'balanced')
+        base_description = descriptions.get(meal_style, f"Сбалансированное {name}")
+
+        if prep_time <= 10:
+            return f"{base_description}. Приготовится всего за {prep_time} минут!"
+        else:
+            return f"{base_description}. Время приготовления: {prep_time} минут."
+
+    @classmethod
+    def _assess_difficulty(cls, meal_template: Dict[str, Any], nutrition_dna: NutritionDNA) -> str:
+        """Assess cooking difficulty based on meal and user profile"""
+
+        prep_time = meal_template['prep_time']
+
+        # Base difficulty on prep time
+        if prep_time <= 10:
+            base_difficulty = 'easy'
+        elif prep_time <= 25:
+            base_difficulty = 'medium'
+        else:
+            base_difficulty = 'hard'
+
+        # Adjust for user archetype
+        if nutrition_dna.archetype == EatingPersonality.BUSY_PROFESSIONAL:
+            # Busy professionals prefer everything easy
+            if base_difficulty == 'medium':
+                return 'medium'  # Keep medium as medium for busy people
+            elif base_difficulty == 'hard':
+                return 'hard'  # But hard stays hard
+        elif nutrition_dna.archetype == EatingPersonality.EARLY_BIRD_PLANNER:
+            # Planners can handle more complexity
+            if base_difficulty == 'hard':
+                return 'medium'
+
+        return base_difficulty
+
+    @classmethod
+    def _generate_ingredients_list(cls, meal_template: Dict[str, Any], calories: int) -> List[Dict[str, Any]]:
+        """Generate ingredients list for the meal"""
+
+        meal_name = meal_template['name'].lower()
+        ingredients = []
+
+        # Simple ingredient mapping based on meal name keywords
+        if 'йогурт' in meal_name:
+            ingredients.extend([
+                {'name': 'Греческий йогурт', 'amount': 200, 'unit': 'г'},
+                {'name': 'Орехи', 'amount': 30, 'unit': 'г'},
+                {'name': 'Мед', 'amount': 1, 'unit': 'ч.л.'}
+            ])
+        elif 'омлет' in meal_name:
+            ingredients.extend([
+                {'name': 'Яйца', 'amount': 2, 'unit': 'шт'},
+                {'name': 'Молоко', 'amount': 50, 'unit': 'мл'},
+                {'name': 'Соль', 'amount': 1, 'unit': 'щепотка'}
+            ])
+        elif 'салат' in meal_name:
+            ingredients.extend([
+                {'name': 'Листья салата', 'amount': 100, 'unit': 'г'},
+                {'name': 'Огурцы', 'amount': 1, 'unit': 'шт'},
+                {'name': 'Помидоры', 'amount': 1, 'unit': 'шт'},
+                {'name': 'Оливковое масло', 'amount': 1, 'unit': 'ст.л.'}
+            ])
+        elif 'овсянка' in meal_name or 'каша' in meal_name:
+            ingredients.extend([
+                {'name': 'Овсяные хлопья', 'amount': 50, 'unit': 'г'},
+                {'name': 'Молоко', 'amount': 200, 'unit': 'мл'},
+                {'name': 'Ягоды', 'amount': 80, 'unit': 'г'}
+            ])
+        elif 'курица' in meal_name or 'куриная' in meal_name:
+            ingredients.extend([
+                {'name': 'Куриная грудка', 'amount': 150, 'unit': 'г'},
+                {'name': 'Овощи', 'amount': 200, 'unit': 'г'},
+                {'name': 'Специи', 'amount': 1, 'unit': 'щепотка'}
+            ])
+        else:
+            # Generic ingredients based on calories
+            if calories < 300:
+                ingredients.extend([
+                    {'name': 'Основной ингредиент', 'amount': 100, 'unit': 'г'},
+                    {'name': 'Овощи', 'amount': 150, 'unit': 'г'}
+                ])
+            elif calories < 500:
+                ingredients.extend([
+                    {'name': 'Белковый компонент', 'amount': 120, 'unit': 'г'},
+                    {'name': 'Углеводы', 'amount': 80, 'unit': 'г'},
+                    {'name': 'Овощи', 'amount': 200, 'unit': 'г'}
+                ])
+            else:
+                ingredients.extend([
+                    {'name': 'Белковый компонент', 'amount': 150, 'unit': 'г'},
+                    {'name': 'Углеводы', 'amount': 100, 'unit': 'г'},
+                    {'name': 'Овощи', 'amount': 250, 'unit': 'г'},
+                    {'name': 'Полезные жиры', 'amount': 20, 'unit': 'г'}
+                ])
+
+        return ingredients
+
+    @classmethod
+    def generate_daily_meal_plan(
+        cls,
+        nutrition_dna: NutritionDNA,
+        target_date: date,
+        context: Dict[str, Any] = None,
+        constraints: Dict[str, Any] = None,
+        enhanced_profile: Dict[str, Any] = None
+    ) -> Dict[str, PersonalizedMealRecommendation]:
+        """Generate complete daily meal plan"""
+
+        context = context or {}
+        constraints = constraints or {}
+
+        # Add date-specific context
+        day_context = context.copy()
+        day_context['is_weekend'] = target_date.weekday() >= 5
+        day_context['day_of_week'] = target_date.weekday()
+
+        # Get predictions for the day to inform recommendations
+        predictions = BehaviorPredictor.predict_daily_behavior(nutrition_dna, target_date)
+        day_context['predictions'] = predictions
+
+        # Generate meal recommendations
+        meals = {}
+        meal_types = ['breakfast', 'lunch', 'dinner']
+
+        for meal_type in meal_types:
+            # Adjust context for each meal time
+            meal_context = day_context.copy()
+
+            if meal_type == 'breakfast':
+                meal_context['current_time'] = nutrition_dna.temporal_patterns.preferred_breakfast_time
+            elif meal_type == 'lunch':
+                meal_context['current_time'] = nutrition_dna.temporal_patterns.preferred_lunch_time
+            else:  # dinner
+                meal_context['current_time'] = nutrition_dna.temporal_patterns.preferred_dinner_time
+
+            meals[meal_type] = cls.recommend_meal(
+                nutrition_dna, meal_type, meal_context, constraints, enhanced_profile
+            )
+
+        return meals
+
+    @classmethod
+    def generate_adaptive_suggestions(
+        cls,
+        nutrition_dna: NutritionDNA,
+        recent_meals: List[Dict[str, Any]],
+        feedback: List[Dict[str, Any]] = None
+    ) -> List[str]:
+        """Generate adaptive suggestions based on recent meals and feedback"""
+
+        suggestions = []
+        feedback = feedback or []
+
+        # Analyze recent meal patterns
+        if recent_meals:
+            # Check variety
+            recent_dishes = [meal.get('dish_name', '') for meal in recent_meals[-7:]]  # Last 7 meals
+            unique_dishes = set(recent_dishes)
+
+            if len(unique_dishes) < len(recent_dishes) * 0.6:  # Less than 60% variety
+                suggestions.append("Попробуйте разнообразить рацион - добавьте новые блюда или способы приготовления")
+
+            # Check prep time patterns
+            prep_times = [meal.get('prep_time_minutes', 30) for meal in recent_meals[-5:]]
+            avg_prep_time = sum(prep_times) / len(prep_times)
+
+            if avg_prep_time > 25 and nutrition_dna.archetype == EatingPersonality.BUSY_PROFESSIONAL:
+                suggestions.append("Рассмотрите блюда с меньшим временем приготовления для будних дней")
+
+        # Analyze feedback patterns
+        if feedback:
+            satisfaction_scores = [fb.get('satisfaction', 3) for fb in feedback[-10:]]  # Last 10 ratings
+            avg_satisfaction = sum(satisfaction_scores) / len(satisfaction_scores)
+
+            if avg_satisfaction < 3.5:
+                suggestions.append("Попробуем скорректировать рекомендации под ваши предпочтения")
+
+            # Check specific feedback themes
+            negative_feedback = [fb for fb in feedback if fb.get('satisfaction', 3) < 3]
+            if len(negative_feedback) > len(feedback) * 0.3:  # More than 30% negative
+                common_issues = []
+                for fb in negative_feedback:
+                    issue = fb.get('issue', '')
+                    if 'сложно готовить' in issue.lower():
+                        common_issues.append('complexity')
+                    elif 'не нравится вкус' in issue.lower():
+                        common_issues.append('taste')
+
+                if 'complexity' in common_issues:
+                    suggestions.append("Будем предлагать более простые в приготовлении блюда")
+                if 'taste' in common_issues:
+                    suggestions.append("Учтем ваши вкусовые предпочтения в следующих рекомендациях")
+
+        # Archetype-specific suggestions
+        if nutrition_dna.archetype == EatingPersonality.SOCIAL_EATER:
+            suggestions.append("Рассмотрите возможность готовить блюда, которыми можно поделиться с друзьями")
+
+        elif nutrition_dna.archetype == EatingPersonality.WEEKEND_WARRIOR:
+            suggestions.append("Попробуйте сохранить хотя бы одну здоровую привычку на выходных")
+
+        return suggestions[:3]  # Return top 3 suggestions

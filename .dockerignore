@@ -1,0 +1,50 @@
+# VCS
+.git
+.gitignore
+
+# Python caches/venvs
+__pycache__/
+**/__pycache__/
+.venv/
+venv/
+c0r/
+.pytest_cache/
+.mypy_cache/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+**/node_modules/
+
+# Flutter/mobile build artifacts
+app/build/
+app/.dart_tool/
+app/.gradle/
+app/ios/
+app/android/.gradle/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/ios/Pods/
+app/ios/Runner.app/
+app/ios/build/
+
+app_prototype/build/
+app_prototype/.dart_tool/
+app_prototype/ios/
+app_prototype/android/
+
+# IDE/editor
+.vscode/
+.idea/
+*.iml
+
+# Logs & coverage
+*.log
+logs/
+coverage/
+**/coverage/
+
+# Misc
+.DS_Store
