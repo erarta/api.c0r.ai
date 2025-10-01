@@ -16,8 +16,10 @@ if [ -f ".env" ] && [ "${CI}" != "true" ]; then
     set -a  # automatically export all variables
     source <(grep -v '^#' .env | grep -v '^$' | grep '=' | sed 's/^/export /')
     set +a  # stop automatically exporting
+elif [ "${CI}" = "true" ]; then
+    echo -e "${YELLOW}🤖 Running in CI/GitHub Actions mode${NC}"
 else
-    echo -e "${YELLOW}🏭 Running in CI/Production mode - using environment variables${NC}"
+    echo -e "${YELLOW}🏭 Running in production mode - using environment variables${NC}"
 fi
 
 # Set default production environment if ENVIRONMENT is not set

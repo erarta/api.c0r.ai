@@ -68,7 +68,7 @@ jobs:
           echo "🗄️ Running database migrations..."
           if [ -f "scripts/run_migrations.sh" ]; then
             chmod +x scripts/run_migrations.sh
-            ENVIRONMENT=production DB_PASSWORD='${{ secrets.DB_PASSWORD }}' ./scripts/run_migrations.sh
+            env CI=true ENVIRONMENT=production DB_PASSWORD='${{ secrets.DB_PASSWORD }}' ./scripts/run_migrations.sh
           else
             echo "⚠️ Migration script not found, skipping migrations"
           fi
