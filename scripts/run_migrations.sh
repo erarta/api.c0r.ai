@@ -10,18 +10,37 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Database connection parameters (defaults to production)
-DB_HOST=${DB_HOST:-"aws-0-eu-central-1.pooler.supabase.com"}
-DB_USER=${DB_USER:-"postgres.mmrzpngugivxoapjiovb"}
-DB_NAME=${DB_NAME:-"postgres"}
-DB_PORT=${DB_PORT:-"6543"}
+# Load environment variables from .env file if it exists (local development)
+if [ -f ".env" ]; then
+    echo -e "${YELLOW}📄 Loading environment from .env file...${NC}"
+    set -a  # automatically export all variables
+    source <(grep -v '^#' .env | grep -v '^$' | grep '=' | sed 's/^/export /')
+    set +a  # stop automatically exporting
+fi
 
-# For development database, override with environment variables
+# Set default production environment if ENVIRONMENT is not set
+if [ -z "$ENVIRONMENT" ]; then
+    echo -e "${YELLOW}🏭 Environment not set, defaulting to production${NC}"
+    ENVIRONMENT="production"
+fi
+
+# Set database connection based on ENVIRONMENT
 if [ "$ENVIRONMENT" = "development" ]; then
-    DB_HOST=${DB_HOST:-"aws-0-eu-central-1.pooler.supabase.com"}
-    DB_USER=${DB_USER:-"postgres.cadeererdjwemspkeriq"}
-    DB_NAME=${DB_NAME:-"postgres"}
-    DB_PORT=${DB_PORT:-"6543"}
+    # Development database connection
+    echo -e "${YELLOW}🔧 Connecting to DEVELOPMENT database${NC}"
+    DB_HOST="aws-0-eu-central-1.pooler.supabase.com"
+    DB_USER="postgres.cadeererdjwemspkeriq"
+    DB_NAME="postgres"
+    DB_PORT="6543"
+    echo -e "${YELLOW}📍 Dev DB: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}${NC}"
+else
+    # Production database connection
+    echo -e "${YELLOW}🏭 Connecting to PRODUCTION database${NC}"
+    DB_HOST="aws-0-eu-central-1.pooler.supabase.com"
+    DB_USER="postgres.mmrzpngugivxoapjiovb"
+    DB_NAME="postgres"
+    DB_PORT="6543"
+    echo -e "${YELLOW}📍 Prod DB: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}${NC}"
 fi
 MIGRATIONS_DIR="migrations/database"
 
