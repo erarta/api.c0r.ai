@@ -10,11 +10,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Database connection parameters
+# Database connection parameters (defaults to production)
 DB_HOST=${DB_HOST:-"aws-0-eu-central-1.pooler.supabase.com"}
 DB_USER=${DB_USER:-"postgres.mmrzpngugivxoapjiovb"}
 DB_NAME=${DB_NAME:-"postgres"}
 DB_PORT=${DB_PORT:-"6543"}
+
+# For development database, override with environment variables
+if [ "$ENVIRONMENT" = "development" ]; then
+    DB_HOST=${DB_HOST:-"aws-0-eu-central-1.pooler.supabase.com"}
+    DB_USER=${DB_USER:-"postgres.cadeererdjwemspkeriq"}
+    DB_NAME=${DB_NAME:-"postgres"}
+    DB_PORT=${DB_PORT:-"6543"}
+fi
 MIGRATIONS_DIR="migrations/database"
 
 echo -e "${YELLOW}🗄️ Starting database migrations...${NC}"
