@@ -33,9 +33,25 @@
       "Bash(docker stop:*)",
       "Bash(PGPASSWORD:*)",
       "Bash(git rm:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(env:*)",
+      "Bash(PGPASSWORD='xuoO4|LSaaGX5' psql:*)",
+      "Bash(PGPASSWORD='xuoO4|LSaaGX5' psql -h aws-0-eu-central-1.pooler.supabase.com -U postgres.mmrzpngugivxoapjiovb -d postgres -p 6543 -f migrations/database/2025-10-01_create_meal_plans_table.sql)"
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📋 Project Rules: Check CLAUDE.md for migrations and project guidelines'"
+          }
+        ]
+      }
+    ]
   }
 }
