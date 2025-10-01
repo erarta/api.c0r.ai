@@ -60,9 +60,25 @@ jobs:
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           # Navigate to project directory
           cd /home/ubuntu/api.c0r.ai
-          
+
           # Pull latest changes
           git pull origin main
+
+          # Run database migrations (added by Claude)
+          echo "🗄️ Running database migrations..."
+          if [ -f "scripts/run_migrations.sh" ]; then
+            chmod +x scripts/run_migrations.sh
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}' ./scripts/run_migrations.sh
+          else
+            echo "⚠️ Migration script not found, skipping migrations"
+          fi
+
+          # Validate production config (added by Claude)
+          if [ -f "scripts/validate_production_config.sh" ]; then
+            echo "✅ Validating production configuration..."
+            chmod +x scripts/validate_production_config.sh
+            ./scripts/validate_production_config.sh
+          fi
           
           # Stop existing containers
           docker compose down

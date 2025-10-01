@@ -83,8 +83,6 @@ services:
     environment:
       - ML_SERVICE_URL=http://ml:8001
       - REDIS_URL=redis://redis:6379/0
-      # Added by Claude for food plan bypass testing
-      - BYPASS_SUBSCRIPTION=${BYPASS_SUBSCRIPTION}
     depends_on:
       - ml
       - redis

@@ -27,7 +27,13 @@
       "Bash(git commit:*)",
       "Bash(git pull:*)",
       "Bash(git rebase:*)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Read(//Users/evgeniydubskiy/.ssh/**)",
+      "Bash(scp:*)",
+      "Bash(docker stop:*)",
+      "Bash(PGPASSWORD:*)",
+      "Bash(git rm:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

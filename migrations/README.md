@@ -19,22 +19,31 @@ migrations/
     └── initial_schema.sql
 ```
 
-## 🚀 Automated Migration System
+## 🚀 Automated Migration System (Updated by Claude)
 
 ### Migration Tracking
-- All migrations are tracked in `schema_migrations` table
-- Automatic checksum validation prevents duplicate runs
+- All migrations are tracked in `migrations_log` table
+- Automatic duplicate prevention with idempotent migrations
+- **Auto-deployment integration** - migrations run on every deploy
 - Built-in rollback support with tracking
-- Deployment notifications to service bot
 
 ### Running Migrations
 ```bash
-# Automated migration runner (recommended)
+# Automated migration runner (recommended - used in GitHub Actions)
+./scripts/run_migrations.sh
+
+# Legacy Python runner (deprecated)
 python scripts/run_migrations.py
 
-# Manual migration (for specific cases)
-psql -h your-host -d your-database -U your-user -f migrations/database/migration_file.sql
+# Manual migration (for specific cases only)
+psql -h aws-0-eu-central-1.pooler.supabase.com -U postgres.mmrzpngugivxoapjiovb -d postgres -p 6543 -f migrations/database/migration_file.sql
 ```
+
+### GitHub Actions Integration
+- Migrations run automatically on every push to `main`
+- No more manual migration applying on production!
+- Failures don't block deployment (warnings only)
+- Full logging in GitHub Actions workflow
 
 ### Rolling Back
 ```bash
