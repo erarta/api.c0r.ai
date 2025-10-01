@@ -10,12 +10,14 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Load environment variables from .env file if it exists (local development)
-if [ -f ".env" ]; then
+# Load environment variables from .env file only for local development
+if [ -f ".env" ] && [ "${CI}" != "true" ]; then
     echo -e "${YELLOW}📄 Loading environment from .env file...${NC}"
     set -a  # automatically export all variables
     source <(grep -v '^#' .env | grep -v '^$' | grep '=' | sed 's/^/export /')
     set +a  # stop automatically exporting
+else
+    echo -e "${YELLOW}🏭 Running in CI/Production mode - using environment variables${NC}"
 fi
 
 # Set default production environment if ENVIRONMENT is not set
