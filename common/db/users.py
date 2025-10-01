@@ -28,23 +28,39 @@ async def get_or_create_user(telegram_id: int, language: Optional[str] = None):
             logger.info(f"Found existing user {telegram_id}: {user[0]}")
             return user[0]
 
-        # Create new user - only include fields that exist in schema
+        # Create new user - adapt to production vs development schema
         data = {"telegram_id": telegram_id}
 
-        # Check if credits_remaining column exists by trying to query it
+        # Check schema type and use appropriate column names
         try:
+            # Try development schema first (credits_remaining)
             test_query = supabase.table("users").select("credits_remaining").limit(1).execute()
             data["credits_remaining"] = 3
-        except Exception as e:
-            logger.warning(f"credits_remaining column not found in users table: {e}")
+            logger.info("Using development schema (credits_remaining)")
+        except Exception:
+            try:
+                # Fallback to production schema (credits)
+                test_query = supabase.table("users").select("credits").limit(1).execute()
+                data["credits"] = 3
+                logger.info("Using production schema (credits)")
+            except Exception as e:
+                logger.warning(f"Neither credits_remaining nor credits column found: {e}")
 
-        # Check if language column exists
+        # Check language column (development vs production)
         if language:
             try:
+                # Try development schema first (language)
                 test_query = supabase.table("users").select("language").limit(1).execute()
                 data["language"] = language
-            except Exception as e:
-                logger.warning(f"language column not found in users table: {e}")
+                logger.info("Using development schema (language)")
+            except Exception:
+                try:
+                    # Fallback to production schema (language_code)
+                    test_query = supabase.table("users").select("language_code").limit(1).execute()
+                    data["language_code"] = language
+                    logger.info("Using production schema (language_code)")
+                except Exception as e:
+                    logger.warning(f"Neither language nor language_code column found: {e}")
 
         logger.info(f"Creating new user {telegram_id} with data: {data}")
         user = supabase.table("users").insert(data).execute().data[0]
@@ -144,14 +160,21 @@ async def update_user_language(telegram_id: int, language: str):
         return None
 
     try:
-        # Check if language column exists
+        # Try development schema first (language)
         test_query = supabase.table("users").select("language").limit(1).execute()
         updated = supabase.table("users").update({"language": language}).eq("telegram_id", telegram_id).execute().data[0]
         logger.info(f"Language updated for user {telegram_id}: {updated}")
         return updated
-    except Exception as e:
-        logger.warning(f"Cannot update language for user {telegram_id} - language column may not exist: {e}")
-        return None
+    except Exception:
+        try:
+            # Fallback to production schema (language_code)
+            test_query = supabase.table("users").select("language_code").limit(1).execute()
+            updated = supabase.table("users").update({"language_code": language}).eq("telegram_id", telegram_id).execute().data[0]
+            logger.info(f"Language_code updated for user {telegram_id}: {updated}")
+            return updated
+        except Exception as e:
+            logger.warning(f"Cannot update language for user {telegram_id} - neither language nor language_code column exists: {e}")
+            return None
 
 
 async def update_user_country_and_phone(telegram_id: int, country: Optional[str] = None, phone_number: Optional[str] = None):
@@ -186,11 +209,15 @@ async def get_user_stats(telegram_id: int):
         logger.warning(f"Cannot get analysis count for user {telegram_id}: {e}")
         analysis_count = 0
 
+    # Adapt to different schema versions
+    credits = user.get('credits_remaining', user.get('credits', 0))
+    language = user.get('language', user.get('language_code', 'en'))
+
     stats = {
         'telegram_id': telegram_id,
-        'credits_remaining': user.get('credits_remaining', 0),  # Default to 0 if column doesn't exist
+        'credits_remaining': credits,
         'total_analyses': analysis_count or 0,
-        'language': user.get('language', 'en'),
+        'language': language,
         'country': user.get('country'),
         'created_at': user.get('created_at')
     }
