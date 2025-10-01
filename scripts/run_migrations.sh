@@ -26,15 +26,15 @@ fi
 
 # Set database connection based on ENVIRONMENT
 if [ "$ENVIRONMENT" = "development" ]; then
-    # Development database connection
+    # Development database connection (eu-north-1 region)
     echo -e "${YELLOW}🔧 Connecting to DEVELOPMENT database${NC}"
-    DB_HOST="aws-0-eu-central-1.pooler.supabase.com"
+    DB_HOST="aws-0-eu-north-1.pooler.supabase.com"
     DB_USER="postgres.cadeererdjwemspkeriq"
     DB_NAME="postgres"
     DB_PORT="6543"
     echo -e "${YELLOW}📍 Dev DB: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}${NC}"
 else
-    # Production database connection
+    # Production database connection (eu-central-1 region)
     echo -e "${YELLOW}🏭 Connecting to PRODUCTION database${NC}"
     DB_HOST="aws-0-eu-central-1.pooler.supabase.com"
     DB_USER="postgres.mmrzpngugivxoapjiovb"
