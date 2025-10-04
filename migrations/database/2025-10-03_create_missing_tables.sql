@@ -19,14 +19,11 @@ BEGIN
 
         CREATE INDEX IF NOT EXISTS analysis_corrections_user_idx ON public.analysis_corrections(user_id, created_at DESC);
 
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'analysis_corrections_user_id_fkey') THEN
-                ALTER TABLE public.analysis_corrections
-                ADD CONSTRAINT analysis_corrections_user_id_fkey
-                FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-            END IF;
-        END $$;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'analysis_corrections_user_id_fkey') THEN
+            ALTER TABLE public.analysis_corrections
+            ADD CONSTRAINT analysis_corrections_user_id_fkey
+            FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+        END IF;
 
         -- Create favorites_food table
         CREATE TABLE IF NOT EXISTS public.favorites_food (
@@ -42,14 +39,11 @@ BEGIN
         CREATE INDEX IF NOT EXISTS favorites_food_user_created_idx ON public.favorites_food(user_id, created_at DESC);
         CREATE INDEX IF NOT EXISTS favorites_food_user_name_idx ON public.favorites_food(user_id, name);
 
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'favorites_food_user_id_fkey') THEN
-                ALTER TABLE public.favorites_food
-                ADD CONSTRAINT favorites_food_user_id_fkey
-                FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-            END IF;
-        END $$;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'favorites_food_user_id_fkey') THEN
+            ALTER TABLE public.favorites_food
+            ADD CONSTRAINT favorites_food_user_id_fkey
+            FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+        END IF;
 
         -- Create saved_recipes table
         CREATE TABLE IF NOT EXISTS public.saved_recipes (
@@ -65,23 +59,17 @@ BEGIN
         CREATE INDEX IF NOT EXISTS saved_recipes_user_created_idx ON public.saved_recipes(user_id, created_at DESC);
         CREATE INDEX IF NOT EXISTS saved_recipes_user_title_idx ON public.saved_recipes(user_id, title);
 
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'saved_recipes_language_check') THEN
-                ALTER TABLE public.saved_recipes
-                ADD CONSTRAINT saved_recipes_language_check
-                CHECK (language = ANY (ARRAY['en'::text, 'ru'::text]));
-            END IF;
-        END $$;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'saved_recipes_language_check') THEN
+            ALTER TABLE public.saved_recipes
+            ADD CONSTRAINT saved_recipes_language_check
+            CHECK (language = ANY (ARRAY['en'::text, 'ru'::text]));
+        END IF;
 
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'saved_recipes_user_id_fkey') THEN
-                ALTER TABLE public.saved_recipes
-                ADD CONSTRAINT saved_recipes_user_id_fkey
-                FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-            END IF;
-        END $$;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'saved_recipes_user_id_fkey') THEN
+            ALTER TABLE public.saved_recipes
+            ADD CONSTRAINT saved_recipes_user_id_fkey
+            FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+        END IF;
 
         -- Grant permissions
         GRANT ALL ON public.analysis_corrections TO postgres;
